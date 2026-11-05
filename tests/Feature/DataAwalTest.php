@@ -44,7 +44,9 @@ it('mengisi jenis kegiatan awal beserta berkasnya', function () {
         ->toBe(['Undangan', 'Daftar hadir', 'Notulen', 'Dokumentasi foto'])
         ->and($rapat->jenisBerkas->last()->tata_letak)->toBe(TataLetakBerkas::Kisi);
 
-    expect(JenisKegiatan::where('nama', 'Gaji/Honor')->firstOrFail()->jenisBerkas)->toHaveCount(0);
+    $gaji = JenisKegiatan::where('nama', 'Gaji/Honor')->firstOrFail();
+    expect($gaji->jenisBerkas->pluck('nama')->all())->toBe(['Bukti penggajian'])
+        ->and($gaji->jenisBerkas->first()->tata_letak)->toBe(TataLetakBerkas::Penuh);
     expect(JenisKegiatan::where('nama', 'Belanja barang')->firstOrFail()->jenisBerkas->pluck('nama')->all())
         ->toBe(['Nota', 'Foto barang']);
 

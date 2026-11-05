@@ -73,7 +73,7 @@ class DataAwalSeeder extends Seeder
             ],
             'Gaji/Honor' => [
                 'kata_kunci' => ['gaji', 'honor'],
-                'berkas' => [],
+                'berkas' => [['Bukti penggajian', TataLetakBerkas::Penuh]],
             ],
             'Belanja barang' => [
                 'kata_kunci' => [

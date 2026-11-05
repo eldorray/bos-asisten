@@ -1,5 +1,6 @@
 <?php
 
+use App\Impor\Token;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +48,15 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * @return list<Token>
+ */
+function tokenFixture(string $nama): array
+{
+    /** @var list<array{int, float, float, string}> $data */
+    $data = json_decode((string) file_get_contents(__DIR__."/Fixtures/impor/{$nama}.json"), true, flags: JSON_THROW_ON_ERROR);
+
+    return array_map(fn (array $t) => new Token($t[0], (float) $t[1], (float) $t[2], $t[3]), $data);
 }

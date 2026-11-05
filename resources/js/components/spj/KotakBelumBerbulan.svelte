@@ -13,15 +13,25 @@
         belumBerbulan: { tahap: number; kegiatan: BarisKegiatanData[] }[];
     } = $props();
 
-    function pilihBulan(id: number, bulan: string): void {
-        if (bulan === '') {
+    let galat = $state<Record<number, string>>({});
+
+    function pilihBulan(id: number, pilihan: HTMLSelectElement): void {
+        if (pilihan.value === '') {
             return;
         }
 
+        delete galat[id];
+
         router.patch(
             KegiatanController.update(id).url,
-            { bulan: Number(bulan) },
-            { preserveScroll: true },
+            { bulan: Number(pilihan.value) },
+            {
+                preserveScroll: true,
+                onError: (errors) => {
+                    galat[id] = errors.bulan ?? 'Bulan tidak bisa disimpan.';
+                    pilihan.value = '';
+                },
+            },
         );
     }
 </script>
@@ -64,13 +74,19 @@
                 <select
                     class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
                     aria-label={`Bulan untuk ${k.nama}`}
-                    onchange={(e) => pilihBulan(k.id, e.currentTarget.value)}
+                    aria-invalid={galat[k.id] ? true : undefined}
+                    onchange={(e) => pilihBulan(k.id, e.currentTarget)}
                 >
                     <option value="">Pilih bulan</option>
                     {#each namaBulan.slice(awal, awal + 6) as nama, i (nama)}
                         <option value={awal + i + 1}>{nama}</option>
                     {/each}
                 </select>
+                {#if galat[k.id]}
+                    <p role="alert" class="w-full text-sm text-belum-foreground">
+                        {galat[k.id]}
+                    </p>
+                {/if}
             </div>
         {/each}
     </section>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
     import ListChecks from '@lucide/svelte/icons/list-checks';
+    import Download from '@lucide/svelte/icons/download';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
     import School from '@lucide/svelte/icons/school';
     import Upload from '@lucide/svelte/icons/upload';
@@ -22,6 +23,7 @@
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
     import { dashboard } from '@/routes';
+    import { unduh as cadanganUnduh } from '@/routes/cadangan';
     import type { NavItem } from '@/types';
 
     let {
@@ -57,6 +59,12 @@
             title: 'Jenis Kegiatan',
             href: JenisKegiatanController.index(),
             icon: ListChecks,
+        },
+        {
+            title: 'Unduh Cadangan',
+            href: cadanganUnduh(),
+            icon: Download,
+            unduh: true,
         },
     ];
 </script>

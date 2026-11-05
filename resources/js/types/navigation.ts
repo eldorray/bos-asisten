@@ -16,4 +16,6 @@ export type NavItem = {
     icon?: NavIcon;
     isActive?: boolean;
     badge?: { jumlah: number; label: string };
+    /** Tautan unduhan biasa, bukan kunjungan Inertia. */
+    unduh?: boolean;
 };

@@ -33,24 +33,38 @@
                     tooltip={item.title}
                 >
                     {#snippet children(props)}
-                        <Link
-                            {...props}
-                            href={toUrl(item.href)}
-                            class={props.class}
-                        >
-                            {#if item.icon}
-                                <item.icon class="size-4 shrink-0" />
-                            {/if}
-                            <span class="flex-1">{item.title}</span>
-                            {#if item.badge && item.badge.jumlah > 0}
-                                <span
-                                    aria-label={item.badge.label}
-                                    class="min-w-5 rounded-md bg-destructive px-1.5 text-center text-xs font-semibold text-destructive-foreground tabular-nums group-data-[collapsible=icon]:hidden"
-                                >
-                                    {item.badge.jumlah}
-                                </span>
-                            {/if}
-                        </Link>
+                        {#if item.unduh}
+                            <a
+                                {...props}
+                                href={toUrl(item.href)}
+                                download
+                                class={props.class}
+                            >
+                                {#if item.icon}
+                                    <item.icon class="size-4 shrink-0" />
+                                {/if}
+                                <span class="flex-1">{item.title}</span>
+                            </a>
+                        {:else}
+                            <Link
+                                {...props}
+                                href={toUrl(item.href)}
+                                class={props.class}
+                            >
+                                {#if item.icon}
+                                    <item.icon class="size-4 shrink-0" />
+                                {/if}
+                                <span class="flex-1">{item.title}</span>
+                                {#if item.badge && item.badge.jumlah > 0}
+                                    <span
+                                        aria-label={item.badge.label}
+                                        class="min-w-5 rounded-md bg-destructive px-1.5 text-center text-xs font-semibold text-destructive-foreground tabular-nums group-data-[collapsible=icon]:hidden"
+                                    >
+                                        {item.badge.jumlah}
+                                    </span>
+                                {/if}
+                            </Link>
+                        {/if}
                     {/snippet}
                 </SidebarMenuButton>
             </SidebarMenuItem>

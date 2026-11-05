@@ -5,6 +5,7 @@ use App\Http\Controllers\FotoController;
 use App\Http\Controllers\ImporController;
 use App\Http\Controllers\JenisKegiatanController;
 use App\Http\Controllers\KegiatanController;
+use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('kegiatan/{kegiatan}/foto', [FotoController::class, 'store'])->name('foto.store');
     Route::get('foto/{foto}', [FotoController::class, 'show'])->name('foto.show');
     Route::delete('foto/{foto}', [FotoController::class, 'destroy'])->name('foto.destroy');
+    Route::post('kegiatan/{kegiatan}/kuitansi', [KuitansiController::class, 'store'])->name('kuitansi.store');
+    Route::patch('kuitansi/{kuitansi}', [KuitansiController::class, 'update'])->name('kuitansi.update');
+    Route::delete('kuitansi/{kuitansi}', [KuitansiController::class, 'destroy'])->name('kuitansi.destroy');
     Route::post('kegiatan-tandai', [KegiatanController::class, 'tandai'])->name('kegiatan.tandai');
 
     Route::get('impor', [ImporController::class, 'index'])->name('impor.index');

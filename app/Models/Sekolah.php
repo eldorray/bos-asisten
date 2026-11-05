@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $kode_bukti
  * @property string $nama_kepala
  * @property string $nama_bendahara
- * @property array<string, int> $nomor_awal
+ * @property array<int, int> $nomor_awal
  */
 #[Fillable([
     'nama', 'sebutan', 'sistem', 'identitas', 'desa_kecamatan', 'kabupaten', 'provinsi',

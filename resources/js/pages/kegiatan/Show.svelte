@@ -16,6 +16,12 @@
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import FormKuitansi from '@/components/spj/FormKuitansi.svelte';
+    import type {
+        KandidatRapel,
+        KuitansiData,
+        NilaiAwal,
+    } from '@/components/spj/FormKuitansi.svelte';
     import UnggahBerkas from '@/components/spj/UnggahBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { Button } from '@/components/ui/button';
@@ -51,10 +57,16 @@
         kegiatan,
         berkasFoto,
         jenisKegiatans,
+        kuitansi,
+        nilaiAwal,
+        kandidatRapel,
     }: {
         kegiatan: Rincian;
         berkasFoto: { id: number; nama: string; fotos: { id: number }[] }[];
         jenisKegiatans: { id: number; nama: string }[];
+        kuitansi: KuitansiData | null;
+        nilaiAwal: NilaiAwal | null;
+        kandidatRapel: KandidatRapel[];
     } = $props();
 
     // Nilai awal formulir memang diambil sekali dari props.
@@ -190,6 +202,25 @@
                 <UnggahBerkas kegiatanId={kegiatan.id} jenisBerkasId={berkas.id} />
             </div>
         {/each}
+    </section>
+
+    <section class="grid gap-3">
+        <h2 class="text-base font-semibold">Kuitansi</h2>
+        {#if kuitansi !== null || nilaiAwal !== null}
+            {#key kuitansi?.id ?? 'baru'}
+                <FormKuitansi
+                    kegiatanId={kegiatan.id}
+                    tahun={kegiatan.tahun}
+                    {kuitansi}
+                    {nilaiAwal}
+                    {kandidatRapel}
+                />
+            {/key}
+        {:else}
+            <p class="text-sm text-muted-foreground">
+                Tentukan bulan kegiatan ini dulu sebelum membuat kuitansi.
+            </p>
+        {/if}
     </section>
 
     <form class="grid max-w-xl gap-3" onsubmit={simpanJenis}>

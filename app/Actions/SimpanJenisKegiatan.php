@@ -27,6 +27,11 @@ class SimpanJenisKegiatan
             $dikirim = array_filter(array_map(fn (array $b): ?int => isset($b['id']) ? (int) $b['id'] : null, $data['berkas']));
             $jenis->jenisBerkas()->whereNotIn('id', $dikirim)->delete();
 
+            // Nama sementara agar tukar atau geser nama dalam satu simpanan tidak menabrak indeks unik (jenis, nama).
+            foreach ($dikirim as $id) {
+                $jenis->jenisBerkas()->whereKey($id)->update(['nama' => '__tmp_'.$id]);
+            }
+
             foreach ($data['berkas'] as $i => $berkas) {
                 $atribut = ['nama' => $berkas['nama'], 'tata_letak' => $berkas['tata_letak'], 'urutan' => $i + 1];
 

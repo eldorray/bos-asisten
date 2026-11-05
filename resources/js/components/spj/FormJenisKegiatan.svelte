@@ -77,6 +77,10 @@
         } else {
             form.submit(JenisKegiatanController.update(jenis.id), {
                 preserveScroll: true,
+                onSuccess: () => {
+                    // Ambil id berkas baru dari data segar agar simpan berikutnya tidak menghapus dan membuat ulang.
+                    form.berkas = jenis.berkas.map((b) => ({ ...b }));
+                },
             });
         }
     }

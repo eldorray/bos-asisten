@@ -228,3 +228,35 @@ it('tidak mengubah flag cadangan lewat update', function () {
 
     expect($jenis->refresh()->cadangan)->toBeTrue();
 });
+
+it('menukar nama dua berkas dalam satu simpanan', function () {
+    $jenis = jenisDenganBerkas();
+    [$hadir, $sk] = $jenis->jenisBerkas->all();
+
+    $this->put(route('jenis-kegiatan.update', $jenis), [
+        'nama' => 'Honor', 'kata_kunci' => 'honor',
+        'berkas' => [
+            ['id' => $hadir->id, 'nama' => 'SK', 'tata_letak' => 'penuh'],
+            ['id' => $sk->id, 'nama' => 'Daftar hadir', 'tata_letak' => 'penuh'],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    expect($hadir->refresh()->nama)->toBe('SK')->and($sk->refresh()->nama)->toBe('Daftar hadir');
+});
+
+it('menggeser nama berkas melintasi tiga baris dalam satu simpanan', function () {
+    $jenis = jenisDenganBerkas();
+    $ketiga = JenisBerkas::factory()->create(['jenis_kegiatan_id' => $jenis->id, 'nama' => 'Foto', 'urutan' => 3]);
+    [$a, $b] = $jenis->jenisBerkas->all();
+
+    $this->put(route('jenis-kegiatan.update', $jenis), [
+        'nama' => 'Honor', 'kata_kunci' => 'honor',
+        'berkas' => [
+            ['id' => $a->id, 'nama' => 'SK', 'tata_letak' => 'penuh'],
+            ['id' => $b->id, 'nama' => 'Foto', 'tata_letak' => 'penuh'],
+            ['id' => $ketiga->id, 'nama' => 'Baru', 'tata_letak' => 'penuh'],
+        ],
+    ])->assertSessionHasNoErrors();
+
+    expect($jenis->refresh()->jenisBerkas->pluck('nama')->all())->toBe(['SK', 'Foto', 'Baru']);
+});

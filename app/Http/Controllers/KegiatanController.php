@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\GabungAcara;
 use App\Actions\HitungStatusKegiatan;
 use App\Actions\KelayakanKuitansi;
 use App\Actions\NilaiAwalKuitansi;
@@ -58,6 +59,12 @@ class KegiatanController extends Controller
                     'nomor' => $status->kuitansiRapel->nomor,
                 ],
             ],
+            'acara' => $kegiatan->acara === null ? null : [
+                'id' => $kegiatan->acara->id,
+                'nama' => $kegiatan->acara->nama,
+                'anggota' => $kegiatan->acara->kegiatans()->orderBy('id')->get(['id', 'nama'])
+                    ->map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama])->all(),
+            ],
             'berkasFoto' => $this->berkasFoto($kegiatan),
             'kuitansi' => $kuitansi === null ? null : $this->dataKuitansi($kuitansi),
             'nilaiAwal' => $kuitansi === null && $kegiatan->bulan !== null
@@ -100,7 +107,7 @@ class KegiatanController extends Controller
         return back();
     }
 
-    public function destroy(Kegiatan $kegiatan, SimpanKuitansi $simpan): RedirectResponse
+    public function destroy(Kegiatan $kegiatan, SimpanKuitansi $simpan, GabungAcara $gabung): RedirectResponse
     {
         abort_unless($kegiatan->hilang_dari_anggaran, 422, 'Hanya kegiatan yang sudah tidak ada di anggaran yang boleh dihapus.');
 
@@ -112,7 +119,10 @@ class KegiatanController extends Controller
             'Kegiatan ini termasuk kuitansi rapel yang mencakup kegiatan lain. Hapus kuitansinya dulu.',
         );
 
-        DB::transaction(function () use ($kegiatan, $kuitansi, $simpan): void {
+        DB::transaction(function () use ($kegiatan, $kuitansi, $simpan, $gabung): void {
+            $acara = $kegiatan->acara;
+
+            // Foto bersama milik acara, jadi tidak ikut terhapus; hanya foto milik baris ini.
             $kegiatan->fotos->each->delete();
 
             if ($kuitansi !== null) {
@@ -120,6 +130,10 @@ class KegiatanController extends Controller
             }
 
             $kegiatan->delete();
+
+            if ($acara !== null && $acara->kegiatans()->count() === 1) {
+                $gabung->pisah($acara);
+            }
         });
 
         return to_route('dashboard');

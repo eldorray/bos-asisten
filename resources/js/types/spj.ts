@@ -25,8 +25,15 @@ export type BarisKegiatanData = {
     kurang: number;
     catatanStatus: string | null;
     rapel: { bulan: number; nomor: string } | null;
+    acara: { id: number; nama: string } | null;
     hilangDariAnggaran: boolean;
     perluDitinjau: boolean;
+};
+
+export type SaranAcaraData = {
+    ids: number[];
+    nama: string;
+    baris: { id: number; nama: string; jumlah: number }[];
 };
 
 export type SekolahBulan = {
@@ -36,6 +43,7 @@ export type SekolahBulan = {
     total: number;
     peringatan: string | null;
     kegiatan: BarisKegiatanData[];
+    saranAcara: SaranAcaraData[];
     belumBerbulan: { tahap: number; kegiatan: BarisKegiatanData[] }[];
 };
 

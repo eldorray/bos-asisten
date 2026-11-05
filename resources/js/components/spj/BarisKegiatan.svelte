@@ -58,6 +58,11 @@
         <small class="block text-xs text-muted-foreground">
             {kegiatan.koefisien}
         </small>
+        {#if kegiatan.acara}
+            <small class="block text-xs text-muted-foreground">
+                Satu acara: {kegiatan.acara.nama}
+            </small>
+        {/if}
         {#if kegiatan.perluDitinjau}
             <Badge variant="outline" class="mt-1 border-amber-500 text-amber-700">
                 Jenis: {kegiatan.jenis}, perlu ditinjau

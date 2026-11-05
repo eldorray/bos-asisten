@@ -13,6 +13,7 @@
     import { router, useForm } from '@inertiajs/svelte';
     import FotoController from '@/actions/App/Http/Controllers/FotoController';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
+    import AcaraController from '@/actions/App/Http/Controllers/AcaraController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
@@ -55,6 +56,7 @@
 
     let {
         kegiatan,
+        acara,
         berkasFoto,
         jenisKegiatans,
         kuitansi,
@@ -63,6 +65,7 @@
         rapelDipilih,
     }: {
         kegiatan: Rincian;
+        acara: { id: number; nama: string; anggota: { id: number; nama: string }[] } | null;
         berkasFoto: { id: number; nama: string; fotos: { id: number }[] }[];
         jenisKegiatans: { id: number; nama: string }[];
         kuitansi: KuitansiData | null;
@@ -83,6 +86,20 @@
     function simpanJenis(event: SubmitEvent): void {
         event.preventDefault();
         jenis.submit(KegiatanController.update(kegiatan.id), {
+            preserveScroll: true,
+        });
+    }
+
+    function pisahAcara(): void {
+        if (
+            !confirm(
+                'Pisahkan acara ini? Semua foto berkas akan pindah ke baris pertama.',
+            )
+        ) {
+            return;
+        }
+
+        router.delete(AcaraController.destroy(acara!.id).url, {
             preserveScroll: true,
         });
     }
@@ -167,6 +184,22 @@
             </CardContent>
         </Card>
     </div>
+
+    {#if acara}
+        <div class="grid gap-2 rounded-md border border-sky-300 bg-sky-50 p-3 text-sm dark:border-sky-800 dark:bg-sky-950/40">
+            <p class="font-semibold">Satu acara: {acara.nama}</p>
+            <p class="text-muted-foreground">
+                Foto berkas dipakai bersama oleh {acara.anggota
+                    .map((a) => a.nama)
+                    .join(', ')}. Kuitansi tetap per baris.
+            </p>
+            <div>
+                <Button type="button" size="sm" variant="outline" onclick={pisahAcara}>
+                    Pisahkan acara
+                </Button>
+            </div>
+        </div>
+    {/if}
 
     <section class="grid gap-4">
         <h2 class="text-base font-semibold">Foto berkas</h2>

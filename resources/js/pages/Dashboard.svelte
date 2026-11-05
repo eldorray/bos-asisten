@@ -21,6 +21,7 @@
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import BarisKegiatan from '@/components/spj/BarisKegiatan.svelte';
     import KotakBelumBerbulan from '@/components/spj/KotakBelumBerbulan.svelte';
+    import SaranAcara from '@/components/spj/SaranAcara.svelte';
     import PemilihBulan from '@/components/spj/PemilihBulan.svelte';
     import { namaBulan, rupiah } from '@/types';
     import type { SekolahBulan } from '@/types';
@@ -176,6 +177,10 @@
                         Tidak ada kegiatan di bulan ini.
                     </p>
                 {/if}
+            {/each}
+
+            {#each s.saranAcara as saran (saran.ids.join('-'))}
+                <SaranAcara {saran} />
             {/each}
 
             <KotakBelumBerbulan

@@ -35,6 +35,17 @@ class UpdateKegiatanRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
+            $kegiatan = $this->route('kegiatan');
+
+            if (
+                $this->has('jenis_kegiatan_id')
+                && $kegiatan instanceof Kegiatan
+                && $kegiatan->acara_id !== null
+                && $this->integer('jenis_kegiatan_id') !== $kegiatan->jenis_kegiatan_id
+            ) {
+                $validator->errors()->add('jenis_kegiatan_id', 'Kegiatan ini bagian dari acara. Pisahkan acaranya dulu sebelum mengubah jenis.');
+            }
+
             if (! $this->has('bulan') || $validator->errors()->has('bulan')) {
                 return;
             }

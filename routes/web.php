@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcaraController;
 use App\Http\Controllers\BulanController;
 use App\Http\Controllers\FotoController;
 use App\Http\Controllers\ImporController;
@@ -23,6 +24,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('kegiatan/{kegiatan}/kuitansi', [KuitansiController::class, 'store'])->name('kuitansi.store');
     Route::patch('kuitansi/{kuitansi}', [KuitansiController::class, 'update'])->name('kuitansi.update');
     Route::delete('kuitansi/{kuitansi}', [KuitansiController::class, 'destroy'])->name('kuitansi.destroy');
+    Route::post('acara', [AcaraController::class, 'store'])->name('acara.store');
+    Route::delete('acara/{acara}', [AcaraController::class, 'destroy'])->name('acara.destroy');
     Route::post('kegiatan-tandai', [KegiatanController::class, 'tandai'])->name('kegiatan.tandai');
 
     Route::get('impor', [ImporController::class, 'index'])->name('impor.index');

@@ -34,7 +34,7 @@ class SusunLayarBulan
                 ->with(['imporAnggarans' => fn ($q) => $q->where('tahun', $tahun)])
                 ->orderBy('id')
                 ->get()
-                ->map(fn (Sekolah $s): array => $this->sekolah($s, $bulan, $baris))
+                ->map(fn (Sekolah $s): array => $this->sekolah($s, $tahun, $bulan, $baris))
                 ->all()),
             'menunggakPerBulan' => $this->menunggakPerBulan($baris),
         ];
@@ -44,7 +44,7 @@ class SusunLayarBulan
      * @param  Collection<int, array{kegiatan: Kegiatan, status: StatusKegiatan}>  $baris
      * @return array<string, mixed>
      */
-    private function sekolah(Sekolah $sekolah, int $bulan, Collection $baris): array
+    private function sekolah(Sekolah $sekolah, int $tahun, int $bulan, Collection $baris): array
     {
         $milik = $baris->filter(fn (array $b): bool => $b['kegiatan']->sekolah_id === $sekolah->id);
         $bulanIni = $milik->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan);
@@ -56,6 +56,11 @@ class SusunLayarBulan
             'total' => (int) $bulanIni->sum(fn (array $b): int => $b['kegiatan']->jumlah),
             'peringatan' => $this->peringatan($sekolah, $bulan),
             'kegiatan' => $bulanIni->map(fn (array $b): array => $this->baris($b['kegiatan'], $b['status']))->values()->all(),
+            'saranAcara' => array_map(fn (array $kelompok): array => [
+                'ids' => array_map(fn (Kegiatan $k): int => $k->id, $kelompok),
+                'nama' => $kelompok[0]->nama,
+                'baris' => array_map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah], $kelompok),
+            ], SaranAcara::untukBulan($sekolah, $tahun, $bulan)),
             'belumBerbulan' => $milik
                 ->filter(fn (array $b): bool => $b['kegiatan']->bulan === null)
                 ->groupBy(fn (array $b): int => (int) $b['kegiatan']->tahap)
@@ -103,6 +108,7 @@ class SusunLayarBulan
                 'bulan' => $status->kuitansiRapel->bulan,
                 'nomor' => $status->kuitansiRapel->nomor,
             ],
+            'acara' => $kegiatan->acara === null ? null : ['id' => $kegiatan->acara->id, 'nama' => $kegiatan->acara->nama],
             'hilangDariAnggaran' => $kegiatan->hilang_dari_anggaran,
             'perluDitinjau' => $kegiatan->jenisKegiatan->cadangan && ! $kegiatan->jenis_dikonfirmasi,
         ];

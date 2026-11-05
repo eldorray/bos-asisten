@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, page } from '@inertiajs/svelte';
     import ListChecks from '@lucide/svelte/icons/list-checks';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
     import School from '@lucide/svelte/icons/school';
@@ -30,17 +30,24 @@
         children?: Snippet;
     } = $props();
 
-    const mainNavItems: NavItem[] = [
+    const navLaporan: NavItem[] = $derived([
         {
             title: 'Bulanan',
             href: dashboard(),
             icon: LayoutGrid,
+            badge: {
+                jumlah: page.props.menunggakBulanIni,
+                label: `${page.props.menunggakBulanIni} kegiatan bulan ini belum selesai`,
+            },
         },
         {
             title: 'Impor Anggaran',
             href: ImporController.index(),
             icon: Upload,
         },
+    ]);
+
+    const navPengaturan: NavItem[] = [
         {
             title: 'Sekolah',
             href: SekolahController.index(),
@@ -58,7 +65,11 @@
     <SidebarHeader>
         <SidebarMenu>
             <SidebarMenuItem>
-                <SidebarMenuButton size="lg" asChild>
+                <SidebarMenuButton
+                    size="lg"
+                    asChild
+                    class="hover:bg-transparent active:bg-transparent"
+                >
                     {#snippet children(props)}
                         <Link
                             {...props}
@@ -74,7 +85,8 @@
     </SidebarHeader>
 
     <SidebarContent>
-        <NavMain items={mainNavItems} />
+        <NavMain label="Laporan" items={navLaporan} />
+        <NavMain label="Pengaturan" items={navPengaturan} />
     </SidebarContent>
 
     <SidebarFooter>

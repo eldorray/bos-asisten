@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Actions\SusunLayarBulan;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +43,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'menunggakBulanIni' => fn (): int => $request->user() === null
+                ? 0
+                : app(SusunLayarBulan::class)->jumlahMenunggak(now()->year, now()->month),
         ];
     }
 }

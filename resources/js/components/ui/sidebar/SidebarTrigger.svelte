@@ -15,7 +15,7 @@
     data-slot="sidebar-trigger"
     variant="ghost"
     size="icon"
-    class={cn('h-7 w-7', className)}
+    class={cn('size-9', className)}
     onclick={toggleSidebar}
 >
     {#if $isMobile || $state === 'collapsed'}

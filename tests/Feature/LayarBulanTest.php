@@ -50,6 +50,22 @@ test('format bulan salah memakai bulan berjalan', function () {
         ->assertInertia(fn (Assert $page) => $page->where('bulan', '2026-11'));
 });
 
+test('lencana menu menghitung tunggakan bulan berjalan saja', function () {
+    $this->travelTo('2026-03-10');
+    $sekolah = Sekolah::factory()->create();
+    Kegiatan::factory()->count(2)->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => 3]);
+    Kegiatan::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => 4]);
+    Kegiatan::factory()->create([
+        'sekolah_id' => $sekolah->id,
+        'tahun' => 2026,
+        'bulan' => 3,
+        'status_manual' => StatusManual::DiLuarAplikasi,
+    ]);
+
+    $this->get(route('impor.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('menunggakBulanIni', 2));
+});
+
 test('kegiatan tanpa bulan masuk belum berbulan per tahap', function () {
     $sekolah = Sekolah::factory()->erkam()->create();
     Kegiatan::factory()->create(['sekolah_id' => $sekolah->id, 'bulan' => null, 'tahap' => 1, 'nama' => 'Pagar Besi']);

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
+    import Link2 from '@lucide/svelte/icons/link-2';
     import AcaraController from '@/actions/App/Http/Controllers/AcaraController';
     import InputError from '@/components/InputError.svelte';
     import { Button } from '@/components/ui/button';
@@ -32,29 +33,42 @@
     }
 </script>
 
-<div
-    class="mt-3 grid gap-2 rounded-md border border-sky-300 bg-sky-50 p-3 text-sm dark:border-sky-800 dark:bg-sky-950/40"
+<section
+    aria-label="Saran satu acara"
+    class="grid content-start gap-3 rounded-[14px] border bg-card p-4 text-sm"
 >
-    <p class="font-semibold">
-        Mungkin satu acara
-        <span class="font-normal">
-            - undangan, daftar hadir, notulen, dan foto cukup diunggah sekali
+    <div class="flex items-start gap-3">
+        <span
+            class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-dirapel text-dirapel-foreground"
+        >
+            <Link2 class="size-[18px]" />
         </span>
-    </p>
-    <ul class="grid gap-0.5">
+        <div>
+            <h2 class="text-[15px] font-semibold">Mungkin satu acara</h2>
+            <p class="mt-0.5 text-muted-foreground">
+                Undangan, daftar hadir, notulen, dan foto cukup diunggah sekali.
+            </p>
+        </div>
+    </div>
+    <ul class="grid gap-1.5">
         {#each saran.baris as b (b.id)}
-            <li>{b.nama} · Rp {rupiah(b.jumlah)}</li>
+            <li class="flex justify-between gap-3">
+                <span class="min-w-0">{b.nama}</span>
+                <span class="shrink-0 tabular-nums">
+                    Rp {rupiah(b.jumlah)}
+                </span>
+            </li>
         {/each}
     </ul>
     <div class="flex flex-wrap items-center gap-2">
         <Input
-            class="max-w-xs"
+            class="min-w-48 flex-1"
             aria-label="Nama acara"
             bind:value={nama}
         />
-        <Button size="sm" disabled={memproses || nama.trim() === ''} onclick={gabung}>
+        <Button disabled={memproses || nama.trim() === ''} onclick={gabung}>
             Gabung
         </Button>
     </div>
     <InputError message={galat.kegiatan_ids ?? galat.nama} />
-</div>
+</section>

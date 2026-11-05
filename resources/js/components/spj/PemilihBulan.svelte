@@ -34,7 +34,7 @@
         <ChevronLeft class="size-4" />
     </Button>
     <select
-        class="h-9 rounded-md border border-input bg-background px-2 text-base font-bold"
+        class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
         aria-label="Pilih bulan"
         value={nomor}
         onchange={(e) => pergi(tahun, Number(e.currentTarget.value))}
@@ -48,7 +48,7 @@
     </select>
     <input
         type="number"
-        class="h-9 w-24 rounded-md border border-input bg-background px-2 text-base font-bold"
+        class="h-11 w-24 rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
         aria-label="Tahun"
         min="2000"
         max="2100"

@@ -32,29 +32,36 @@
 
 <AppHead title="Jenis kegiatan" />
 
-<div class="flex flex-col gap-6 p-4">
+<div class="flex flex-col gap-5 p-5 md:p-7">
     <Heading
         title="Jenis kegiatan"
         description="Kata kunci mencocokkan kegiatan dari anggaran. Urutan berkas menentukan urutan halaman cetak setelah kuitansi."
     />
 
-    {#each jenisKegiatans as jenis (jenis.id)}
-        <Card>
+    <div class="grid items-start gap-3.5 xl:grid-cols-2">
+        {#each jenisKegiatans as jenis (jenis.id)}
+            <Card>
+                <CardHeader class="grid-cols-[1fr_auto] items-center">
+                    <CardTitle class="text-base">{jenis.nama}</CardTitle>
+                    <span
+                        class="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                    >
+                        {jenis.berkas.length + 1} berkas
+                    </span>
+                </CardHeader>
+                <CardContent>
+                    <FormJenisKegiatan {jenis} />
+                </CardContent>
+            </Card>
+        {/each}
+
+        <Card class="border-dashed border-input bg-muted">
             <CardHeader>
-                <CardTitle class="text-base">{jenis.nama}</CardTitle>
+                <CardTitle class="text-base">Tambah jenis kegiatan</CardTitle>
             </CardHeader>
             <CardContent>
-                <FormJenisKegiatan {jenis} />
+                <FormJenisKegiatan />
             </CardContent>
         </Card>
-    {/each}
-
-    <Card>
-        <CardHeader>
-            <CardTitle class="text-base">Tambah jenis kegiatan</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <FormJenisKegiatan />
-        </CardContent>
-    </Card>
+    </div>
 </div>

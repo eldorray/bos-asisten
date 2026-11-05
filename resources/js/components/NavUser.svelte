@@ -27,13 +27,13 @@
                     {#snippet children(props)}
                         <SidebarMenuButton
                             size="lg"
-                            class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                            class="bg-sidebar-accent text-sidebar-accent-foreground shadow-xs group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none"
                             data-test="sidebar-menu-button"
                             onclick={props.onclick}
                             aria-expanded={props['aria-expanded']}
                             data-state={props['data-state']}
                         >
-                            <UserInfo {user} />
+                            <UserInfo {user} showEmail />
                             <ChevronsUpDown class="ml-auto size-4" />
                         </SidebarMenuButton>
                     {/snippet}

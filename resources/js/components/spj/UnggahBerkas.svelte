@@ -155,7 +155,7 @@
         <div class="flex flex-wrap items-center gap-2 text-sm">
             <span class="max-w-48 truncate">{item.file.name}</span>
             {#if item.status === 'gagal'}
-                <span class="text-red-700">{item.pesan}</span>
+                <span class="text-belum-foreground">{item.pesan}</span>
                 <Button type="button" size="sm" variant="outline" onclick={() => ulangi(item)}>
                     Coba lagi
                 </Button>

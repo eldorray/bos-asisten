@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Download from '@lucide/svelte/icons/download';
     import PdfBulananController from '@/actions/App/Http/Controllers/PdfBulananController';
     import { Button } from '@/components/ui/button';
     import {
@@ -44,7 +45,10 @@
     }
 </script>
 
-<Button size="sm" onclick={tekanUnduh}>Unduh PDF</Button>
+<Button onclick={tekanUnduh}>
+    <Download class="size-4" />
+    Unduh PDF
+</Button>
 
 <Dialog bind:open={peringatanTerbuka}>
     <DialogContent>

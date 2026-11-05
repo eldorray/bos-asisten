@@ -1,5 +1,6 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
+    import Calendar from '@lucide/svelte/icons/calendar';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData } from '@/types';
@@ -27,30 +28,41 @@
 
 {#each belumBerbulan as kelompok (kelompok.tahap)}
     {@const awal = (kelompok.tahap - 1) * 6}
-    <div
-        class="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40"
+    <section
+        aria-label={`Tahap ${kelompok.tahap} belum punya bulan`}
+        class="grid content-start gap-3 rounded-[14px] border bg-card p-4 text-sm"
     >
-        <p class="font-semibold">
-            {kelompok.kegiatan.length} kegiatan Tahap {kelompok.tahap}
-            {sekolah} belum punya bulan
-            <span class="font-normal">
-                - pilih bulannya agar tidak terlewat
-            </span>
-        </p>
-        {#each kelompok.kegiatan as k (k.id)}
-            <div
-                class="flex flex-wrap items-center justify-between gap-2 py-1.5 text-sm"
+        <div class="flex items-start gap-3">
+            <span
+                class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-kurang text-kurang-foreground"
             >
-                <span>
-                    {k.nama} · Rp {rupiah(k.jumlah)}
+                <Calendar class="size-[18px]" />
+            </span>
+            <div>
+                <h2 class="text-[15px] font-semibold">
+                    {kelompok.kegiatan.length} kegiatan Tahap {kelompok.tahap}
+                    {sekolah} belum punya bulan
+                </h2>
+                <p class="mt-0.5 text-muted-foreground">
+                    Pilih bulannya agar tidak terlewat.
+                </p>
+            </div>
+        </div>
+        {#each kelompok.kegiatan as k (k.id)}
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="min-w-0">
+                    {k.nama} ·
+                    <span class="tabular-nums">Rp {rupiah(k.jumlah)}</span>
                     {#if k.perluDitinjau}
-                        <span class="text-xs font-semibold text-amber-700">
+                        <span
+                            class="text-xs font-semibold text-kurang-foreground"
+                        >
                             Jenis: {k.jenis}
                         </span>
                     {/if}
                 </span>
                 <select
-                    class="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
                     aria-label={`Bulan untuk ${k.nama}`}
                     onchange={(e) => pilihBulan(k.id, e.currentTarget.value)}
                 >
@@ -61,5 +73,5 @@
                 </select>
             </div>
         {/each}
-    </div>
+    </section>
 {/each}

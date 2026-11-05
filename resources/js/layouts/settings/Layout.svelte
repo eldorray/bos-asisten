@@ -35,7 +35,7 @@
     const url = currentUrlState();
 </script>
 
-<div class="px-4 py-6">
+<div class="flex flex-col gap-8 p-5 md:p-7">
     <Heading
         title="Settings"
         description="Manage your profile and account settings"

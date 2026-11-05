@@ -41,6 +41,20 @@ class SusunLayarBulan
     }
 
     /**
+     * Angka lencana di menu Bulanan: kegiatan satu bulan yang masih harus dikerjakan.
+     */
+    public function jumlahMenunggak(int $tahun, int $bulan): int
+    {
+        return Kegiatan::query()
+            ->where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->with(HitungStatusKegiatan::RELASI)
+            ->get()
+            ->filter(fn (Kegiatan $k): bool => HitungStatusKegiatan::untuk($k)->menunggak())
+            ->count();
+    }
+
+    /**
      * @param  Collection<int, array{kegiatan: Kegiatan, status: StatusKegiatan}>  $baris
      * @return array<string, mixed>
      */

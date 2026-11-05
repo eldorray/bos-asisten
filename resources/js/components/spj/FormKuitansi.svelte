@@ -156,7 +156,7 @@
     }
 </script>
 
-<form class="grid max-w-xl gap-3" onsubmit={simpan}>
+<form class="grid gap-3" onsubmit={simpan}>
     {#if kuitansi !== null}
         <p class="text-sm text-muted-foreground">
             Mencakup {kuitansi.bulanCakupan
@@ -170,7 +170,7 @@
     {/if}
 
     {#if kuitansi === null && kandidatRapel.length > 0}
-        <fieldset class="grid gap-1 rounded-md border p-3 text-sm">
+        <fieldset class="grid gap-1 rounded-[10px] border p-3 text-sm">
             <legend class="px-1 font-medium">
                 Rapel: gabungkan bulan lain
             </legend>
@@ -224,7 +224,7 @@
         bind:value={form.jumlah}
     />
     <InputError message={form.errors.jumlah} />
-    <p class="text-sm">
+    <p class="rounded-[10px] bg-muted px-3 py-2.5 text-sm">
         Terbilang:
         {#if terbilang !== null}
             <span class="font-medium">{terbilang}</span>
@@ -235,7 +235,7 @@
         {/if}
     </p>
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2">
         <Button type="submit" disabled={form.processing || memuat}>
             {kuitansi === null ? 'Buat kuitansi' : 'Simpan kuitansi'}
         </Button>

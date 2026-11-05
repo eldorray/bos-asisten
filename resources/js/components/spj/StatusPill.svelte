@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Flag from '@lucide/svelte/icons/flag';
     import { cn } from '@/lib/utils';
     import type { StatusKode } from '@/types';
 
@@ -13,27 +14,27 @@
     const tampil: Record<StatusKode, { label: string; kelas: string }> = {
         selesai: {
             label: 'Selesai',
-            kelas: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
+            kelas: 'bg-selesai text-selesai-foreground',
         },
         kurang: {
             label: 'Kurang',
-            kelas: 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300',
+            kelas: 'bg-kurang text-kurang-foreground',
         },
         belum: {
             label: 'Belum',
-            kelas: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300',
+            kelas: 'bg-belum text-belum-foreground',
         },
         dirapel: {
             label: 'Dirapel',
-            kelas: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300',
+            kelas: 'bg-dirapel text-dirapel-foreground',
         },
         tidak_dilaksanakan: {
             label: 'Tidak dilaksanakan',
-            kelas: 'bg-muted text-muted-foreground',
+            kelas: 'bg-batal text-batal-foreground',
         },
         di_luar_aplikasi: {
             label: 'Di luar aplikasi',
-            kelas: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300',
+            kelas: 'bg-selesai text-selesai-foreground',
         },
     };
 
@@ -44,9 +45,10 @@
 
 <span
     class={cn(
-        'inline-block rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
+        'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap',
         tampil[status].kelas,
     )}
 >
+    <Flag class="size-3" />
     {label}
 </span>

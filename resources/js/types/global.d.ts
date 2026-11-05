@@ -22,6 +22,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            menunggakBulanIni: number;
             [key: string]: unknown;
         };
     }

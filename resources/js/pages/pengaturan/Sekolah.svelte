@@ -13,6 +13,7 @@
 
 <script lang="ts">
     import { useForm } from '@inertiajs/svelte';
+    import School from '@lucide/svelte/icons/school';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
@@ -113,43 +114,55 @@
 
 <AppHead title="Pengaturan sekolah" />
 
-<div class="flex flex-col gap-6 p-4">
-    <Heading
-        title="Pengaturan sekolah"
-        description="Data sekolah dan penandatangan yang tercetak pada kuitansi."
-    />
-
-    <div class="grid max-w-xs gap-2">
-        <Label for="tahun">Tahun nomor awal</Label>
-        <Input
-            id="tahun"
-            type="number"
-            min="2000"
-            max="2100"
-            value={tahun}
-            onchange={gantiTahun}
+<div class="flex flex-col gap-5 p-5 md:p-7">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <Heading
+            title="Pengaturan sekolah"
+            description="Data sekolah dan penandatangan yang tercetak pada kuitansi."
         />
+
+        <div class="flex items-center gap-2.5">
+            <Label for="tahun" class="shrink-0">Tahun nomor awal</Label>
+            <Input
+                id="tahun"
+                class="w-24"
+                type="number"
+                min="2000"
+                max="2100"
+                value={tahun}
+                onchange={gantiTahun}
+            />
+        </div>
     </div>
 
-    <div class="grid gap-4 lg:grid-cols-2">
+    <div class="grid items-start gap-3.5 xl:grid-cols-2">
         {#each sekolahs as sekolah, i (sekolah.id)}
             {@const form = forms[i]}
             <Card>
-                <CardHeader>
-                    <CardTitle class="text-base">
-                        {sekolah.nama}
-                        <span class="text-sm font-normal text-muted-foreground">
-                            · {sekolah.sistem.toUpperCase()} · {sekolah.identitas}
+                <CardHeader class="border-b">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="grid size-10 shrink-0 place-items-center rounded-[11px] bg-primary text-primary-foreground"
+                        >
+                            <School class="size-5" />
                         </span>
-                    </CardTitle>
+                        <div class="min-w-0">
+                            <CardTitle class="text-base">
+                                {sekolah.nama}
+                            </CardTitle>
+                            <p class="mt-1 text-[13px] text-muted-foreground">
+                                {sekolah.sistem.toUpperCase()} · {sekolah.identitas}
+                            </p>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <form
-                        class="grid gap-3"
+                        class="grid gap-3 sm:grid-cols-2"
                         onsubmit={(e) => simpan(e, i)}
                     >
                         {#each kolom as { kunci, label } (kunci)}
-                            <div class="grid gap-1">
+                            <div class="grid content-start gap-1">
                                 <Label for={`${kunci}-${sekolah.id}`}>
                                     {label}
                                 </Label>
@@ -164,7 +177,7 @@
                                 <InputError message={form.errors[kunci]} />
                             </div>
                         {/each}
-                        <div class="grid gap-1">
+                        <div class="grid content-start gap-1">
                             <Label for={`nomor_awal-${sekolah.id}`}>
                                 Nomor awal kuitansi tahun {tahun}
                             </Label>
@@ -182,7 +195,7 @@
                             <InputError message={form.errors.nomor_awal} />
                             <InputError message={(form.errors as Record<string, string>).tahun} />
                         </div>
-                        <div>
+                        <div class="sm:col-span-2">
                             <Button type="submit" disabled={form.processing}>
                                 Simpan
                             </Button>

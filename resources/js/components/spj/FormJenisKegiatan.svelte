@@ -2,6 +2,7 @@
     import { useForm } from '@inertiajs/svelte';
     import ArrowDown from '@lucide/svelte/icons/arrow-down';
     import ArrowUp from '@lucide/svelte/icons/arrow-up';
+    import Plus from '@lucide/svelte/icons/plus';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
     import InputError from '@/components/InputError.svelte';
@@ -117,9 +118,9 @@
     <div class="grid gap-2">
         <h3 class="text-sm font-medium">Daftar berkas, berurutan</h3>
         <div
-            class="flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-sm"
+            class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[10px] bg-muted px-3 py-2.5 text-sm"
         >
-            <span class="flex-1">Kuitansi</span>
+            <span class="flex-1 font-medium">Kuitansi</span>
             <span class="text-xs text-muted-foreground">
                 otomatis, selalu pertama
             </span>
@@ -136,7 +137,7 @@
                         })}
                 />
                 <select
-                    class="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    class="h-11 rounded-[10px] border border-input bg-card px-2 text-sm"
                     aria-label={`Tata letak berkas ${i + 1}`}
                     value={berkas.tata_letak}
                     onchange={(e) =>
@@ -184,12 +185,13 @@
         {/each}
         <div>
             <Button type="button" variant="outline" onclick={tambahBerkas}>
+                <Plus class="size-4" />
                 Tambah berkas
             </Button>
         </div>
     </div>
 
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2 border-t pt-3">
         <Button type="submit" disabled={form.processing}>
             {jenis === null ? 'Tambah jenis' : 'Simpan'}
         </Button>

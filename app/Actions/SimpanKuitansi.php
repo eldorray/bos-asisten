@@ -93,33 +93,24 @@ class SimpanKuitansi
             throw $this->galat($kolom, 'Ada kegiatan yang tidak ditemukan.');
         }
 
-        if ($kegiatans->contains(fn (Kegiatan $k): bool => $k->bulan === null)) {
+        $acuan = $kegiatans->firstOrFail('id', $ids[0]);
+
+        if ($acuan->bulan === null) {
             throw $this->galat($kolom, 'Tentukan bulan kegiatan dulu sebelum membuat kuitansi.');
+        }
+
+        if (($alasan = KelayakanKuitansi::alasanTolakAcuan($acuan)) !== null) {
+            throw $this->galat($kolom, $alasan);
         }
 
         if ($kegiatans->contains(fn (Kegiatan $k): bool => $k->kuitansi()->exists())) {
             throw $this->galat($kolom, 'Kegiatan ini sudah punya kuitansi.');
         }
 
-        if ($kegiatans->count() === 1) {
-            return;
-        }
-
-        $acuan = $kegiatans->firstOrFail('id', $ids[0]);
-
-        $sama = $kegiatans->every(fn (Kegiatan $k): bool => $k->sekolah_id === $acuan->sekolah_id
-            && $k->tahun === $acuan->tahun
-            && $k->tahap === $acuan->tahap
-            && $k->kode === $acuan->kode
-            && $k->kode_program === $acuan->kode_program
-            && $k->uraian === $acuan->uraian);
-
-        if (! $sama) {
-            throw $this->galat($kolom, 'Rapel hanya untuk kegiatan yang sama: sekolah, tahun, tahap, kode, kode program, dan uraiannya harus sama.');
-        }
-
-        if ($kegiatans->contains(fn (Kegiatan $k): bool => $k->acara_id !== null)) {
-            throw $this->galat($kolom, 'Anggota acara tidak bisa dirapel.');
+        foreach ($kegiatans->where('id', '!=', $acuan->id) as $lain) {
+            if (($alasan = KelayakanKuitansi::alasanTolakRapel($acuan, $lain)) !== null) {
+                throw $this->galat($kolom, $alasan);
+            }
         }
     }
 
@@ -145,6 +136,10 @@ class SimpanKuitansi
 
     private function nomorUrut(string $nomor): int
     {
-        return preg_match('/^\d+/', $nomor, $m) === 1 ? (int) $m[0] : 0;
+        if (preg_match('/^\d{1,9}(?!\d)/', $nomor, $m) !== 1) {
+            throw $this->galat('nomor', 'Nomor bukti harus diawali angka urut (maksimal 9 digit).');
+        }
+
+        return (int) $m[0];
     }
 }

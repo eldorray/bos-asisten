@@ -267,6 +267,8 @@ test('rapel yang tidak sah ditolak', function (string $kasus) {
         'beda tahun' => kegiatanGaji($sekolah, 2, ['tahun' => 2025]),
         'beda tahap' => kegiatanGaji($sekolah, 2, ['tahap' => 2]),
         'beda sekolah' => kegiatanGaji(sekolahSmp(['kode_bukti' => 'SMPY']), 2),
+        'status manual' => kegiatanGaji($sekolah, 2, ['status_manual' => 'di_luar_aplikasi']),
+        'hilang dari anggaran' => kegiatanGaji($sekolah, 2, ['hilang_dari_anggaran' => true]),
         'anggota acara' => kegiatanGaji($sekolah, 2, ['acara_id' => Acara::factory()->create(['sekolah_id' => $sekolah->id])->id]),
         'sudah berkuitansi' => tap(kegiatanGaji($sekolah, 2), function (Kegiatan $k) use ($sekolah): void {
             Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'bulan' => 2, 'nomor_urut' => 9, 'nomor' => '009/02/SMPG/2026'])->kegiatans()->attach($k);
@@ -278,7 +280,7 @@ test('rapel yang tidak sah ditolak', function (string $kasus) {
     ]))->assertSessionHasErrors('kegiatan_rapel_ids');
 
     expect($maret->kuitansi()->count())->toBe(0)->and($lain->fresh()->kuitansi()->count())->toBe($kasus === 'sudah berkuitansi' ? 1 : 0);
-})->with(['beda uraian', 'beda kode', 'beda kode program', 'beda tahun', 'beda tahap', 'beda sekolah', 'anggota acara', 'sudah berkuitansi']);
+})->with(['beda uraian', 'beda kode', 'beda kode program', 'beda tahun', 'beda tahap', 'beda sekolah', 'status manual', 'hilang dari anggaran', 'anggota acara', 'sudah berkuitansi']);
 
 test('kegiatan yang sudah berkuitansi tidak bisa dibuatkan lagi', function () {
     $januari = kegiatanGaji(sekolahSmp(), 1);
@@ -408,6 +410,7 @@ test('halaman kegiatan membawa nilai awal, kuitansi, dan kandidat rapel', functi
     $mei = kegiatanGaji($sekolah, 5);
     kegiatanGaji($sekolah, 2, ['uraian' => 'Listrik', 'nama' => 'Listrik']);
     kegiatanGaji($sekolah, 4, ['status_manual' => 'di_luar_aplikasi']);
+    kegiatanGaji($sekolah, 7, ['hilang_dari_anggaran' => true]);
     kegiatanGaji($sekolah, 6, ['acara_id' => Acara::factory()->create(['sekolah_id' => $sekolah->id])->id]);
 
     $this->get(route('kegiatan.show', $maret))->assertInertia(fn (Assert $page) => $page
@@ -417,11 +420,14 @@ test('halaman kegiatan membawa nilai awal, kuitansi, dan kandidat rapel', functi
         ->where('nilaiAwal.terbilang', 'Lima belas juta sembilan ratus enam puluh ribu rupiah')
         ->has('kandidatRapel', 2)
         ->where('kandidatRapel.0.id', $januari->id)
-        ->where('kandidatRapel.1.id', $mei->id));
+        ->where('kandidatRapel.1.id', $mei->id)
+        ->where('rapelDipilih', []));
 
     $this->get(route('kegiatan.show', ['kegiatan' => $maret, 'rapel' => [$januari->id, $mei->id]]))
         ->assertInertia(fn (Assert $page) => $page
             ->where('nilaiAwal.jumlah', 47_880_000)
+            ->where('nilaiAwal.untuk_pembayaran', 'Gaji/Honor Rutin PTK/Operator Januari, Maret, Mei 2026')
+            ->where('rapelDipilih', [$januari->id, $mei->id])
             ->where('nilaiAwal.nomor', '001/05/SMPG/2026'));
 
     $this->post(route('kuitansi.store', $maret), isianKuitansi(['nomor' => '001/03/SMPG/2026', 'tanggal_lunas' => '2026-03-20']))
@@ -443,4 +449,95 @@ test('rute kuitansi memerlukan login', function () {
     $this->post(route('kuitansi.store', $kegiatan), isianKuitansi())->assertRedirect(route('login'));
     $this->patch(route('kuitansi.update', Kuitansi::factory()->create()), isianKuitansi())->assertRedirect(route('login'));
     $this->delete(route('kuitansi.destroy', Kuitansi::factory()->create()))->assertRedirect(route('login'));
+});
+
+test('kegiatan dengan status manual tidak dibuatkan kuitansi', function () {
+    $kegiatan = kegiatanGaji(sekolahSmp(), 1, ['status_manual' => 'di_luar_aplikasi']);
+
+    $this->post(route('kuitansi.store', $kegiatan), isianKuitansi())->assertSessionHasErrors('kegiatan');
+
+    expect(Kuitansi::count())->toBe(0);
+});
+
+test('nomor dengan lebih dari sembilan digit di depan ditolak sebagai galat validasi', function () {
+    $januari = kegiatanGaji(sekolahSmp(), 1);
+
+    $this->post(route('kuitansi.store', $januari), isianKuitansi(['nomor' => '1234567890/01/SMPG/2026']))
+        ->assertSessionHasErrors('nomor');
+    $this->post(route('kuitansi.store', $januari), isianKuitansi(['nomor' => '123456789/01/SMPG/2026']))
+        ->assertSessionHasNoErrors();
+
+    $lain = kegiatanGaji(sekolahSmp(['kode_bukti' => 'SMPX']), 1);
+    expect(fn () => app(SimpanKuitansi::class)->buat([$lain->id], isianKuitansi(['nomor' => '1234567890/x'])))
+        ->toThrow(ValidationException::class);
+});
+
+dataset('teks lama', [
+    'huruf besar' => ['HONOR JANUARI 2026', 'HONOR Mei 2026'],
+    'huruf kecil' => ['honor januari 2026', 'honor Mei 2026'],
+    'sampai' => ['Honor Januari sampai Maret 2026', 'Honor Mei 2026'],
+    'hingga' => ['Honor Januari hingga Maret 2026', 'Honor Mei 2026'],
+    's/d' => ['Honor Januari s/d Maret 2026', 'Honor Mei 2026'],
+    's.d.' => ['Honor Januari s.d. Maret 2026', 'Honor Mei 2026'],
+    'dan' => ['Honor Januari dan Februari 2026', 'Honor Mei 2026'],
+    'em dash' => ['Honor Januari—Maret 2026', 'Honor Mei 2026'],
+    'en dash' => ['Honor Januari – Maret 2026', 'Honor Mei 2026'],
+    'hubung' => ['Honor Januari-Maret 2026', 'Honor Mei 2026'],
+    'daftar' => ['Honor Januari, Maret 2026', 'Honor Mei 2026'],
+    'koma biasa tetap' => ['Honor Januari 2026, guru tetap', 'Honor Mei 2026, guru tetap'],
+]);
+
+test('nama bulan lama diganti dengan berbagai gaya penulisan', function (string $lama, string $baru) {
+    $sekolah = sekolahSmp();
+    $mei = kegiatanGaji($sekolah, 5);
+    Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'bulan' => 4, 'untuk_pembayaran' => $lama])
+        ->kegiatans()->attach(kegiatanGaji($sekolah, 4));
+
+    expect(NilaiAwalKuitansi::untuk($mei)['untuk_pembayaran'])->toBe($baru);
+})->with('teks lama');
+
+test('bulan dan tahun hanya diganti sebelum a/n sehingga nama penerima aman', function () {
+    $sekolah = sekolahSmp();
+    $mei = kegiatanGaji($sekolah, 5);
+    $lama = kegiatanGaji($sekolah, 4, ['tahun' => 2025]);
+    Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2025, 'bulan' => 4, 'nomor' => '001/04/SMPG/2025', 'nomor_urut' => 1,
+        'untuk_pembayaran' => 'Honor April 2025 a/n Juni Astuti dkk Maret 2025'])->kegiatans()->attach($lama);
+
+    expect(NilaiAwalKuitansi::untuk($mei)['untuk_pembayaran'])->toBe('Honor Mei 2026 a/n Juni Astuti dkk Maret 2025');
+
+    Kuitansi::query()->update(['untuk_pembayaran' => 'Honor April 2025 A/N Juni Astuti']);
+    expect(NilaiAwalKuitansi::untuk($mei)['untuk_pembayaran'])->toBe('Honor Mei 2026 A/N Juni Astuti');
+});
+
+test('rapel bulan tidak berurutan menyebut setiap bulan', function () {
+    $sekolah = sekolahSmp();
+    $bulan = collect([1, 2, 3, 5])->mapWithKeys(fn (int $b) => [$b => kegiatanGaji($sekolah, $b)]);
+    $dasar = 'Gaji/Honor Rutin PTK/Operator';
+
+    expect(NilaiAwalKuitansi::untuk($bulan[1], [$bulan[3]])['untuk_pembayaran'])->toBe("$dasar Januari, Maret 2026")
+        ->and(NilaiAwalKuitansi::untuk($bulan[1], [$bulan[2], $bulan[3]])['untuk_pembayaran'])->toBe("$dasar Januari-Maret 2026")
+        ->and(NilaiAwalKuitansi::untuk($bulan[1], [$bulan[2], $bulan[5]])['untuk_pembayaran'])->toBe("$dasar Januari, Februari, Mei 2026");
+});
+
+test('hapus kegiatan hilang ikut menghapus kuitansi yang hanya mencakup dia', function () {
+    $kegiatan = kegiatanGaji(sekolahSmp(), 1, ['hilang_dari_anggaran' => true]);
+    $this->post(route('kuitansi.store', $kegiatan), isianKuitansi())->assertSessionHasNoErrors();
+
+    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard'));
+
+    expect(Kuitansi::count())->toBe(0)->and(DB::table('kegiatan_kuitansi')->count())->toBe(0)->and(Kegiatan::count())->toBe(0);
+});
+
+test('hapus kegiatan yang ada di kuitansi rapel ditolak', function () {
+    $sekolah = sekolahSmp();
+    $januari = kegiatanGaji($sekolah, 1);
+    $februari = kegiatanGaji($sekolah, 2);
+    $this->post(route('kuitansi.store', $februari), isianKuitansi([
+        'nomor' => '001/02/SMPG/2026', 'kegiatan_rapel_ids' => [$januari->id], 'tanggal_lunas' => '2026-02-20',
+    ]))->assertSessionHasNoErrors();
+    $januari->update(['hilang_dari_anggaran' => true]);
+
+    $this->delete(route('kegiatan.destroy', $januari))->assertStatus(422);
+
+    expect(Kuitansi::count())->toBe(1)->and(Kegiatan::whereKey($januari->id)->exists())->toBeTrue();
 });

@@ -156,7 +156,7 @@ test('kegiatan dihapus hanya kalau sudah hilang dari anggaran', function () {
     expect(Kegiatan::find($aman->id))->not->toBeNull();
 });
 
-test('menghapus kegiatan yang hilang menghapus foto, file, dan pivotnya', function () {
+test('menghapus kegiatan yang hilang menghapus foto, file, dan kuitansi miliknya sendiri', function () {
     Storage::fake('local');
     $kegiatan = Kegiatan::factory()->create(['hilang_dari_anggaran' => true]);
     Storage::disk('local')->put('foto/a.jpg', 'x');
@@ -170,7 +170,7 @@ test('menghapus kegiatan yang hilang menghapus foto, file, dan pivotnya', functi
         ->and(Foto::find($foto->id))->toBeNull()
         ->and(Storage::disk('local')->exists('foto/a.jpg'))->toBeFalse()
         ->and(DB::table('kegiatan_kuitansi')->where('kegiatan_id', $kegiatan->id)->count())->toBe(0)
-        ->and(Kuitansi::find($kuitansi->id))->not->toBeNull();
+        ->and(Kuitansi::find($kuitansi->id))->toBeNull();
 });
 
 test('halaman rincian kegiatan tampil', function () {

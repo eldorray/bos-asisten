@@ -22,7 +22,7 @@ class SimpanKuitansiRequest extends FormRequest
 
         $rules = [
             'nomor' => [
-                'required', 'string', 'max:50', 'regex:/^\d+/',
+                'required', 'string', 'max:50', 'regex:/^\d{1,9}(?!\d)/',
                 Rule::unique('kuitansis', 'nomor')
                     ->where('sekolah_id', $sekolahId)
                     ->where('tahun', $tahun)
@@ -78,7 +78,7 @@ class SimpanKuitansiRequest extends FormRequest
     {
         return [
             'nomor.required' => 'Nomor bukti wajib diisi.',
-            'nomor.regex' => 'Nomor bukti harus diawali angka urut, misalnya 001/01/SMPG/2026.',
+            'nomor.regex' => 'Nomor bukti harus diawali angka urut (maksimal 9 digit), misalnya 001/01/SMPG/2026.',
             'nomor.unique' => 'Nomor ini sudah dipakai kuitansi lain.',
             'untuk_pembayaran.required' => 'Isi untuk pembayaran apa.',
             'untuk_pembayaran.max' => 'Untuk pembayaran maksimal 200 karakter.',

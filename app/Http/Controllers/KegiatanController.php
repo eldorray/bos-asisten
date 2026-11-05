@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\HitungStatusKegiatan;
+use App\Actions\KelayakanKuitansi;
 use App\Actions\NilaiAwalKuitansi;
+use App\Actions\SimpanKuitansi;
 use App\Enums\StatusManual;
 use App\Http\Requests\TandaiKegiatanRequest;
 use App\Http\Requests\UpdateKegiatanRequest;
@@ -28,7 +30,8 @@ class KegiatanController extends Controller
         $kegiatan->load([...HitungStatusKegiatan::RELASI, 'sekolah']);
         $status = HitungStatusKegiatan::untuk($kegiatan);
         $kuitansi = $kegiatan->kuitansi->first();
-        $kandidat = $kuitansi === null ? $this->kandidatRapel($kegiatan) : new Collection;
+        $kandidat = $kuitansi === null ? KelayakanKuitansi::kandidatRapel($kegiatan) : new Collection;
+        $dipilih = $this->rapelDipilih($request, $kandidat);
 
         return Inertia::render('kegiatan/Show', [
             'kegiatan' => [
@@ -58,8 +61,9 @@ class KegiatanController extends Controller
             'berkasFoto' => $this->berkasFoto($kegiatan),
             'kuitansi' => $kuitansi === null ? null : $this->dataKuitansi($kuitansi),
             'nilaiAwal' => $kuitansi === null && $kegiatan->bulan !== null
-                ? $this->nilaiAwal($request, $kegiatan, $kandidat)
+                ? $this->nilaiAwal($kegiatan, $dipilih)
                 : null,
+            'rapelDipilih' => $dipilih->modelKeys(),
             'kandidatRapel' => $kandidat->map(fn (Kegiatan $k): array => [
                 'id' => $k->id,
                 'bulan' => $k->bulan,
@@ -96,13 +100,25 @@ class KegiatanController extends Controller
         return back();
     }
 
-    public function destroy(Kegiatan $kegiatan): RedirectResponse
+    public function destroy(Kegiatan $kegiatan, SimpanKuitansi $simpan): RedirectResponse
     {
         abort_unless($kegiatan->hilang_dari_anggaran, 422, 'Hanya kegiatan yang sudah tidak ada di anggaran yang boleh dihapus.');
 
-        DB::transaction(function () use ($kegiatan): void {
+        $kuitansi = $kegiatan->kuitansi()->first();
+
+        abort_if(
+            $kuitansi !== null && $kuitansi->kegiatans()->count() > 1,
+            422,
+            'Kegiatan ini termasuk kuitansi rapel yang mencakup kegiatan lain. Hapus kuitansinya dulu.',
+        );
+
+        DB::transaction(function () use ($kegiatan, $kuitansi, $simpan): void {
             $kegiatan->fotos->each->delete();
-            $kegiatan->kuitansi()->detach();
+
+            if ($kuitansi !== null) {
+                $simpan->hapus($kuitansi);
+            }
+
             $kegiatan->delete();
         });
 
@@ -110,40 +126,25 @@ class KegiatanController extends Controller
     }
 
     /**
-     * Baris yang boleh ikut dirapel bersama kegiatan ini, sebelum maupun sesudah bulannya.
+     * Pilihan rapel dari query, dibatasi pada kandidat yang sah.
      *
+     * @param  Collection<int, Kegiatan>  $kandidat
      * @return Collection<int, Kegiatan>
      */
-    private function kandidatRapel(Kegiatan $kegiatan): Collection
+    private function rapelDipilih(Request $request, Collection $kandidat): Collection
     {
-        if ($kegiatan->bulan === null || $kegiatan->acara_id !== null) {
-            return new Collection;
-        }
+        $ids = array_map(intval(...), array_filter($request->array('rapel'), is_scalar(...)));
 
-        return Kegiatan::query()
-            ->where('sekolah_id', $kegiatan->sekolah_id)
-            ->where('tahun', $kegiatan->tahun)
-            ->where('kode', $kegiatan->kode)
-            ->where('uraian', $kegiatan->uraian)
-            ->when($kegiatan->tahap === null, fn ($q) => $q->whereNull('tahap'), fn ($q) => $q->where('tahap', $kegiatan->tahap))
-            ->when($kegiatan->kode_program === null, fn ($q) => $q->whereNull('kode_program'), fn ($q) => $q->where('kode_program', $kegiatan->kode_program))
-            ->whereKeyNot($kegiatan->id)
-            ->whereNotNull('bulan')
-            ->whereNull('acara_id')
-            ->whereNull('status_manual')
-            ->whereDoesntHave('kuitansi')
-            ->orderBy('bulan')
-            ->get();
+        return $kandidat->whereIn('id', $ids)->values();
     }
 
     /**
-     * @param  Collection<int, Kegiatan>  $kandidat
+     * @param  Collection<int, Kegiatan>  $dipilih
      * @return array<string, mixed>
      */
-    private function nilaiAwal(Request $request, Kegiatan $kegiatan, Collection $kandidat): array
+    private function nilaiAwal(Kegiatan $kegiatan, Collection $dipilih): array
     {
-        $dipilih = array_map(intval(...), array_filter((array) $request->input('rapel', []), is_scalar(...)));
-        $awal = NilaiAwalKuitansi::untuk($kegiatan, array_values($kandidat->whereIn('id', $dipilih)->all()));
+        $awal = NilaiAwalKuitansi::untuk($kegiatan, array_values($dipilih->all()));
 
         return $awal + ['terbilang' => Terbilang::rupiah($awal['jumlah'])];
     }

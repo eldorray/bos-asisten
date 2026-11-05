@@ -60,6 +60,7 @@
         kuitansi,
         nilaiAwal,
         kandidatRapel,
+        rapelDipilih,
     }: {
         kegiatan: Rincian;
         berkasFoto: { id: number; nama: string; fotos: { id: number }[] }[];
@@ -67,6 +68,7 @@
         kuitansi: KuitansiData | null;
         nilaiAwal: NilaiAwal | null;
         kandidatRapel: KandidatRapel[];
+        rapelDipilih: number[];
     } = $props();
 
     // Nilai awal formulir memang diambil sekali dari props.
@@ -214,6 +216,7 @@
                     {kuitansi}
                     {nilaiAwal}
                     {kandidatRapel}
+                    rapelAwal={rapelDipilih}
                 />
             {/key}
         {:else}

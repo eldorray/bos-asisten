@@ -37,15 +37,23 @@
         kuitansi,
         nilaiAwal,
         kandidatRapel,
+        rapelAwal,
     }: {
         kegiatanId: number;
         tahun: number;
         kuitansi: KuitansiData | null;
         nilaiAwal: NilaiAwal | null;
         kandidatRapel: KandidatRapel[];
+        rapelAwal: number[];
     } = $props();
 
-    const hariIni = new Date().toISOString().slice(0, 10);
+    // Tanggal lokal, bukan UTC, supaya pagi hari tidak mundur ke kemarin.
+    const sekarang = new Date();
+    const hariIni = [
+        sekarang.getFullYear(),
+        String(sekarang.getMonth() + 1).padStart(2, '0'),
+        String(sekarang.getDate()).padStart(2, '0'),
+    ].join('-');
 
     // Nilai awal formulir memang diambil sekali dari props.
     /* svelte-ignore state_referenced_locally */
@@ -62,14 +70,22 @@
     const hapus = useForm({});
     const galat = $derived(form.errors as Record<string, string | undefined>);
 
-    let rapelDipilih = $state<number[]>([]);
+    // Pilihan awal datang dari server, supaya muat ulang halaman tidak memisahkan
+    // nilai (jumlah, teks) dari centang bulan.
+    /* svelte-ignore state_referenced_locally */
+    let rapelDipilih = $state<number[]>([...rapelAwal]);
+    let memuat = $state(false);
 
+    const acuan = $derived(kuitansi ?? nilaiAwal);
     const terbilang = $derived(
-        kuitansi !== null
-            ? kuitansi.terbilang
-            : nilaiAwal !== null && Number(form.jumlah) === nilaiAwal.jumlah
-              ? nilaiAwal.terbilang
-              : null,
+        acuan !== null && Number(form.jumlah) === acuan.jumlah
+            ? acuan.terbilang
+            : null,
+    );
+    const galatRapel = $derived(
+        Object.entries(galat)
+            .filter(([kunci]) => kunci.startsWith('kegiatan_rapel_ids'))
+            .map(([, pesan]) => pesan),
     );
 
     function pilihRapel(id: number, aktif: boolean): void {
@@ -77,11 +93,13 @@
             ? [...rapelDipilih, id]
             : rapelDipilih.filter((x) => x !== id);
 
+        memuat = true;
+
         router.get(
             KegiatanController.show.url(kegiatanId),
             { rapel: rapelDipilih },
             {
-                only: ['nilaiAwal'],
+                only: ['nilaiAwal', 'rapelDipilih'],
                 preserveState: true,
                 preserveScroll: true,
                 replace: true,
@@ -93,6 +111,11 @@
                         form.untuk_pembayaran = baru.untuk_pembayaran;
                         form.jumlah = baru.jumlah;
                     }
+
+                    rapelDipilih = page.props.rapelDipilih as number[];
+                },
+                onFinish: () => {
+                    memuat = false;
                 },
             },
         );
@@ -164,7 +187,9 @@
                     )}
                 </label>
             {/each}
-            <InputError message={galat.kegiatan_rapel_ids} />
+            {#each galatRapel as pesan}
+                <InputError message={pesan} />
+            {/each}
         </fieldset>
     {/if}
 
@@ -211,7 +236,7 @@
     </p>
 
     <div class="flex gap-2">
-        <Button type="submit" disabled={form.processing}>
+        <Button type="submit" disabled={form.processing || memuat}>
             {kuitansi === null ? 'Buat kuitansi' : 'Simpan kuitansi'}
         </Button>
         {#if kuitansi !== null}

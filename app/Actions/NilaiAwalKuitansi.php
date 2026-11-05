@@ -81,22 +81,36 @@ class NilaiAwalKuitansi
     }
 
     /**
+     * Bulan berurutan ditulis rentang ("Januari-Maret"); bulan yang melompat ditulis satu per satu
+     * ("Januari, Maret, Mei") supaya tidak menyebut periode yang tidak dibayar.
+     *
      * @param  list<Kegiatan>  $dicakup
      */
     private static function labelBulan(array $dicakup): string
     {
-        $awal = $dicakup[0]->bulan;
-        $akhir = self::bulanTerakhir($dicakup);
+        $bulan = array_values(array_unique(array_filter(
+            array_map(fn (Kegiatan $k): int => $k->bulan ?? 0, $dicakup),
+            fn (int $b): bool => $b > 0,
+        )));
+        sort($bulan);
 
-        if ($akhir === 0) {
+        if ($bulan === []) {
             return '';
         }
 
-        if ($awal === null || $awal === $akhir) {
-            return self::NAMA_BULAN[$akhir] ?? '';
+        $nama = fn (int $b): string => self::NAMA_BULAN[$b] ?? '';
+        $awal = $bulan[0];
+        $akhir = $bulan[count($bulan) - 1];
+
+        if (count($bulan) === 1) {
+            return $nama($awal);
         }
 
-        return (self::NAMA_BULAN[$awal] ?? '').'-'.(self::NAMA_BULAN[$akhir] ?? '');
+        if ($akhir - $awal + 1 === count($bulan)) {
+            return $nama($awal).'-'.$nama($akhir);
+        }
+
+        return implode(', ', array_map($nama, $bulan));
     }
 
     private static function kuitansiSebelumnya(Kegiatan $kegiatan): ?Kuitansi
@@ -118,25 +132,37 @@ class NilaiAwalKuitansi
             ->first();
     }
 
+    /**
+     * Mengganti bulan dan tahun hanya pada bagian sebelum "a/n" pertama; nama penerima tidak disentuh.
+     */
     private static function gantiBulanDanTahun(string $teks, string $label, int $tahunLama, int $tahunBaru): string
     {
-        $bulan = implode('|', self::NAMA_BULAN);
+        $kepala = $teks;
+        $ekor = '';
 
-        $teks = (string) preg_replace_callback(
-            '/'.self::BATAS.'(?:'.$bulan.')(?:\s*[-–]\s*(?:'.$bulan.'))?'.self::BATAS_AKHIR.'/u',
+        if (preg_match('/'.self::BATAS.'a\/n'.self::BATAS_AKHIR.'/iu', $teks, $m, PREG_OFFSET_CAPTURE) === 1) {
+            $kepala = substr($teks, 0, $m[0][1]);
+            $ekor = substr($teks, $m[0][1]);
+        }
+
+        $bulan = self::BATAS.'(?:'.implode('|', self::NAMA_BULAN).')'.self::BATAS_AKHIR;
+        $sambung = '\s*(?:-|–|—|s\/d|s\.d\.?|sampai|hingga|dan|,)\s*';
+
+        $kepala = (string) preg_replace_callback(
+            '/'.$bulan.'(?:'.$sambung.$bulan.')*/iu',
             fn (): string => $label,
-            $teks,
+            $kepala,
         );
 
         if ($tahunLama !== $tahunBaru) {
-            $teks = (string) preg_replace(
+            $kepala = (string) preg_replace(
                 '/'.self::BATAS.$tahunLama.self::BATAS_AKHIR.'/u',
                 (string) $tahunBaru,
-                $teks,
+                $kepala,
             );
         }
 
-        return $teks;
+        return $kepala.$ekor;
     }
 
     /**

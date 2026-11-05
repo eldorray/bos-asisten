@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcaraController;
 use App\Http\Controllers\BulanController;
+use App\Http\Controllers\CadanganController;
 use App\Http\Controllers\FotoController;
 use App\Http\Controllers\ImporController;
 use App\Http\Controllers\JenisKegiatanController;
@@ -39,6 +40,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('pengaturan/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::patch('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'update'])->name('sekolah.update');
+    Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
+
     Route::resource('pengaturan/jenis-kegiatan', JenisKegiatanController::class)
         ->parameters(['jenis-kegiatan' => 'jenis_kegiatan'])
         ->except(['create', 'show', 'edit']);

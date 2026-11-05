@@ -1,7 +1,9 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import Upload from '@lucide/svelte/icons/upload';
     import type { Snippet } from 'svelte';
+    import ImporController from '@/actions/App/Http/Controllers/ImporController';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavMain from '@/components/NavMain.svelte';
     import NavUser from '@/components/NavUser.svelte';
@@ -29,6 +31,11 @@
             title: 'Bulanan',
             href: dashboard(),
             icon: LayoutGrid,
+        },
+        {
+            title: 'Impor Anggaran',
+            href: ImporController.index(),
+            icon: Upload,
         },
     ];
 </script>

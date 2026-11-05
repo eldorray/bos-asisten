@@ -36,8 +36,8 @@ class PdfTokenReader
                     );
                 }
             }
-        } catch (Throwable) {
-            throw new ImporDitolak('File tidak bisa dibaca sebagai PDF. Gunakan PDF asli dari aplikasi.');
+        } catch (Throwable $e) {
+            throw new ImporDitolak('File tidak bisa dibaca sebagai PDF. Gunakan PDF asli dari aplikasi.', previous: $e);
         }
 
         if ($token === []) {

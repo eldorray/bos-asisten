@@ -64,6 +64,9 @@
         nilaiAwal,
         kandidatRapel,
         rapelDipilih,
+        pilihanBulan,
+        kandidatAcara,
+        selisihAnggaran,
     }: {
         kegiatan: Rincian;
         acara: { id: number; nama: string; anggota: { id: number; nama: string }[] } | null;
@@ -73,6 +76,9 @@
         nilaiAwal: NilaiAwal | null;
         kandidatRapel: KandidatRapel[];
         rapelDipilih: number[];
+        pilihanBulan: number[];
+        kandidatAcara: { id: number; nama: string; jumlah: number }[];
+        selisihAnggaran: { kuitansi: number; anggaran: number } | null;
     } = $props();
 
     // Nilai awal formulir memang diambil sekali dari props.
@@ -83,6 +89,32 @@
         status_manual: kegiatan.statusManual ?? '',
         catatan_status: kegiatan.catatanStatus ?? '',
     });
+
+    /* svelte-ignore state_referenced_locally */
+    const pindah = useForm({ bulan: kegiatan.bulan ?? '' });
+    /* svelte-ignore state_referenced_locally */
+    const gabung = useForm({
+        nama: kegiatan.nama,
+        // Baris lain yang dicentang; baris ini ikut ditambahkan saat dikirim.
+        kegiatan_ids: [] as number[],
+    });
+
+    function simpanBulan(event: SubmitEvent): void {
+        event.preventDefault();
+        pindah.submit(KegiatanController.update(kegiatan.id), {
+            preserveScroll: true,
+        });
+    }
+
+    function simpanGabung(event: SubmitEvent): void {
+        event.preventDefault();
+        gabung
+            .transform((data) => ({
+                ...data,
+                kegiatan_ids: [kegiatan.id, ...data.kegiatan_ids],
+            }))
+            .submit(AcaraController.store(), { preserveScroll: true });
+    }
 
     function simpanJenis(event: SubmitEvent): void {
         event.preventDefault();
@@ -212,6 +244,53 @@
                 </section>
             {/if}
 
+            {#if !acara && kandidatAcara.length > 0}
+                <form
+                    aria-label="Gabung jadi satu acara"
+                    class="grid gap-3 rounded-[14px] border bg-card p-3.5 text-sm"
+                    onsubmit={simpanGabung}
+                >
+                    <div>
+                        <h2 class="text-[15px] font-semibold">
+                            Gabung jadi satu acara
+                        </h2>
+                        <p class="mt-0.5 text-muted-foreground">
+                            Dokumen cukup diunggah sekali. Kuitansi tetap per
+                            baris.
+                        </p>
+                    </div>
+                    {#each kandidatAcara as k (k.id)}
+                        <label class="flex items-center gap-2.5">
+                            <input
+                                type="checkbox"
+                                class="size-4"
+                                value={k.id}
+                                bind:group={gabung.kegiatan_ids}
+                            />
+                            <span class="flex-1">{k.nama}</span>
+                            <span class="text-muted-foreground tabular-nums">
+                                Rp {rupiah(k.jumlah)}
+                            </span>
+                        </label>
+                    {/each}
+                    <Label for="nama_acara">Nama acara</Label>
+                    <Input id="nama_acara" bind:value={gabung.nama} />
+                    <InputError
+                        message={gabung.errors.nama ?? gabung.errors.kegiatan_ids}
+                    />
+                    <div>
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={gabung.processing ||
+                                gabung.kegiatan_ids.length === 0}
+                        >
+                            Gabung
+                        </Button>
+                    </div>
+                </form>
+            {/if}
+
             <section class="grid gap-3">
                 <h2 class="mt-1 text-lg font-semibold tracking-tight">
                     Foto berkas
@@ -308,11 +387,22 @@
                 class="grid gap-3 rounded-[14px] border bg-card p-4"
             >
                 <h2 class="text-[15px] font-semibold">Kuitansi</h2>
+                {#if selisihAnggaran}
+                    <p
+                        role="alert"
+                        class="rounded-xl bg-kurang px-3 py-2 text-sm text-kurang-foreground"
+                    >
+                        Kuitansi Rp {rupiah(selisihAnggaran.kuitansi)}, anggaran
+                        Rp {rupiah(selisihAnggaran.anggaran)}. Periksa sebelum
+                        ditandatangani.
+                    </p>
+                {/if}
                 {#if kuitansi !== null || nilaiAwal !== null}
-                    {#key kuitansi?.id ?? 'baru'}
+                    {#key `${kuitansi?.id ?? 'baru'}-${kegiatan.bulan}`}
                         <FormKuitansi
                             kegiatanId={kegiatan.id}
                             tahun={kegiatan.tahun}
+                            bulan={kegiatan.bulan}
                             {kuitansi}
                             {nilaiAwal}
                             {kandidatRapel}
@@ -328,6 +418,32 @@
             </section>
 
             <div class="grid gap-4 rounded-[14px] border bg-card p-4">
+                {#if pilihanBulan.length > 0}
+                    <form class="grid gap-3 border-b pb-4" onsubmit={simpanBulan}>
+                        <Label for="bulan_kegiatan">Bulan kegiatan</Label>
+                        <select
+                            id="bulan_kegiatan"
+                            class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
+                            bind:value={pindah.bulan}
+                        >
+                            <option value="" disabled>Pilih bulan</option>
+                            {#each pilihanBulan as b (b)}
+                                <option value={b}>{namaBulan[b - 1]}</option>
+                            {/each}
+                        </select>
+                        <InputError message={pindah.errors.bulan} />
+                        <div>
+                            <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={pindah.processing}
+                            >
+                                Simpan bulan
+                            </Button>
+                        </div>
+                    </form>
+                {/if}
+
                 <form class="grid gap-3" onsubmit={simpanJenis}>
                     <Label for="jenis">Jenis kegiatan</Label>
                     <select

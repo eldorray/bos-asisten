@@ -7,12 +7,13 @@ namespace App\Actions;
 use App\Enums\SistemAnggaran;
 use App\Models\Kegiatan;
 use App\Models\Sekolah;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
 class SusunLayarBulan
 {
     /**
-     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>}
+     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>, pdfBelumPerBulan: array<int, bool>}
      */
     public function susun(int $tahun, int $bulan): array
     {
@@ -27,16 +28,19 @@ class SusunLayarBulan
 
         $bulanIni = $baris->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan);
 
+        $sekolahs = Sekolah::query()
+            ->with(['imporAnggarans' => fn ($q) => $q->where('tahun', $tahun)])
+            ->orderBy('id')
+            ->get();
+
         return [
             'bulan' => sprintf('%04d-%02d', $tahun, $bulan),
             'ringkasan' => $this->ringkasan($bulanIni),
-            'sekolah' => array_values(Sekolah::query()
-                ->with(['imporAnggarans' => fn ($q) => $q->where('tahun', $tahun)])
-                ->orderBy('id')
-                ->get()
+            'sekolah' => array_values($sekolahs
                 ->map(fn (Sekolah $s): array => $this->sekolah($s, $tahun, $bulan, $baris))
                 ->all()),
             'menunggakPerBulan' => $this->menunggakPerBulan($baris),
+            'pdfBelumPerBulan' => $this->pdfBelumPerBulan($sekolahs, $tahun),
         ];
     }
 
@@ -76,7 +80,7 @@ class SusunLayarBulan
                 'baris' => array_map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah], $kelompok),
             ], SaranAcara::untukBulan($sekolah, $tahun, $bulan)),
             'belumBerbulan' => $milik
-                ->filter(fn (array $b): bool => $b['kegiatan']->bulan === null)
+                ->filter(fn (array $b): bool => $b['kegiatan']->bulan === null && $b['kegiatan']->status_manual === null)
                 ->groupBy(fn (array $b): int => (int) $b['kegiatan']->tahap)
                 ->sortKeys()
                 ->map(fn (Collection $kelompok, int $tahap): array => [
@@ -141,6 +145,26 @@ class SusunLayarBulan
             'kurang' => $hitung(['kurang']),
             'belum' => $hitung(['belum']),
         ];
+    }
+
+    /**
+     * Bulan yang sudah lewat atau sedang berjalan tetapi PDF-nya belum diunggah.
+     * Bulan seperti itu tidak punya baris, jadi jumlah tunggakan saja tidak bisa menunjukkannya.
+     *
+     * @param  EloquentCollection<int, Sekolah>  $sekolahs
+     * @return array<int, bool>
+     */
+    private function pdfBelumPerBulan(EloquentCollection $sekolahs, int $tahun): array
+    {
+        $hasil = [];
+
+        foreach (range(1, 12) as $bulan) {
+            $sudahTiba = $tahun < now()->year || ($tahun === now()->year && $bulan <= now()->month);
+
+            $hasil[$bulan] = $sudahTiba && $sekolahs->contains(fn (Sekolah $s): bool => $this->peringatan($s, $bulan) !== null);
+        }
+
+        return $hasil;
     }
 
     /**

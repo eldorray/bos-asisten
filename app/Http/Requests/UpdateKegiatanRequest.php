@@ -46,6 +46,15 @@ class UpdateKegiatanRequest extends FormRequest
                 $validator->errors()->add('jenis_kegiatan_id', 'Kegiatan ini bagian dari acara. Pisahkan acaranya dulu sebelum mengubah jenis.');
             }
 
+            if (
+                $this->has('jenis_kegiatan_id')
+                && $kegiatan instanceof Kegiatan
+                && $this->integer('jenis_kegiatan_id') !== $kegiatan->jenis_kegiatan_id
+                && $kegiatan->fotos()->exists()
+            ) {
+                $validator->errors()->add('jenis_kegiatan_id', 'Kegiatan ini sudah punya foto berkas. Hapus fotonya dulu sebelum mengubah jenis.');
+            }
+
             if (! $this->has('bulan') || $validator->errors()->has('bulan')) {
                 return;
             }

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { router } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
     import Calendar from '@lucide/svelte/icons/calendar';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import { namaBulan, rupiah } from '@/types';
@@ -61,7 +61,13 @@
         {#each kelompok.kegiatan as k (k.id)}
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="min-w-0">
-                    {k.nama} ·
+                    <Link
+                        href={KegiatanController.show(k.id)}
+                        class="underline underline-offset-2"
+                    >
+                        {k.nama}
+                    </Link>
+                    ·
                     <span class="tabular-nums">Rp {rupiah(k.jumlah)}</span>
                     {#if k.perluDitinjau}
                         <span

@@ -17,6 +17,8 @@ class SimpanFoto
 {
     public const PESAN_FORMAT = 'Format foto tidak didukung. Ubah ke JPG lalu unggah lagi.';
 
+    public const PESAN_GAGAL_SIMPAN = 'Foto gagal disimpan. Coba lagi.';
+
     public const SISI_MAKS = 1600;
 
     private const MUTU_JPEG = 80;
@@ -36,10 +38,23 @@ class SimpanFoto
         $disk = Storage::disk('local');
 
         if ($info[2] === IMAGETYPE_JPEG && $orientasi === 1 && max($lebar, $tinggi) <= self::SISI_MAKS) {
-            $disk->putFileAs(dirname($path), $file, basename($path));
+            $tertulis = $disk->putFileAs(dirname($path), $file, basename($path));
+            $ukuran = (int) filesize($sumber);
         } else {
             [$jpeg, $lebar, $tinggi] = $this->olah($sumber, $orientasi);
-            $disk->put($path, $jpeg);
+            $tertulis = $disk->put($path, $jpeg);
+            $ukuran = strlen($jpeg);
+        }
+
+        // Disk lokal tidak melempar galat saat gagal, misalnya kuota hosting habis.
+        if ($tertulis === false) {
+            throw $this->gagal(self::PESAN_GAGAL_SIMPAN);
+        }
+
+        if ($disk->size($path) !== $ukuran) {
+            $disk->delete($path);
+
+            throw $this->gagal(self::PESAN_GAGAL_SIMPAN);
         }
 
         $pemilik = $kegiatan->pemilikBerkas();

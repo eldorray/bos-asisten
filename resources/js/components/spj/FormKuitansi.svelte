@@ -38,6 +38,7 @@
         nilaiAwal,
         kandidatRapel,
         rapelAwal,
+        bulan,
     }: {
         kegiatanId: number;
         tahun: number;
@@ -45,6 +46,7 @@
         nilaiAwal: NilaiAwal | null;
         kandidatRapel: KandidatRapel[];
         rapelAwal: number[];
+        bulan: number | null;
     } = $props();
 
     // Tanggal lokal, bukan UTC, supaya pagi hari tidak mundur ke kemarin.
@@ -64,7 +66,12 @@
         penerima: kuitansi?.penerima ?? nilaiAwal?.penerima ?? '',
         tanggal_lunas:
             kuitansi?.tanggal_lunas ??
-            (hariIni.startsWith(String(tahun)) ? hariIni : ''),
+            // Kuitansi bulan lalu tidak boleh diam-diam bertanggal hari ini.
+            (hariIni.startsWith(
+                `${tahun}-${String(bulan).padStart(2, '0')}`,
+            )
+                ? hariIni
+                : ''),
         jumlah: kuitansi?.jumlah ?? nilaiAwal?.jumlah ?? 0,
     });
     const hapus = useForm({});

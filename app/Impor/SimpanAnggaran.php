@@ -19,7 +19,7 @@ class SimpanAnggaran
 {
     private const SUMBER_ARKAS = 'BOSP Reguler';
 
-    private const KOLOM_PEMBARUAN = ['uraian', 'nama', 'koefisien', 'harga', 'pajak', 'jumlah', 'tahap'];
+    private const KOLOM_PEMBARUAN = ['uraian', 'nama', 'koefisien', 'harga', 'pajak', 'jumlah'];
 
     public function __construct(private readonly PenyaranJenis $penyaran) {}
 
@@ -116,7 +116,7 @@ class SimpanAnggaran
         $kemunculan = [];
 
         foreach ($anggaran->baris as $baris) {
-            $dasar = sha1($baris->kode.'|'.$baris->kodeProgram.'|'.$baris->uraian);
+            $dasar = sha1($baris->tahap.'|'.$baris->kode.'|'.$baris->kodeProgram.'|'.$baris->uraian);
             $kunci = $dasar.'#'.($kemunculan[$dasar] = ($kemunculan[$dasar] ?? 0) + 1);
 
             array_push($rencana, ...($anggaran->sistem === SistemAnggaran::Arkas

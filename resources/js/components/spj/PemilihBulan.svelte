@@ -9,10 +9,23 @@
     let {
         bulan,
         menunggakPerBulan,
+        pdfBelumPerBulan,
     }: {
         bulan: string;
         menunggakPerBulan: Record<string, number>;
+        pdfBelumPerBulan: Record<string, boolean>;
     } = $props();
+
+    function label(nama: string, nomorBulan: number): string {
+        const catatan = [
+            pdfBelumPerBulan[nomorBulan] ? 'PDF belum diunggah' : null,
+            menunggakPerBulan[nomorBulan]
+                ? `${menunggakPerBulan[nomorBulan]} belum selesai`
+                : null,
+        ].filter(Boolean);
+
+        return catatan.length > 0 ? `${nama} (${catatan.join(', ')})` : nama;
+    }
 
     const tahun = $derived(Number(bulan.slice(0, 4)));
     const nomor = $derived(Number(bulan.slice(5, 7)));
@@ -24,7 +37,7 @@
     }
 </script>
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex max-w-full flex-wrap items-center gap-2">
     <Button
         variant="outline"
         size="icon"
@@ -34,16 +47,13 @@
         <ChevronLeft class="size-4" />
     </Button>
     <select
-        class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
+        class="h-11 max-w-full rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
         aria-label="Pilih bulan"
         value={nomor}
         onchange={(e) => pergi(tahun, Number(e.currentTarget.value))}
     >
         {#each namaBulan as nama, i (nama)}
-            {@const tunggak = menunggakPerBulan[i + 1] ?? 0}
-            <option value={i + 1}>
-                {nama}{tunggak > 0 ? ` (${tunggak} belum selesai)` : ''}
-            </option>
+            <option value={i + 1}>{label(nama, i + 1)}</option>
         {/each}
     </select>
     <input

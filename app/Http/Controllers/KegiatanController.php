@@ -9,6 +9,7 @@ use App\Actions\HitungStatusKegiatan;
 use App\Actions\KelayakanKuitansi;
 use App\Actions\NilaiAwalKuitansi;
 use App\Actions\SimpanKuitansi;
+use App\Enums\SistemAnggaran;
 use App\Enums\StatusManual;
 use App\Http\Requests\TandaiKegiatanRequest;
 use App\Http\Requests\UpdateKegiatanRequest;
@@ -26,7 +27,7 @@ use Inertia\Response;
 
 class KegiatanController extends Controller
 {
-    public function show(Request $request, Kegiatan $kegiatan): Response
+    public function show(Request $request, Kegiatan $kegiatan, GabungAcara $gabung): Response
     {
         $kegiatan->load([...HitungStatusKegiatan::RELASI, 'sekolah']);
         $status = HitungStatusKegiatan::untuk($kegiatan);
@@ -76,6 +77,11 @@ class KegiatanController extends Controller
                 'bulan' => $k->bulan,
                 'jumlah' => $k->jumlah,
             ])->values()->all(),
+            'pilihanBulan' => $this->pilihanBulan($kegiatan),
+            'kandidatAcara' => $gabung->kandidat($kegiatan)
+                ->map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah])
+                ->all(),
+            'selisihAnggaran' => $kuitansi === null ? null : $this->selisihAnggaran($kuitansi),
             'jenisKegiatans' => JenisKegiatan::query()->orderBy('urutan')->get(['id', 'nama']),
         ]);
     }
@@ -138,6 +144,37 @@ class KegiatanController extends Controller
         });
 
         return to_route('dashboard', $bulanLayar === null ? [] : ['bulan' => sprintf('%04d-%02d', $kegiatan->tahun, $bulanLayar)]);
+    }
+
+    /**
+     * Bulan yang boleh dipilih di halaman rincian. Aturan lengkapnya ada di UpdateKegiatanRequest.
+     *
+     * @return list<int>
+     */
+    private function pilihanBulan(Kegiatan $kegiatan): array
+    {
+        if (
+            $kegiatan->sekolah->sistem !== SistemAnggaran::Erkam
+            || $kegiatan->tahap === null
+            || $kegiatan->acara_id !== null
+            || $kegiatan->kuitansi->isNotEmpty()
+        ) {
+            return [];
+        }
+
+        $awal = ($kegiatan->tahap - 1) * 6 + 1;
+
+        return range($awal, $awal + 5);
+    }
+
+    /**
+     * @return array{kuitansi: int, anggaran: int}|null
+     */
+    private function selisihAnggaran(Kuitansi $kuitansi): ?array
+    {
+        $anggaran = (int) $kuitansi->kegiatans()->sum('jumlah');
+
+        return $anggaran === $kuitansi->jumlah ? null : ['kuitansi' => $kuitansi->jumlah, 'anggaran' => $anggaran];
     }
 
     /**

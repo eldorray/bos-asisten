@@ -48,6 +48,30 @@ class GabungAcara
     }
 
     /**
+     * Baris lain yang boleh digabung dengan baris ini.
+     *
+     * @return Collection<int, Kegiatan>
+     */
+    public function kandidat(Kegiatan $kegiatan): Collection
+    {
+        if (! $this->bebas($kegiatan) || $kegiatan->bulan === null) {
+            return new Collection;
+        }
+
+        return Kegiatan::query()
+            ->where('sekolah_id', $kegiatan->sekolah_id)
+            ->where('tahun', $kegiatan->tahun)
+            ->where('bulan', $kegiatan->bulan)
+            ->where('jenis_kegiatan_id', $kegiatan->jenis_kegiatan_id)
+            ->whereKeyNot($kegiatan->id)
+            ->with('kuitansi')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Kegiatan $k): bool => $this->bebas($k))
+            ->values();
+    }
+
+    /**
      * Bubarkan acara. Semua foto kembali ke baris pertama (menurut id), tidak ada yang hilang.
      */
     public function pisah(Acara $acara): void
@@ -85,6 +109,14 @@ class GabungAcara
         if ($pesan !== null) {
             throw ValidationException::withMessages(['kegiatan_ids' => $pesan]);
         }
+    }
+
+    private function bebas(Kegiatan $kegiatan): bool
+    {
+        return $kegiatan->acara_id === null
+            && $kegiatan->status_manual === null
+            && ! $kegiatan->hilang_dari_anggaran
+            && ! $this->rapel($kegiatan);
     }
 
     private function rapel(Kegiatan $kegiatan): bool

@@ -12,6 +12,8 @@
 </script>
 
 <script lang="ts">
+    import { tick } from 'svelte';
+    import Calendar from '@lucide/svelte/icons/calendar';
     import { Link, router } from '@inertiajs/svelte';
     import CircleCheck from '@lucide/svelte/icons/circle-check';
     import CircleDashed from '@lucide/svelte/icons/circle-dashed';
@@ -40,11 +42,13 @@
         ringkasan,
         sekolah,
         menunggakPerBulan,
+        pdfBelumPerBulan,
     }: {
         bulan: string;
         ringkasan: { selesai: number; kurang: number; belum: number };
         sekolah: SekolahBulan[];
         menunggakPerBulan: Record<string, number>;
+        pdfBelumPerBulan: Record<string, boolean>;
     } = $props();
 
     const simpanan = (kunci: string): string | null =>
@@ -73,6 +77,22 @@
     );
 
     const menandai = $derived(sedangMenandai === aktif?.id);
+
+    // Tanpa PDF, papan kosong akan terbaca seolah bulan ini tidak ada kegiatan.
+    const tanpaData = $derived(
+        aktif?.peringatan !== null && aktif?.kegiatan.length === 0,
+    );
+
+    const jumlahBelumBerbulan = (s: SekolahBulan): number =>
+        s.belumBerbulan.reduce((n, k) => n + k.kegiatan.length, 0);
+
+    async function lihatBelumBerbulan(id: number): Promise<void> {
+        sekolahId = id;
+        await tick();
+        document
+            .getElementById('belum-berbulan')
+            ?.scrollIntoView({ behavior: 'smooth' });
+    }
 
     const jumlahTerpilih = $derived(
         Object.values(terpilih).filter(Boolean).length,
@@ -188,18 +208,18 @@
                 {ringkasan.kurang} kurang berkas, {ringkasan.belum} belum mulai
             </p>
         </div>
-        <PemilihBulan {bulan} {menunggakPerBulan} />
+        <PemilihBulan {bulan} {menunggakPerBulan} {pdfBelumPerBulan} />
     </div>
 
     {#if aktif}
-        {#if aktif.peringatan}
+        {#each sekolah.filter((s) => s.peringatan) as s (s.id)}
             <div
                 role="alert"
                 class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-belum py-2 pr-2 pl-3 text-sm text-belum-foreground"
             >
                 <div class="flex min-w-60 flex-1 items-center gap-3">
                     <TriangleAlert class="size-5 shrink-0" />
-                    <p>{aktif.nama}: {aktif.peringatan}.</p>
+                    <p>{s.nama}: {s.peringatan}.</p>
                 </div>
                 <Button variant="outline" asChild>
                     {#snippet children(props)}
@@ -212,41 +232,65 @@
                     {/snippet}
                 </Button>
             </div>
-        {/if}
+        {/each}
 
-        <section
-            aria-label="Ringkasan sekolah"
-            class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-3.5"
-        >
-            {#each statistik as s (s.label)}
-                <div
-                    class="grid content-start gap-3.5 rounded-[14px] border bg-card p-3.5 sm:p-4"
-                >
-                    <div class="flex items-center justify-between gap-2">
-                        <span
-                            class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground"
-                        >
-                            <s.ikon class="size-[18px]" />
-                        </span>
-                        <span
-                            class="hidden text-right text-[13px] text-muted-foreground sm:block"
-                        >
-                            {s.catatan}
-                        </span>
-                    </div>
-                    <div>
-                        <div
-                            class="text-lg font-semibold tracking-tight [overflow-wrap:anywhere] tabular-nums sm:text-[22px]"
-                        >
-                            {s.nilai}
-                        </div>
-                        <div class="text-sm text-muted-foreground">
-                            {s.label}
-                        </div>
-                    </div>
+        {#each sekolah.filter((s) => jumlahBelumBerbulan(s) > 0) as s (s.id)}
+            <div
+                role="alert"
+                class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-kurang py-2 pr-2 pl-3 text-sm text-kurang-foreground"
+            >
+                <div class="flex min-w-60 flex-1 items-center gap-3">
+                    <Calendar class="size-5 shrink-0" />
+                    <p>
+                        {s.nama}: {jumlahBelumBerbulan(s)} kegiatan belum punya
+                        bulan.
+                    </p>
                 </div>
-            {/each}
-        </section>
+                <Button
+                    variant="outline"
+                    class="text-foreground"
+                    onclick={() => lihatBelumBerbulan(s.id)}
+                >
+                    Pilih bulannya
+                </Button>
+            </div>
+        {/each}
+
+        {#if !tanpaData}
+            <section
+                aria-label="Ringkasan sekolah"
+                class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-3.5"
+            >
+                {#each statistik as s (s.label)}
+                    <div
+                        class="grid content-start gap-3.5 rounded-[14px] border bg-card p-3.5 sm:p-4"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <span
+                                class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-primary text-primary-foreground"
+                            >
+                                <s.ikon class="size-[18px]" />
+                            </span>
+                            <span
+                                class="hidden text-right text-[13px] text-muted-foreground sm:block"
+                            >
+                                {s.catatan}
+                            </span>
+                        </div>
+                        <div>
+                            <div
+                                class="text-lg font-semibold tracking-tight [overflow-wrap:anywhere] tabular-nums sm:text-[22px]"
+                            >
+                                {s.nilai}
+                            </div>
+                            <div class="text-sm text-muted-foreground">
+                                {s.label}
+                            </div>
+                        </div>
+                    </div>
+                {/each}
+            </section>
+        {/if}
 
         <div
             class="flex flex-wrap items-center justify-between gap-3 border-b pb-4"
@@ -259,7 +303,9 @@
                         nilai: s.id,
                         label: s.nama,
                         peringatan: s.peringatan,
-                        lencana: hitung(s.kegiatan, 'kurang', 'belum').length,
+                        lencana:
+                            hitung(s.kegiatan, 'kurang', 'belum').length +
+                            jumlahBelumBerbulan(s),
                     }))}
                     onpilih={(id) => (sekolahId = id)}
                 />
@@ -314,7 +360,11 @@
             {/if}
         </div>
 
-        {#if tampilan === 'papan'}
+        {#if tanpaData}
+            <p class="py-7 text-center text-sm text-muted-foreground">
+                Daftar kegiatan {aktif.nama} muncul setelah PDF-nya diunggah.
+            </p>
+        {:else if tampilan === 'papan'}
             <div class="grid items-start gap-3.5 md:grid-cols-2 xl:grid-cols-4">
                 {#each kolom as k (k.label)}
                     <section
@@ -375,7 +425,10 @@
         {/if}
 
         {#if aktif.saranAcara.length > 0 || aktif.belumBerbulan.length > 0}
-            <div class="grid items-start gap-3.5 lg:grid-cols-2">
+            <div
+                id="belum-berbulan"
+                class="grid scroll-mt-4 items-start gap-3.5 lg:grid-cols-2"
+            >
                 {#each aktif.saranAcara as saran (saran.ids.join('-'))}
                     <SaranAcara {saran} />
                 {/each}

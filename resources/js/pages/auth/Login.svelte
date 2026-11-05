@@ -1,7 +1,7 @@
 <script module lang="ts">
     export const layout = {
-        title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        title: 'Masuk ke akun Anda',
+        description: 'Masukkan email dan password Anda',
     };
 </script>
 
@@ -29,7 +29,7 @@
     } = $props();
 </script>
 
-<AppHead title="Log in" />
+<AppHead title="Masuk" />
 
 {#if status}
     <div class="mb-4 text-center text-sm font-medium text-green-600">
@@ -47,7 +47,7 @@
     {#snippet children({ errors, processing })}
         <div class="grid gap-6">
             <div class="grid gap-2">
-                <Label for="email">Email address</Label>
+                <Label for="email">Email</Label>
                 <Input
                     id="email"
                     type="email"
@@ -64,7 +64,7 @@
                     <Label for="password">Password</Label>
                     {#if canResetPassword}
                         <TextLink href={request()} class="text-sm">
-                            Forgot your password?
+                            Lupa password?
                         </TextLink>
                     {/if}
                 </div>
@@ -81,7 +81,7 @@
             <div class="flex items-center justify-between">
                 <Label for="remember" class="flex items-center space-x-3">
                     <Checkbox id="remember" name="remember" />
-                    <span>Remember me</span>
+                    <span>Ingat saya</span>
                 </Label>
             </div>
 
@@ -92,7 +92,7 @@
                 data-test="login-button"
             >
                 {#if processing}<Spinner />{/if}
-                Log in
+                Masuk
             </Button>
         </div>
     {/snippet}

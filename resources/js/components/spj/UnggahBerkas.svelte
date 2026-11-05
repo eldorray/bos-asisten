@@ -48,9 +48,16 @@
     }
 
     function kirim(item: Antrean, file: File): Promise<string | null> {
-        return new Promise((selesai) => {
+        return new Promise((resolve) => {
             let pesan: string | null = null;
             let berhasil = false;
+            // onFinish tidak berjalan saat kunjungan dibatalkan, jadi onCancel juga menyelesaikan.
+            const selesai = (): void =>
+                resolve(
+                    berhasil
+                        ? null
+                        : (pesan ?? 'Gagal mengunggah. Coba lagi.'),
+                );
 
             router.post(
                 FotoController.store(kegiatanId),
@@ -80,13 +87,9 @@
                     },
                     onCancel: () => {
                         pesan = 'Unggahan dibatalkan.';
+                        selesai();
                     },
-                    onFinish: () =>
-                        selesai(
-                            berhasil
-                                ? null
-                                : (pesan ?? 'Gagal mengunggah. Coba lagi.'),
-                        ),
+                    onFinish: selesai,
                 },
             );
         });

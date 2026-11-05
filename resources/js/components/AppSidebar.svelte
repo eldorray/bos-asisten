@@ -1,9 +1,13 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
+    import ListChecks from '@lucide/svelte/icons/list-checks';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
+    import School from '@lucide/svelte/icons/school';
     import Upload from '@lucide/svelte/icons/upload';
     import type { Snippet } from 'svelte';
     import ImporController from '@/actions/App/Http/Controllers/ImporController';
+    import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
+    import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavMain from '@/components/NavMain.svelte';
     import NavUser from '@/components/NavUser.svelte';
@@ -36,6 +40,16 @@
             title: 'Impor Anggaran',
             href: ImporController.index(),
             icon: Upload,
+        },
+        {
+            title: 'Sekolah',
+            href: SekolahController.index(),
+            icon: School,
+        },
+        {
+            title: 'Jenis Kegiatan',
+            href: JenisKegiatanController.index(),
+            icon: ListChecks,
         },
     ];
 </script>

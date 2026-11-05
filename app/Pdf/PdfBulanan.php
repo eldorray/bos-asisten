@@ -27,11 +27,11 @@ class PdfBulanan
         foreach ($lembar as $satu) {
             $pdf->AddPage();
 
-            foreach ($satu->penempatan as $tempat) {
+            foreach ($satu->penempatan as $i => $tempat) {
                 if ($tempat->isi instanceof LampiranPdf) {
                     self::foto($pdf, $tempat, $tempat->isi);
                 } elseif ($tempat->isi === null || $tempat->isi instanceof Kuitansi) {
-                    $kuitansi->gambar($tempat->isi, $tempat->x, $tempat->y, $tempat->lebar, $tempat->tinggi);
+                    $kuitansi->gambar($tempat->isi, $tempat->x, $tempat->y, $tempat->lebar, $tempat->tinggi, isset($satu->penempatan[$i + 1]));
                 }
             }
         }

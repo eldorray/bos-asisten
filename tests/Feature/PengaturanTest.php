@@ -77,6 +77,26 @@ it('menolak nomor awal yang bukan bilangan bulat minimal 1', function (mixed $ni
     ])->assertSessionHasErrors('nomor_awal');
 })->with([0, -3, 'abc', 1.5]);
 
+it('membatasi isian sekolah agar muat di kuitansi', function (string $kolom, int $batas, string $pesan) {
+    $sekolah = Sekolah::factory()->create();
+    $wajib = ['nama_kepala' => 'Kepala', 'nama_bendahara' => 'Bendahara'];
+
+    $this->patch(route('sekolah.update', $sekolah), [$kolom => str_repeat('W', $batas)] + $wajib)
+        ->assertSessionHasNoErrors();
+    $this->patch(route('sekolah.update', $sekolah), [$kolom => str_repeat('W', $batas + 1)] + $wajib)
+        ->assertSessionHasErrors([$kolom => $pesan]);
+
+    expect($sekolah->refresh()->{$kolom})->toBe(str_repeat('W', $batas));
+})->with([
+    ['nama', 100, 'Nama sekolah maksimal 100 karakter agar muat di kuitansi.'],
+    ['sebutan', 20, 'Sebutan maksimal 20 karakter agar muat di kuitansi.'],
+    ['desa_kecamatan', 100, 'Desa/kecamatan maksimal 100 karakter agar muat di kuitansi.'],
+    ['kabupaten', 100, 'Kabupaten maksimal 100 karakter agar muat di kuitansi.'],
+    ['provinsi', 100, 'Provinsi maksimal 100 karakter agar muat di kuitansi.'],
+    ['nama_kepala', 90, 'Nama kepala maksimal 90 karakter agar muat di kuitansi.'],
+    ['nama_bendahara', 90, 'Nama bendahara maksimal 90 karakter agar muat di kuitansi.'],
+]);
+
 it('menambah jenis kegiatan dengan berkas berurutan', function () {
     $this->post(route('jenis-kegiatan.store'), [
         'nama' => 'Perjalanan dinas',

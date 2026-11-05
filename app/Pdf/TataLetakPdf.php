@@ -12,7 +12,7 @@ use App\Models\Kuitansi;
  */
 class TataLetakPdf
 {
-    public const TINGGI_A4 = 297.0;
+    private const TINGGI_A4 = 297.0;
 
     private const LEBAR_A4 = 210.0;
 
@@ -71,7 +71,8 @@ class TataLetakPdf
     }
 
     /**
-     * Lampiran pertama mengisi sisa lembar kuitansi. Sisanya dibagi per baris, dua baris per lembar.
+     * Lampiran pertama mengisi sisa lembar kuitansi. Kalau lampiran itu kisi, sisa lembar
+     * menjadi awal kisi: sebanyak baris yang muat. Sisanya dua baris per lembar.
      *
      * @param  list<Penempatan>  $kuitansi  Kuitansi di lembar yang masih terbuka.
      * @param  non-empty-list<LampiranPdf>  $lampiran
@@ -79,23 +80,23 @@ class TataLetakPdf
      */
     private static function lembarLampiran(array $kuitansi, array $lampiran): array
     {
-        $sisaLembar = count($kuitansi) < self::KUITANSI_PER_LEMBAR;
+        $atas = count($kuitansi) * self::TINGGI_KUITANSI + self::MARGIN;
+        $sisaTinggi = self::TINGGI_A4 - self::MARGIN - $atas;
+        $barisDiSisa = 0;
 
-        if ($sisaLembar) {
-            $atas = count($kuitansi) * self::TINGGI_KUITANSI + self::MARGIN;
-            $kuitansi[] = self::foto(
-                array_shift($lampiran),
-                self::MARGIN,
-                $atas,
-                self::lebarIsi(),
-                self::TINGGI_A4 - self::MARGIN - $atas,
-            );
+        if (count($kuitansi) < self::KUITANSI_PER_LEMBAR) {
+            if ($lampiran[0]->tataLetak === TataLetakBerkas::Kisi) {
+                $barisDiSisa = (int) floor(($sisaTinggi + self::JARAK) / (self::tinggiBaris() + self::JARAK));
+            } else {
+                $kuitansi[] = self::foto(array_shift($lampiran), self::MARGIN, $atas, self::lebarIsi(), $sisaTinggi);
+            }
         }
 
-        $hasil = [new Lembar($kuitansi)];
+        $baris = self::bagiBaris($lampiran);
+        $hasil = [new Lembar([...$kuitansi, ...self::tempatBaris(array_slice($baris, 0, $barisDiSisa), $atas)])];
 
-        foreach (array_chunk(self::bagiBaris($lampiran), self::BARIS_PER_LEMBAR) as $baris) {
-            $hasil[] = new Lembar(self::tempatBaris($baris));
+        foreach (array_chunk(array_slice($baris, $barisDiSisa), self::BARIS_PER_LEMBAR) as $bagian) {
+            $hasil[] = new Lembar(self::tempatBaris($bagian, self::MARGIN));
         }
 
         return $hasil;
@@ -144,14 +145,14 @@ class TataLetakPdf
      * @param  array<int, non-empty-list<LampiranPdf>>  $daftarBaris
      * @return list<Penempatan>
      */
-    private static function tempatBaris(array $daftarBaris): array
+    private static function tempatBaris(array $daftarBaris, float $atas): array
     {
-        $tinggiBaris = (self::TINGGI_A4 - 2 * self::MARGIN - self::JARAK) / self::BARIS_PER_LEMBAR;
+        $tinggiBaris = self::tinggiBaris();
         $lebarKisi = (self::lebarIsi() - self::JARAK) / self::KOLOM_KISI;
         $tempat = [];
 
         foreach (array_values($daftarBaris) as $nomorBaris => $baris) {
-            $y = self::MARGIN + $nomorBaris * ($tinggiBaris + self::JARAK);
+            $y = $atas + $nomorBaris * ($tinggiBaris + self::JARAK);
 
             foreach ($baris as $kolom => $lampiran) {
                 $tempat[] = $lampiran->tataLetak === TataLetakBerkas::Kisi
@@ -180,6 +181,11 @@ class TataLetakPdf
             $tinggi,
             $lampiran,
         );
+    }
+
+    private static function tinggiBaris(): float
+    {
+        return (self::TINGGI_A4 - 2 * self::MARGIN - self::JARAK) / self::BARIS_PER_LEMBAR;
     }
 
     private static function lebarIsi(): float

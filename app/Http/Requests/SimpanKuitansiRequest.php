@@ -22,14 +22,14 @@ class SimpanKuitansiRequest extends FormRequest
 
         $rules = [
             'nomor' => [
-                'required', 'string', 'max:50', 'regex:/^\d{1,9}(?!\d)/',
+                'required', 'string', 'max:40', 'regex:/^\d{1,9}(?!\d)/',
                 Rule::unique('kuitansis', 'nomor')
                     ->where('sekolah_id', $sekolahId)
                     ->where('tahun', $tahun)
                     ->ignore($kuitansiId),
             ],
             'untuk_pembayaran' => ['required', 'string', 'max:200'],
-            'penerima' => ['required', 'string', 'max:255'],
+            'penerima' => ['required', 'string', 'max:90'],
             'tanggal_lunas' => [
                 'required', 'date_format:Y-m-d',
                 function (string $atribut, mixed $nilai, Closure $gagal) use ($tahun): void {
@@ -78,11 +78,13 @@ class SimpanKuitansiRequest extends FormRequest
     {
         return [
             'nomor.required' => 'Nomor bukti wajib diisi.',
+            'nomor.max' => 'Nomor bukti maksimal 40 karakter agar muat di kuitansi.',
             'nomor.regex' => 'Nomor bukti harus diawali angka urut (maksimal 9 digit), misalnya 001/01/SMPG/2026.',
             'nomor.unique' => 'Nomor ini sudah dipakai kuitansi lain.',
             'untuk_pembayaran.required' => 'Isi untuk pembayaran apa.',
             'untuk_pembayaran.max' => 'Untuk pembayaran maksimal 200 karakter.',
             'penerima.required' => 'Isi nama penerima.',
+            'penerima.max' => 'Nama penerima maksimal 90 karakter agar muat di kuitansi.',
             'tanggal_lunas.required' => 'Isi tanggal lunas.',
             'tanggal_lunas.date_format' => 'Tanggal lunas tidak sah.',
             'jumlah.required' => 'Isi jumlah.',

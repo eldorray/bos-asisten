@@ -38,6 +38,9 @@ class GambarKuitansi
 
     private const TINGGI_NAMA_TTD = 8.0;
 
+    /** Ukuran terkecil yang dipakai: nilai terpanjang yang sah selalu muat di ukuran ini. */
+    private const FONT_MIN = 6.0;
+
     private const ABU = 90;
 
     private static ?FPDF $pengukur = null;
@@ -65,17 +68,24 @@ class GambarKuitansi
     /**
      * Pecah teks UTF-8 menjadi baris windows-1252 yang tidak melebihi $lebar.
      *
+     * @param  bool  $rapat  Isi tiap baris sampai penuh tanpa menjaga batas kata, untuk teks yang hanya muat dengan cara ini.
      * @return list<string>
      */
-    public static function barisTeks(string $teks, float $lebar, float $ukuran, string $gaya = ''): array
+    public static function barisTeks(string $teks, float $lebar, float $ukuran, string $gaya = '', bool $rapat = false): array
     {
         $pengukur = self::$pengukur ??= new FPDF('P', 'mm', 'A4');
         $pengukur->SetFont(self::FONT, $gaya, $ukuran);
 
+        $daftarKata = preg_split('/\s+/', trim(self::teksPdf($teks))) ?: [];
+
+        if ($rapat) {
+            $daftarKata = [implode(' ', $daftarKata)];
+        }
+
         $baris = [];
         $sekarang = '';
 
-        foreach (preg_split('/\s+/', trim(self::teksPdf($teks))) ?: [] as $kata) {
+        foreach ($daftarKata as $kata) {
             $calon = $sekarang === '' ? $kata : $sekarang.' '.$kata;
 
             if ($pengukur->GetStringWidth($calon) <= $lebar) {
@@ -124,7 +134,7 @@ class GambarKuitansi
         return $hasil !== false ? $hasil : (string) preg_replace('/[^\x20-\x7E]/u', '?', $bersih);
     }
 
-    public function gambar(?Kuitansi $kuitansi, float $x, float $y, float $lebar, float $tinggi): void
+    public function gambar(?Kuitansi $kuitansi, float $x, float $y, float $lebar, float $tinggi, bool $adaDiBawah): void
     {
         $this->pdf->SetTextColor(0);
         $this->pdf->SetDrawColor(0);
@@ -140,7 +150,7 @@ class GambarKuitansi
             default => $this->arkas($kuitansi, $kiri, $atas, $lebarIsi, $tinggiIsi),
         };
 
-        if ($y + $tinggi < TataLetakPdf::TINGGI_A4) {
+        if ($adaDiBawah) {
             $this->garisPutus($kiri, $y + $tinggi, $kiri + $lebarIsi);
         }
     }
@@ -201,41 +211,47 @@ class GambarKuitansi
         $this->kepala('KUITANSI/BUKTI PEMBAYARAN', '', $x, $y, $lebar);
 
         $bawahIsi = $y + $tinggi;
-        $atasTtd = $bawahIsi - self::TINGGI_TTD_ERKAM;
+        $atasTtdLega = $bawahIsi - self::TINGGI_TTD_ERKAM;
         $lebarLabel = 28.0;
         $lebarKolom = ($lebar - self::JARAK_KOLOM) / 2;
-        $tinggiKolom = self::tinggiBaris(6.0) * 2;
+        $satuBaris = self::tinggiBaris(8.5);
+        $duaBaris = self::tinggiBaris(self::FONT_MIN) * 2;
+        $tigaBaris = self::tinggiBaris(self::FONT_MIN) * 3;
 
         $kolomKiri = [
-            ['Tahun Anggaran', (string) $kuitansi->tahun],
-            ['Nomor Bukti', $kuitansi->nomor],
-            ['Sudah terima dari', "Kepala {$sebutan}"],
-            [$sebutan, $this->sekolah->nama],
+            ['Tahun Anggaran', (string) $kuitansi->tahun, $satuBaris],
+            ['Nomor Bukti', $kuitansi->nomor, $duaBaris],
+            ['Sudah terima dari', "Kepala {$sebutan}", $duaBaris],
+            [$sebutan, $this->sekolah->nama, $tigaBaris],
         ];
         $kolomKanan = [
-            ['Desa/Kecamatan', $this->sekolah->desa_kecamatan],
-            ['Kabupaten', $this->sekolah->kabupaten],
-            ['Provinsi', $this->sekolah->provinsi],
+            ['Desa/Kecamatan', $this->sekolah->desa_kecamatan, $tigaBaris],
+            ['Kabupaten', $this->sekolah->kabupaten, $tigaBaris],
+            ['Provinsi', $this->sekolah->provinsi, $tigaBaris],
         ];
 
         $yKiri = $yKanan = $y + self::TINGGI_KEPALA;
 
-        foreach ($kolomKiri as [$label, $nilai]) {
-            $yKiri += $this->baris($label, $nilai, $x, $yKiri, $lebarLabel, $lebarKolom - $lebarLabel, $tinggiKolom, 8.5);
+        foreach ($kolomKiri as [$label, $nilai, $tinggiMaks]) {
+            $yKiri += $this->baris($label, $nilai, $x, $yKiri, $lebarLabel, $lebarKolom - $lebarLabel, $tinggiMaks, 8.5);
         }
 
-        foreach ($kolomKanan as [$label, $nilai]) {
-            $yKanan += $this->baris($label, $nilai, $x + $lebarKolom + self::JARAK_KOLOM, $yKanan, $lebarLabel, $lebarKolom - $lebarLabel, $tinggiKolom, 8.5);
+        foreach ($kolomKanan as [$label, $nilai, $tinggiMaks]) {
+            $yKanan += $this->baris($label, $nilai, $x + $lebarKolom + self::JARAK_KOLOM, $yKanan, $lebarLabel, $lebarKolom - $lebarLabel, $tinggiMaks, 8.5);
         }
 
         $yBaris = max($yKiri, $yKanan);
         $lebarNilai = $lebar - $lebarLabel;
-        $tinggiDana = self::tinggiBaris(8.5);
 
         $yBaris += $this->baris('Jumlah Uang', $this->rupiah($kuitansi->jumlah), $x, $yBaris, $lebarLabel, $lebarNilai, 5.0, 11.0, 'B');
-        $yBaris += $this->baris('Terbilang', Terbilang::rupiah($kuitansi->jumlah), $x, $yBaris, $lebarLabel, $lebarNilai, self::tinggiBaris(8.5) * 2, 8.5, 'I');
-        $yBaris += $this->baris('Untuk Pembayaran', $kuitansi->untuk_pembayaran, $x, $yBaris, $lebarLabel, $lebarNilai, $atasTtd - $yBaris - $tinggiDana - 1.0, 8.5);
-        $this->baris('Sumber Dana', $kuitansi->sumber_dana, $x, $yBaris, $lebarLabel, $lebarNilai, $tinggiDana, 8.5);
+        $yBaris += $this->baris('Terbilang', Terbilang::rupiah($kuitansi->jumlah), $x, $yBaris, $lebarLabel, $lebarNilai, self::tinggiBaris(7.0) * 2, 8.5, 'I');
+
+        // Untuk Pembayaran tidak boleh kehilangan baris: kalau sempit, ruang tanda tanganlah yang mengalah.
+        $tinggiUntuk = max($tigaBaris, $atasTtdLega - $yBaris - $satuBaris - 1.0);
+        $yBaris += $this->baris('Untuk Pembayaran', $kuitansi->untuk_pembayaran, $x, $yBaris, $lebarLabel, $lebarNilai, $tinggiUntuk, 8.5);
+        $yBaris += $this->baris('Sumber Dana', $kuitansi->sumber_dana, $x, $yBaris, $lebarLabel, $lebarNilai, $satuBaris, 8.5);
+
+        $atasTtd = max($atasTtdLega, $yBaris);
 
         $lunas = 'Lunas dibayar tanggal '.$kuitansi->tanggal_lunas->format('d-m-Y');
         $tinggiLunas = $this->tulis($lunas, $x + ($lebar + self::JARAK_KOLOM) / 3, $atasTtd, ($lebar - self::JARAK_KOLOM) * 2 / 3, self::tinggiBaris(8.0), 8.0, 6.0, '', 'C');
@@ -267,10 +283,11 @@ class GambarKuitansi
     private function baris(string $label, string $nilai, float $x, float $y, float $lebarLabel, float $lebarNilai, float $tinggiMaks, float $ukuranMaks, string $gaya = ''): float
     {
         $this->pdf->SetTextColor(self::ABU);
-        $this->tulis($label, $x, $y, $lebarLabel, self::tinggiBaris(8.0), 8.0, 6.0);
+        $tinggiLabel = $this->tulis($label, $x, $y, $lebarLabel - 1.0, max(self::tinggiBaris(8.0), $tinggiMaks), 8.0, self::FONT_MIN);
         $this->pdf->SetTextColor(0);
+        $tinggiNilai = $this->tulis($nilai, $x + $lebarLabel, $y, $lebarNilai, $tinggiMaks, $ukuranMaks, self::FONT_MIN, $gaya);
 
-        return $this->tulis($nilai, $x + $lebarLabel, $y, $lebarNilai, $tinggiMaks, $ukuranMaks, 6.0, $gaya) + 0.6;
+        return max($tinggiLabel, $tinggiNilai) + 0.6;
     }
 
     /**
@@ -282,33 +299,56 @@ class GambarKuitansi
 
         foreach ($penanda as $i => [$jabatan, $nama]) {
             $xKolom = $x + $i * ($lebarKolom + self::JARAK_KOLOM);
-            $ukuran = self::ukuranFontPas($nama, $lebarKolom, self::TINGGI_NAMA_TTD, 8.5, 6.0, 'B');
-            $tinggiNama = min(self::TINGGI_NAMA_TTD, count(self::barisTeks($nama, $lebarKolom, $ukuran, 'B')) * self::tinggiBaris($ukuran));
+            $tata = $this->tataTeks($nama, $lebarKolom, self::TINGGI_NAMA_TTD, 8.5, self::FONT_MIN, 'B');
+            $tinggiNama = count($tata['baris']) * self::tinggiBaris($tata['ukuran']);
 
-            $this->tulis($jabatan, $xKolom, $atas, $lebarKolom, self::tinggiBaris(8.5), 8.5, 6.0, '', 'C');
-            $this->tulis($nama, $xKolom, $bawah - $tinggiNama, $lebarKolom, self::TINGGI_NAMA_TTD, 8.5, 6.0, 'B', 'C');
+            $this->tulis($jabatan, $xKolom, $atas, $lebarKolom, self::tinggiBaris(8.5), 8.5, self::FONT_MIN, '', 'C');
+            $this->cetak($tata, $xKolom, $bawah - $tinggiNama, $lebarKolom, 'B', 'C');
         }
     }
 
     /**
-     * Tulis teks dalam kotak, tidak pernah melewati $tinggiMaks: baris berlebih dipotong dengan "...".
-     * Mengembalikan tinggi yang terpakai.
+     * Tulis teks dalam kotak, tidak pernah melewati $tinggiMaks. Mengembalikan tinggi yang terpakai.
      */
     private function tulis(string $teks, float $x, float $y, float $lebar, float $tinggiMaks, float $maks, float $min, string $gaya = '', string $rata = 'L'): float
     {
-        $ukuran = self::ukuranFontPas($teks, $lebar, $tinggiMaks, $maks, $min, $gaya);
-        $tinggiBaris = self::tinggiBaris($ukuran);
-        $baris = self::barisTeks($teks, $lebar, $ukuran, $gaya);
-        $maksBaris = max(1, (int) floor($tinggiMaks / $tinggiBaris));
+        return $this->cetak($this->tataTeks($teks, $lebar, $tinggiMaks, $maks, $min, $gaya), $x, $y, $lebar, $gaya, $rata);
+    }
 
-        $this->pdf->SetFont(self::FONT, $gaya, $ukuran);
+    /**
+     * Pilih ukuran dan baris. Teks yang tidak muat kalau menjaga batas kata diisi rapat. Memotong
+     * dengan "..." hanya pertahanan terakhir untuk nilai yang tersimpan sebelum ada batas validasi.
+     *
+     * @return array{ukuran: float, baris: list<string>}
+     */
+    private function tataTeks(string $teks, float $lebar, float $tinggiMaks, float $maks, float $min, string $gaya): array
+    {
+        $ukuran = self::ukuranFontPas($teks, $lebar, $tinggiMaks, $maks, $min, $gaya);
+        $maksBaris = max(1, (int) floor($tinggiMaks / self::tinggiBaris($ukuran) + 1e-9));
+        $baris = self::barisTeks($teks, $lebar, $ukuran, $gaya);
 
         if (count($baris) > $maksBaris) {
-            $baris = array_slice($baris, 0, $maksBaris);
-            $baris[$maksBaris - 1] = $this->potong($baris[$maksBaris - 1], $lebar);
+            $baris = self::barisTeks($teks, $lebar, $ukuran, $gaya, rapat: true);
         }
 
-        foreach ($baris as $i => $isi) {
+        if (count($baris) > $maksBaris) {
+            $this->pdf->SetFont(self::FONT, $gaya, $ukuran);
+            $baris = [...array_slice($baris, 0, $maksBaris - 1), $this->potong($baris[$maksBaris - 1], $lebar)];
+        }
+
+        return ['ukuran' => $ukuran, 'baris' => $baris];
+    }
+
+    /**
+     * @param  array{ukuran: float, baris: list<string>}  $tata
+     */
+    private function cetak(array $tata, float $x, float $y, float $lebar, string $gaya, string $rata): float
+    {
+        $tinggiBaris = self::tinggiBaris($tata['ukuran']);
+
+        $this->pdf->SetFont(self::FONT, $gaya, $tata['ukuran']);
+
+        foreach ($tata['baris'] as $i => $isi) {
             $geser = match ($rata) {
                 'R' => $lebar - $this->pdf->GetStringWidth($isi),
                 'C' => ($lebar - $this->pdf->GetStringWidth($isi)) / 2,
@@ -319,7 +359,7 @@ class GambarKuitansi
             $this->pdf->Text($x + $geser, $y + $i * $tinggiBaris + $tinggiBaris * 0.75, $isi);
         }
 
-        return count($baris) * $tinggiBaris;
+        return count($tata['baris']) * $tinggiBaris;
     }
 
     private function potong(string $baris, float $lebar): string

@@ -541,3 +541,17 @@ test('hapus kegiatan yang ada di kuitansi rapel ditolak', function () {
 
     expect(Kuitansi::count())->toBe(1)->and(Kegiatan::whereKey($januari->id)->exists())->toBeTrue();
 });
+
+test('membatasi nomor dan penerima agar muat di kuitansi', function (string $kolom, string $sah, string $kepanjangan, string $pesan) {
+    $kegiatan = kegiatanGaji(sekolahSmp(), 1);
+
+    $this->post(route('kuitansi.store', $kegiatan), isianKuitansi([$kolom => $kepanjangan]))
+        ->assertSessionHasErrors([$kolom => $pesan]);
+    $this->post(route('kuitansi.store', $kegiatan), isianKuitansi([$kolom => $sah]))
+        ->assertSessionHasNoErrors();
+
+    expect(Kuitansi::firstOrFail()->{$kolom})->toBe($sah);
+})->with([
+    'nomor' => ['nomor', '1/'.str_repeat('W', 38), '1/'.str_repeat('W', 39), 'Nomor bukti maksimal 40 karakter agar muat di kuitansi.'],
+    'penerima' => ['penerima', str_repeat('W', 90), str_repeat('W', 91), 'Nama penerima maksimal 90 karakter agar muat di kuitansi.'],
+]);

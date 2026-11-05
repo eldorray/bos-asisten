@@ -13,6 +13,7 @@ use App\Models\Sekolah;
 use App\Models\User;
 use App\Pdf\BlokPdf;
 use App\Pdf\LampiranPdf;
+use App\Support\Terbilang;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -46,6 +47,21 @@ function jpegBerat(): string
     imagejpeg($gambar, null, 80);
 
     return (string) ob_get_clean();
+}
+
+/**
+ * Nilai terlebar untuk font Helvetica (huruf W) sepanjang tepat $panjang karakter, diakhiri $akhir.
+ */
+function nilaiTerlebar(int $panjang, string $akhir, int $panjangKata): string
+{
+    $isi = implode(' ', str_split(str_repeat('W', $panjang), $panjangKata));
+
+    return substr($isi, 0, $panjang - strlen($akhir)).$akhir;
+}
+
+function tanpaSpasi(string $teks): string
+{
+    return (string) preg_replace('/\s+/', '', $teks);
 }
 
 function jenisRapatPdf(): JenisKegiatan
@@ -124,6 +140,31 @@ function halamanPdf(TestResponse $respons): int
     return count((new Parser)->parseContent((string) $respons->getContent())->getPages());
 }
 
+function isiHalamanPertama(TestResponse $respons): string
+{
+    preg_match('/stream\n(.*?)\nendstream/s', (string) $respons->getContent(), $cocok);
+
+    return (string) gzuncompress($cocok[1]);
+}
+
+/**
+ * Berapa kali warna garis potong dipasang pada halaman pertama.
+ */
+function garisPutusPdf(TestResponse $respons): int
+{
+    return substr_count(isiHalamanPertama($respons), '0.600 G');
+}
+
+/**
+ * Jarak garis dasar teks pertama yang memuat $teks dari tepi bawah halaman pertama, dalam mm.
+ */
+function tinggiTeksPdf(TestResponse $respons, string $teks): float
+{
+    preg_match('/BT [\d.]+ ([\d.]+) Td \([^)]*'.preg_quote($teks, '/').'/', isiHalamanPertama($respons), $cocok);
+
+    return (float) $cocok[1] * 25.4 / 72;
+}
+
 /**
  * @return list<string>
  */
@@ -141,6 +182,20 @@ test('tamu ditolak', function () {
     auth()->logout();
 
     unduhPdf(Sekolah::factory()->create(), 1)->assertRedirect(route('login'));
+});
+
+test('garis potong hanya ada bila ada isi di bawah kuitansi', function () {
+    $sekolah = Sekolah::factory()->create();
+    kuitansiPdf($sekolah, 1, [barisPdf($sekolah, 1)]);
+
+    $sendiri = garisPutusPdf(unduhPdf($sekolah, 1));
+
+    kuitansiPdf($sekolah, 2, [barisPdf($sekolah, 1)]);
+
+    $berdua = garisPutusPdf(unduhPdf($sekolah, 1));
+
+    expect($sendiri)->toBe(0)
+        ->and($berdua)->toBeGreaterThan(0);
 });
 
 test('pdf memuat isi kuitansi dan penandatangan sekolah, urut nomor bukti', function () {
@@ -433,11 +488,11 @@ test('kode bukti dengan garis miring tetap menghasilkan nama file sah', function
     unduhPdf($sekolah, 3)->assertOk()->assertDownload('SPJ-MI-DH-2026-03.pdf');
 });
 
-test('teks panjang dan karakter di luar windows-1252 tidak menggagalkan pdf', function (bool $erkam) {
+test('nilai lama yang melewati batas dipotong sebagai pertahanan terakhir, karakter asing tidak menggagalkan pdf', function (bool $erkam) {
     $pabrik = Sekolah::factory();
     $sekolah = ($erkam ? $pabrik->erkam() : $pabrik)->create(['nama_kepala' => 'Kepala Tetap Tercetak']);
     kuitansiPdf($sekolah, 1, [barisPdf($sekolah, 1)], [
-        'untuk_pembayaran' => substr(str_repeat('Konsumsi rapat koordinasi guru ', 7), 0, 200),
+        'untuk_pembayaran' => 'Konsumsi rapat',
         'penerima' => "عبد الله \u{1F600} ".str_repeat('Nama Panjang ', 19),
     ]);
 
@@ -445,8 +500,60 @@ test('teks panjang dan karakter di luar windows-1252 tidak menggagalkan pdf', fu
 
     $respons->assertOk();
     expect(teksPdf($respons))->toContain('Kepala Tetap Tercetak')
-        ->toContain('Konsumsi rapat');
+        ->toContain('Konsumsi rapat')
+        ->toContain('...');
 })->with(['arkas' => false, 'erkam' => true]);
+
+test('nilai terpanjang yang sah tercetak utuh tanpa dipotong dan tanda tangan tetap lega', function (bool $erkam, int $panjangKata) {
+    $sekolah = ($erkam ? Sekolah::factory()->erkam() : Sekolah::factory())->create();
+    $nilaiSekolah = [
+        'nama' => nilaiTerlebar(100, 'AKHIRSEKOLAH', $panjangKata),
+        'sebutan' => nilaiTerlebar(20, 'SEBUT', $panjangKata),
+        'desa_kecamatan' => nilaiTerlebar(100, 'AKHIRDESA', $panjangKata),
+        'kabupaten' => nilaiTerlebar(100, 'AKHIRKAB', $panjangKata),
+        'provinsi' => nilaiTerlebar(100, 'AKHIRPROV', $panjangKata),
+        'nama_kepala' => nilaiTerlebar(90, 'AKHIRKEPALA', $panjangKata),
+        'nama_bendahara' => nilaiTerlebar(90, 'AKHIRBENDAHARA', $panjangKata),
+    ];
+    $nilaiKuitansi = [
+        'nomor' => '123456789/'.nilaiTerlebar(30, 'AKHIRNOMOR', $panjangKata),
+        'untuk_pembayaran' => nilaiTerlebar(200, 'AKHIRUNTUK', $panjangKata),
+        'penerima' => nilaiTerlebar(90, 'AKHIRPENERIMA', $panjangKata),
+    ];
+
+    $this->patch(route('sekolah.update', $sekolah), $nilaiSekolah)->assertSessionHasNoErrors();
+    $this->post(route('kuitansi.store', barisPdf($sekolah, 1)), $nilaiKuitansi + [
+        'tanggal_lunas' => '2026-01-31',
+        'jumlah' => 999_999_999_999,
+    ])->assertSessionHasNoErrors();
+
+    $respons = unduhPdf($sekolah, 1);
+    $teks = teksPdf($respons);
+    $rapat = tanpaSpasi($teks);
+
+    $tercetak = $erkam
+        ? [...$nilaiSekolah, ...$nilaiKuitansi]
+        : ['sebutan' => $nilaiSekolah['sebutan'], 'nama_kepala' => $nilaiSekolah['nama_kepala'], 'nama_bendahara' => $nilaiSekolah['nama_bendahara'], ...$nilaiKuitansi];
+
+    foreach ($tercetak as $nilai) {
+        expect($rapat)->toContain(tanpaSpasi($nilai));
+    }
+
+    expect($teks)->toContain('Rp 999.999.999.999')
+        ->not->toContain('...')
+        ->and($rapat)->toContain(tanpaSpasi(Terbilang::rupiah(999_999_999_999)));
+
+    // Jabatan ke baris terakhir nama (paling banyak tiga baris): tempat tanda tangan tetap tersisa.
+    $jabatan = tinggiTeksPdf($respons, 'Bendahara');
+    $nama = tinggiTeksPdf($respons, 'AKHIRBENDAHARA');
+
+    expect($jabatan - $nama)->toBeGreaterThanOrEqual(19.0)
+        ->and($jabatan)->toBeLessThan(tinggiTeksPdf($respons, $erkam ? 'Sumber Dana' : 'Kode'));
+})->with(['arkas' => false, 'erkam' => true])->with([
+    'kata pendek' => 4,
+    'kata panjang' => 16,
+    'tanpa spasi' => 1000,
+]);
 
 test('bulan di luar rentang tidak ditemukan', function (int $bulan) {
     unduhPdf(Sekolah::factory()->create(), $bulan)->assertNotFound();
@@ -471,18 +578,8 @@ test('uji beban: 60 foto 1600 px dalam satu bulan tetap di bawah 256 MB', functi
     }
 
     memory_reset_peak_usage();
-    $mulai = microtime(true);
     $respons = unduhPdf($sekolah, 1);
-    $detik = microtime(true) - $mulai;
     $puncak = memory_get_peak_usage(true);
-
-    fwrite(STDOUT, sprintf(
-        "\n  Uji beban PDF: 60 JPEG @ %d KB, PDF %.1f MB, puncak memori %.1f MB, %.2f detik\n",
-        strlen($jpeg) / 1024,
-        strlen((string) $respons->getContent()) / 1024 / 1024,
-        $puncak / 1024 / 1024,
-        $detik,
-    ));
 
     $respons->assertOk();
     expect($puncak)->toBeLessThan(256 * 1024 * 1024)

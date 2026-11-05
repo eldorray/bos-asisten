@@ -139,6 +139,48 @@ test('kisi dua kolom dua baris per lembar', function () {
         ->and($f1->y + $f1->tinggi)->toBeLessThanOrEqual($f3->y);
 });
 
+test('lampiran pertama berupa kisi memulai kisi dua kolom di sisa lembar, bukan satu foto penuh', function () {
+    $lembar = TataLetakPdf::susun([new BlokPdf([null], [
+        lampiranKisi('f1.jpg'),
+        lampiranKisi('f2.jpg'),
+        lampiranKisi('f3.jpg'),
+    ])]);
+
+    expect(isiTiapLembar($lembar))->toBe([
+        ['kuitansi', 'f1.jpg', 'f2.jpg'],
+        ['f3.jpg'],
+    ]);
+
+    [, $f1, $f2] = $lembar[0]->penempatan;
+    $selKisi = TataLetakPdf::susun([new BlokPdf([null, null, null], [lampiranKisi('a.jpg'), lampiranKisi('b.jpg')])])[1]->penempatan[0];
+
+    fotoDiDalamMargin($f1);
+    fotoDiDalamMargin($f2);
+    expect($f1->y)->toBeGreaterThanOrEqual(107.0)
+        ->and($f1->y)->toBe($f2->y)
+        ->and($f1->x + $f1->lebar)->toBeLessThanOrEqual($f2->x)
+        ->and($f1->lebar)->toEqualWithDelta($selKisi->lebar, 0.01)
+        ->and($f1->tinggi)->toEqualWithDelta($selKisi->tinggi, 0.01);
+});
+
+test('sisa lembar yang lebih pendek dari sel kisi tidak dipakai kisi', function () {
+    $lembar = TataLetakPdf::susun([new BlokPdf([null, null], [lampiranKisi('f1.jpg'), lampiranKisi('f2.jpg')])]);
+
+    expect(isiTiapLembar($lembar))->toBe([
+        ['kuitansi', 'kuitansi'],
+        ['f1.jpg', 'f2.jpg'],
+    ]);
+});
+
+test('lampiran penuh setelah kisi pertama tidak masuk sisa lembar', function () {
+    $lembar = TataLetakPdf::susun([new BlokPdf([null], [lampiranKisi('f1.jpg'), lampiranPenuh('lama.jpg')])]);
+
+    expect(isiTiapLembar($lembar))->toBe([
+        ['kuitansi', 'f1.jpg'],
+        ['lama.jpg'],
+    ]);
+});
+
 test('urutan lampiran dipertahankan, foto sisa lampiran penuh dan kisi berbagi lembar', function () {
     $lembar = TataLetakPdf::susun([new BlokPdf([null], [
         lampiranPenuh('undangan.jpg'),

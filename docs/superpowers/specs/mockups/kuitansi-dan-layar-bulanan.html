@@ -1,0 +1,180 @@
+<style>
+  .sheet-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1rem; }
+  .sheet-grid .card-image { aspect-ratio: auto; padding: 14px; display: block; }
+  .sheet { background: #fff; color: #111; width: 100%; max-width: 360px; margin: 0 auto; aspect-ratio: 210 / 297; box-shadow: 0 1px 6px rgba(0,0,0,.25); display: flex; flex-direction: column; font-family: Arial, Helvetica, sans-serif; overflow: hidden; }
+  .kw { flex: 1 1 0; min-height: 0; padding: 9px 12px; border-bottom: 1px dashed #999; display: flex; flex-direction: column; font-size: 7.5px; line-height: 1.35; }
+  .kw:last-child { border-bottom: 0; }
+  .kw-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #111; padding-bottom: 2px; margin-bottom: 4px; }
+  .kw-head b { font-size: 9px; letter-spacing: .3px; }
+  .kw-row { display: grid; grid-template-columns: 76px 1fr; }
+  .kw.tight .kw-row { grid-template-columns: 26px 1fr; }
+  .kw-row span:first-child { color: #555; }
+  .kw-amt { font-weight: 700; font-size: 10px; margin: 3px 0 1px; }
+  .kw-sign { margin-top: auto; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 4px; }
+  .kw-sign .gap { height: 24px; }
+  .kw.tight { padding: 7px 10px; font-size: 7px; }
+  .kw.tight .kw-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
+  .kw.tight .kw-sign .gap { height: 17px; }
+  .rekap { padding: 11px 12px; font-size: 7px; line-height: 1.3; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; }
+  .rekap table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+  .rekap th, .rekap td { border: 1px solid #333; padding: 2.5px 3px; text-align: left; vertical-align: top; }
+  .rekap th { background: #eee; }
+  .num { text-align: right !important; white-space: nowrap; }
+  .sv { background: #fff; color: #1a1a1a; border-radius: 6px; padding: 16px; font-size: 13px; line-height: 1.4; }
+  .sv-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .sv-month { font-size: 18px; font-weight: 700; }
+  .sv-pill { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .ok { background: #dcf5e3; color: #116329; }
+  .warn { background: #fff0c9; color: #7a5200; }
+  .todo { background: #fde0dd; color: #a31515; }
+  .sv-school { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; font-weight: 700; padding: 8px 0 5px; border-bottom: 2px solid #1a1a1a; margin-top: 12px; }
+  .sv-school small { font-weight: 500; color: #555; font-size: 12px; }
+  .sv-row { display: grid; grid-template-columns: minmax(150px, 2fr) 92px minmax(160px, 2fr) 76px; gap: 10px; padding: 7px 0; border-bottom: 1px solid #e5e5e5; align-items: center; }
+  .sv-row small { display: block; color: #666; font-size: 11px; }
+  .doc { font-size: 11.5px; }
+  .doc i { font-style: normal; color: #a31515; font-weight: 600; }
+  .sv-unset { margin-top: 10px; padding: 10px 12px; background: #fff8e6; border: 1px solid #f0d890; border-radius: 6px; }
+  .sv-unset-row { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 4px 0; font-size: 12.5px; }
+  .fake-select { border: 1px solid #aaa; border-radius: 4px; padding: 1px 6px; font-size: 11.5px; background: #fff; white-space: nowrap; }
+</style>
+
+<h2>1. Layar utama: "Bulan ini ada apa saja?"</h2>
+<p class="subtitle">Kegiatan dan nominal diambil dari PDF Anda. Status centang hanya contoh, bukan data sebenarnya.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Contoh layar: Januari 2026</div>
+  <div class="mockup-body">
+    <div class="sv">
+      <div class="sv-top">
+        <div class="sv-month">‹ Januari 2026 ›</div>
+        <div><span class="sv-pill ok">5 selesai</span> <span class="sv-pill warn">3 kurang berkas</span> <span class="sv-pill todo">2 belum mulai</span></div>
+      </div>
+
+      <div class="sv-school"><span>SMP Garuda <small>· ARKAS</small></span><small>Rp 15.100.000</small></div>
+      <div class="sv-row"><div>Gaji Petugas Administrasi<small>25 hari × 50.000</small></div><div class="num">1.250.000</div><div class="doc">✓ Kuitansi</div><div><span class="sv-pill ok">Selesai</span></div></div>
+      <div class="sv-row"><div>Gaji Petugas Kebersihan<small>25 hari × 100.000</small></div><div class="num">2.500.000</div><div class="doc">✓ Kuitansi</div><div><span class="sv-pill ok">Selesai</span></div></div>
+      <div class="sv-row"><div>Gaji Petugas Keamanan<small>25 hari × 100.000</small></div><div class="num">2.500.000</div><div class="doc">✓ Kuitansi</div><div><span class="sv-pill ok">Selesai</span></div></div>
+      <div class="sv-row"><div>Gaji Operator Sekolah<small>25 hari × 150.000</small></div><div class="num">3.750.000</div><div class="doc"><i>✗ Kuitansi</i></div><div><span class="sv-pill todo">Belum</span></div></div>
+      <div class="sv-row"><div>Listrik</div><div class="num">3.600.000</div><div class="doc">✓ Kuitansi · <i>✗ Struk bayar</i></div><div><span class="sv-pill warn">Kurang 1</span></div></div>
+      <div class="sv-row"><div>Internet</div><div class="num">1.500.000</div><div class="doc">✓ Kuitansi · ✓ Struk bayar</div><div><span class="sv-pill ok">Selesai</span></div></div>
+
+      <div class="sv-school"><span>MI Daarul Hikmah <small>· ERKAM Tahap I</small></span><small>Rp 19.060.000 rutin</small></div>
+      <div class="sv-row"><div>Gaji/Honor Rutin PTK<small>1 dari 6 bulan</small></div><div class="num">15.960.000</div><div class="doc">✓ Kuitansi</div><div><span class="sv-pill ok">Selesai</span></div></div>
+      <div class="sv-row"><div>Listrik Pascabayar<small>1 dari 6 bulan</small></div><div class="num">1.000.000</div><div class="doc">✓ Kuitansi · <i>✗ Struk bayar</i></div><div><span class="sv-pill warn">Kurang 1</span></div></div>
+      <div class="sv-row"><div>Internet Pascabayar<small>1 dari 6 bulan</small></div><div class="num">1.500.000</div><div class="doc">✓ Kuitansi · <i>✗ Struk bayar</i></div><div><span class="sv-pill warn">Kurang 1</span></div></div>
+      <div class="sv-row"><div>Retribusi Sampah<small>1 dari 6 bulan</small></div><div class="num">600.000</div><div class="doc"><i>✗ Kuitansi</i> · <i>✗ Bukti bayar</i></div><div><span class="sv-pill todo">Belum</span></div></div>
+
+      <div class="sv-unset">
+        <b>10 kegiatan Tahap I MI belum punya bulan</b> — pilih bulannya agar tidak terlewat
+        <div class="sv-unset-row" style="margin-top:6px"><span>Pagar Besi · Rp 15.770.000</span><span class="fake-select">Pilih bulan ▾</span></div>
+        <div class="sv-unset-row"><span>Filling Cabinet · Rp 4.000.000</span><span class="fake-select">Pilih bulan ▾</span></div>
+        <div class="sv-unset-row"><span>Nasi Kotak + minum (42 guru) · Rp 1.470.000 <span class="sv-pill warn">Jenis: Rapat/Pelatihan</span></span><span class="fake-select">Pilih bulan ▾</span></div>
+        <div class="sv-unset-row" style="color:#666">… 7 lainnya</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2 style="margin-top:2rem">2. Kuitansi ARKAS: mana yang paling pas?</h2>
+<p class="subtitle">Ketiganya selembar A4. Kuitansi ERKAM Anda sekarang memakai 1 halaman per kuitansi. Klik untuk memilih.</p>
+
+<div class="sheet-grid">
+
+  <div class="card" data-choice="dua-per-a4" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="sheet">
+      <div class="kw">
+        <div class="kw-head"><b>KUITANSI / BUKTI PEMBAYARAN</b><span>No. 011/01/SMPG/2026</span></div>
+        <div class="kw-row"><span>Sudah terima dari</span><span>Kepala Sekolah SMP Garuda</span></div>
+        <div class="kw-row"><span>Untuk pembayaran</span><span>Listrik Januari 2026</span></div>
+        <div class="kw-row"><span>Sumber dana</span><span>BOSP Reguler 2026</span></div>
+        <div class="kw-row"><span>Kode</span><span>5.1.02.02.01.0061 · 06.07.01</span></div>
+        <div class="kw-amt">Rp 3.600.000</div>
+        <div><i>Tiga juta enam ratus ribu rupiah</i></div>
+        <div class="kw-sign" style="padding-top:5px">
+          <div>Kepala Sekolah<div class="gap"></div><b>Fahmie Al Khudhorie</b></div>
+          <div>Bendahara<div class="gap"></div><b>Dra. Nurjanah</b></div>
+          <div>Lunas 31-01-2026<br>Penerima<div class="gap" style="height:15px"></div><b>PLN</b></div>
+        </div>
+      </div>
+      <div class="kw">
+        <div class="kw-head"><b>KUITANSI / BUKTI PEMBAYARAN</b><span>No. 012/01/SMPG/2026</span></div>
+        <div class="kw-row"><span>Sudah terima dari</span><span>Kepala Sekolah SMP Garuda</span></div>
+        <div class="kw-row"><span>Untuk pembayaran</span><span>Internet Januari 2026</span></div>
+        <div class="kw-row"><span>Sumber dana</span><span>BOSP Reguler 2026</span></div>
+        <div class="kw-row"><span>Kode</span><span>5.1.02.02.01.0063 · 06.07.05</span></div>
+        <div class="kw-amt">Rp 1.500.000</div>
+        <div><i>Satu juta lima ratus ribu rupiah</i></div>
+        <div class="kw-sign" style="padding-top:5px">
+          <div>Kepala Sekolah<div class="gap"></div><b>Fahmie Al Khudhorie</b></div>
+          <div>Bendahara<div class="gap"></div><b>Dra. Nurjanah</b></div>
+          <div>Lunas 31-01-2026<br>Penerima<div class="gap" style="height:15px"></div><b>Penyedia internet</b></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="card-body">
+      <h3>A. 2 kuitansi per lembar</h3>
+      <p>Hemat 50%. Paling mirip kuitansi biasa, tanda tangan lega.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="tiga-per-a4" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="sheet">
+      <div class="kw tight">
+        <div class="kw-head"><b>KUITANSI</b><span>No. 007/01/SMPG/2026 · Lunas 31-01-2026</span></div>
+        <div class="kw-cols">
+          <div><div class="kw-row"><span>Untuk</span><span>Gaji Petugas Administrasi Januari 2026</span></div><div class="kw-row"><span>Dana</span><span>BOSP Reguler 2026</span></div></div>
+          <div><div class="kw-amt" style="margin-top:0">Rp 1.250.000</div><i>Satu juta dua ratus lima puluh ribu rupiah</i></div>
+        </div>
+        <div class="kw-sign"><div>Kepala Sekolah<div class="gap"></div><b>Fahmie Al Khudhorie</b></div><div>Bendahara<div class="gap"></div><b>Dra. Nurjanah</b></div><div>Penerima<div class="gap"></div><b>(nama petugas)</b></div></div>
+      </div>
+      <div class="kw tight">
+        <div class="kw-head"><b>KUITANSI</b><span>No. 008/01/SMPG/2026 · Lunas 31-01-2026</span></div>
+        <div class="kw-cols">
+          <div><div class="kw-row"><span>Untuk</span><span>Gaji Petugas Kebersihan Januari 2026</span></div><div class="kw-row"><span>Dana</span><span>BOSP Reguler 2026</span></div></div>
+          <div><div class="kw-amt" style="margin-top:0">Rp 2.500.000</div><i>Dua juta lima ratus ribu rupiah</i></div>
+        </div>
+        <div class="kw-sign"><div>Kepala Sekolah<div class="gap"></div><b>Fahmie Al Khudhorie</b></div><div>Bendahara<div class="gap"></div><b>Dra. Nurjanah</b></div><div>Penerima<div class="gap"></div><b>(nama petugas)</b></div></div>
+      </div>
+      <div class="kw tight">
+        <div class="kw-head"><b>KUITANSI</b><span>No. 009/01/SMPG/2026 · Lunas 31-01-2026</span></div>
+        <div class="kw-cols">
+          <div><div class="kw-row"><span>Untuk</span><span>Gaji Petugas Keamanan Januari 2026</span></div><div class="kw-row"><span>Dana</span><span>BOSP Reguler 2026</span></div></div>
+          <div><div class="kw-amt" style="margin-top:0">Rp 2.500.000</div><i>Dua juta lima ratus ribu rupiah</i></div>
+        </div>
+        <div class="kw-sign"><div>Kepala Sekolah<div class="gap"></div><b>Fahmie Al Khudhorie</b></div><div>Bendahara<div class="gap"></div><b>Dra. Nurjanah</b></div><div>Penerima<div class="gap"></div><b>(nama petugas)</b></div></div>
+      </div>
+    </div></div>
+    <div class="card-body">
+      <h3>B. 3 kuitansi per lembar</h3>
+      <p>Hemat 67%. Tiap kuitansi tetap utuh, tapi tanda tangan lebih sempit.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="rekap-per-bulan" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="sheet">
+      <div class="rekap">
+        <div style="text-align:center"><b style="font-size:9px">DAFTAR PENERIMAAN PEMBAYARAN</b><br>SMP Garuda · Januari 2026 · BOSP Reguler</div>
+        <table>
+          <tr><th>No</th><th>Untuk pembayaran</th><th class="num">Jumlah</th><th style="width:62px">Tanda tangan penerima</th></tr>
+          <tr><td>007</td><td>Gaji Petugas Administrasi</td><td class="num">1.250.000</td><td style="height:27px"></td></tr>
+          <tr><td>008</td><td>Gaji Petugas Kebersihan</td><td class="num">2.500.000</td><td style="height:27px"></td></tr>
+          <tr><td>009</td><td>Gaji Petugas Keamanan</td><td class="num">2.500.000</td><td style="height:27px"></td></tr>
+          <tr><td>010</td><td>Gaji Operator Sekolah</td><td class="num">3.750.000</td><td style="height:27px"></td></tr>
+          <tr><td>011</td><td>Listrik (PLN)</td><td class="num">3.600.000</td><td style="height:27px"></td></tr>
+          <tr><td>012</td><td>Internet</td><td class="num">1.500.000</td><td style="height:27px"></td></tr>
+          <tr><td colspan="2"><b>Jumlah</b></td><td class="num"><b>15.100.000</b></td><td></td></tr>
+        </table>
+        <div style="margin-top:4px"><i>Lima belas juta seratus ribu rupiah</i></div>
+        <div class="kw-sign" style="grid-template-columns:1fr 1fr">
+          <div>Kepala Sekolah<div class="gap" style="height:30px"></div><b>Fahmie Al Khudhorie</b></div>
+          <div>Bendahara<div class="gap" style="height:30px"></div><b>Dra. Nurjanah</b></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="card-body">
+      <h3>C. Satu daftar per bulan</h3>
+      <p>Paling hemat: 6 kuitansi jadi 1 lembar. Perlu dipastikan pemeriksa menerima bentuk ini.</p>
+    </div>
+  </div>
+
+</div>

@@ -174,19 +174,25 @@ test('kegiatan dihapus hanya kalau sudah hilang dari anggaran', function () {
 
 test('menghapus kegiatan yang hilang menghapus foto, file, dan kuitansi miliknya sendiri', function () {
     Storage::fake('local');
-    $kegiatan = Kegiatan::factory()->create(['hilang_dari_anggaran' => true]);
+    $kegiatan = Kegiatan::factory()->create(['hilang_dari_anggaran' => true, 'tahun' => 2026, 'bulan' => 3]);
     Storage::disk('local')->put('foto/a.jpg', 'x');
     $foto = Foto::factory()->create(['pemilik_type' => Kegiatan::class, 'pemilik_id' => $kegiatan->id, 'path' => 'foto/a.jpg']);
     $kuitansi = Kuitansi::factory()->create(['sekolah_id' => $kegiatan->sekolah_id]);
     $kegiatan->kuitansi()->attach($kuitansi);
 
-    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard'));
+    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard', ['bulan' => '2026-03']));
 
     expect(Kegiatan::find($kegiatan->id))->toBeNull()
         ->and(Foto::find($foto->id))->toBeNull()
         ->and(Storage::disk('local')->exists('foto/a.jpg'))->toBeFalse()
         ->and(DB::table('kegiatan_kuitansi')->where('kegiatan_id', $kegiatan->id)->count())->toBe(0)
         ->and(Kuitansi::find($kuitansi->id))->toBeNull();
+});
+
+test('menghapus kegiatan ERKAM tanpa bulan kembali ke bulan pertama tahapnya', function () {
+    $kegiatan = Kegiatan::factory()->create(['hilang_dari_anggaran' => true, 'tahun' => 2026, 'bulan' => null, 'tahap' => 2]);
+
+    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard', ['bulan' => '2026-07']));
 });
 
 test('halaman rincian kegiatan tampil', function () {

@@ -112,6 +112,7 @@ class KegiatanController extends Controller
         abort_unless($kegiatan->hilang_dari_anggaran, 422, 'Hanya kegiatan yang sudah tidak ada di anggaran yang boleh dihapus.');
 
         $kuitansi = $kegiatan->kuitansi()->first();
+        $bulanLayar = $kegiatan->bulan ?? ($kegiatan->tahap === null ? null : ($kegiatan->tahap - 1) * 6 + 1);
 
         abort_if(
             $kuitansi !== null && $kuitansi->kegiatans()->count() > 1,
@@ -136,7 +137,7 @@ class KegiatanController extends Controller
             }
         });
 
-        return to_route('dashboard');
+        return to_route('dashboard', $bulanLayar === null ? [] : ['bulan' => sprintf('%04d-%02d', $kegiatan->tahun, $bulanLayar)]);
     }
 
     /**

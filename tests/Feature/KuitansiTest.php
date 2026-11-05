@@ -523,7 +523,7 @@ test('hapus kegiatan hilang ikut menghapus kuitansi yang hanya mencakup dia', fu
     $kegiatan = kegiatanGaji(sekolahSmp(), 1, ['hilang_dari_anggaran' => true]);
     $this->post(route('kuitansi.store', $kegiatan), isianKuitansi())->assertSessionHasNoErrors();
 
-    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard'));
+    $this->delete(route('kegiatan.destroy', $kegiatan))->assertRedirect(route('dashboard', ['bulan' => '2026-01']));
 
     expect(Kuitansi::count())->toBe(0)->and(DB::table('kegiatan_kuitansi')->count())->toBe(0)->and(Kegiatan::count())->toBe(0);
 });

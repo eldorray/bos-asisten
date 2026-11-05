@@ -10,11 +10,13 @@
 </script>
 
 <script lang="ts">
-    import { useForm } from '@inertiajs/svelte';
+    import { router, useForm } from '@inertiajs/svelte';
+    import FotoController from '@/actions/App/Http/Controllers/FotoController';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import UnggahBerkas from '@/components/spj/UnggahBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { Button } from '@/components/ui/button';
     import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,9 +49,11 @@
 
     let {
         kegiatan,
+        berkasFoto,
         jenisKegiatans,
     }: {
         kegiatan: Rincian;
+        berkasFoto: { id: number; nama: string; fotos: { id: number }[] }[];
         jenisKegiatans: { id: number; nama: string }[];
     } = $props();
 
@@ -67,6 +71,14 @@
         jenis.submit(KegiatanController.update(kegiatan.id), {
             preserveScroll: true,
         });
+    }
+
+    function hapusFoto(id: number): void {
+        if (!confirm('Hapus foto ini?')) {
+            return;
+        }
+
+        router.delete(FotoController.destroy(id), { preserveScroll: true });
     }
 
     function simpanStatus(event: SubmitEvent): void {
@@ -141,6 +153,44 @@
             </CardContent>
         </Card>
     </div>
+
+    <section class="grid gap-4">
+        <h2 class="text-base font-semibold">Foto berkas</h2>
+        {#each berkasFoto as berkas (berkas.id)}
+            <div class="grid gap-2 rounded-md border p-3">
+                <h3 class="text-sm font-medium">{berkas.nama}</h3>
+                {#if berkas.fotos.length > 0}
+                    <div class="flex flex-wrap gap-2">
+                        {#each berkas.fotos as foto (foto.id)}
+                            <div class="grid gap-1">
+                                <a
+                                    href={FotoController.show.url(foto.id)}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    <img
+                                        src={FotoController.show.url(foto.id)}
+                                        alt={`Foto ${berkas.nama}`}
+                                        loading="lazy"
+                                        class="h-28 w-28 rounded-md border object-cover"
+                                    />
+                                </a>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onclick={() => hapusFoto(foto.id)}
+                                >
+                                    Hapus
+                                </Button>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+                <UnggahBerkas kegiatanId={kegiatan.id} jenisBerkasId={berkas.id} />
+            </div>
+        {/each}
+    </section>
 
     <form class="grid max-w-xl gap-3" onsubmit={simpanJenis}>
         <Label for="jenis">Jenis kegiatan</Label>

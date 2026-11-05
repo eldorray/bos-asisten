@@ -8,6 +8,7 @@ use App\Actions\HitungStatusKegiatan;
 use App\Enums\StatusManual;
 use App\Http\Requests\TandaiKegiatanRequest;
 use App\Http\Requests\UpdateKegiatanRequest;
+use App\Models\Foto;
 use App\Models\JenisKegiatan;
 use App\Models\Kegiatan;
 use Illuminate\Http\RedirectResponse;
@@ -47,6 +48,7 @@ class KegiatanController extends Controller
                     'nomor' => $status->kuitansiRapel->nomor,
                 ],
             ],
+            'berkasFoto' => $this->berkasFoto($kegiatan),
             'jenisKegiatans' => JenisKegiatan::query()->orderBy('urutan')->get(['id', 'nama']),
         ]);
     }
@@ -89,5 +91,25 @@ class KegiatanController extends Controller
         });
 
         return to_route('dashboard');
+    }
+
+    /**
+     * @return list<array{id: int, nama: string, fotos: list<array{id: int}>}>
+     */
+    private function berkasFoto(Kegiatan $kegiatan): array
+    {
+        $fotos = $kegiatan->pemilikBerkas()->fotos->sortBy('urutan');
+
+        $daftar = [];
+
+        foreach ($kegiatan->jenisKegiatan->jenisBerkas as $berkas) {
+            $daftar[] = [
+                'id' => $berkas->id,
+                'nama' => $berkas->nama,
+                'fotos' => array_values($fotos->where('jenis_berkas_id', $berkas->id)->map(fn (Foto $foto): array => ['id' => $foto->id])->all()),
+            ];
+        }
+
+        return $daftar;
     }
 }

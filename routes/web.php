@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BulanController;
+use App\Http\Controllers\FotoController;
 use App\Http\Controllers\ImporController;
 use App\Http\Controllers\JenisKegiatanController;
 use App\Http\Controllers\KegiatanController;
@@ -15,6 +16,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('kegiatan/{kegiatan}', [KegiatanController::class, 'show'])->name('kegiatan.show');
     Route::patch('kegiatan/{kegiatan}', [KegiatanController::class, 'update'])->name('kegiatan.update');
     Route::delete('kegiatan/{kegiatan}', [KegiatanController::class, 'destroy'])->name('kegiatan.destroy');
+    Route::post('kegiatan/{kegiatan}/foto', [FotoController::class, 'store'])->name('foto.store');
+    Route::get('foto/{foto}', [FotoController::class, 'show'])->name('foto.show');
+    Route::delete('foto/{foto}', [FotoController::class, 'destroy'])->name('foto.destroy');
     Route::post('kegiatan-tandai', [KegiatanController::class, 'tandai'])->name('kegiatan.tandai');
 
     Route::get('impor', [ImporController::class, 'index'])->name('impor.index');

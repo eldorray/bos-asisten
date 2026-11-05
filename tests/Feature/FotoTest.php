@@ -177,6 +177,15 @@ test('tamu diarahkan ke login dan pengguna boleh melihat foto', function () {
     $this->delete(route('foto.destroy', $foto))->assertRedirect(route('login'));
 });
 
+test('foto yang berkasnya hilang dari disk menghasilkan 404', function () {
+    [$kegiatan, $berkas] = kegiatanDenganBerkas();
+    unggah($kegiatan, $berkas, UploadedFile::fake()->createWithContent('a.jpg', jpegBytes(100, 100)));
+    $foto = Foto::firstOrFail();
+    Storage::disk('local')->delete($foto->path);
+
+    $this->get(route('foto.show', $foto))->assertNotFound();
+});
+
 test('menghapus foto menghapus berkasnya', function () {
     [$kegiatan, $berkas] = kegiatanDenganBerkas();
     unggah($kegiatan, $berkas, UploadedFile::fake()->createWithContent('a.jpg', jpegBytes(100, 100)));

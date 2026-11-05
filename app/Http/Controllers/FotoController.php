@@ -26,7 +26,11 @@ class FotoController extends Controller
 
     public function show(Foto $foto): BinaryFileResponse
     {
-        return response()->file(Storage::disk('local')->path($foto->path), [
+        $disk = Storage::disk('local');
+
+        abort_unless($disk->exists($foto->path), 404);
+
+        return response()->file($disk->path($foto->path), [
             'Cache-Control' => 'private, max-age=86400',
         ]);
     }

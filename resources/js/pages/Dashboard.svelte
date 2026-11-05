@@ -23,6 +23,7 @@
     import KotakBelumBerbulan from '@/components/spj/KotakBelumBerbulan.svelte';
     import SaranAcara from '@/components/spj/SaranAcara.svelte';
     import PemilihBulan from '@/components/spj/PemilihBulan.svelte';
+    import UnduhPdf from '@/components/spj/UnduhPdf.svelte';
     import { namaBulan, rupiah } from '@/types';
     import type { SekolahBulan } from '@/types';
 
@@ -133,14 +134,17 @@
                         <Button size="sm" variant="outline" onclick={batalTandai}>
                             Batal
                         </Button>
-                    {:else if s.kegiatan.length > 0}
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onclick={() => mulaiTandai(s)}
-                        >
-                            Tandai sudah di luar aplikasi
-                        </Button>
+                    {:else}
+                        <UnduhPdf sekolah={s} {bulan} />
+                        {#if s.kegiatan.length > 0}
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onclick={() => mulaiTandai(s)}
+                            >
+                                Tandai sudah di luar aplikasi
+                            </Button>
+                        {/if}
                     {/if}
                 </div>
             </div>

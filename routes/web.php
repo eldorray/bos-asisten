@@ -7,6 +7,7 @@ use App\Http\Controllers\ImporController;
 use App\Http\Controllers\JenisKegiatanController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KuitansiController;
+use App\Http\Controllers\PdfBulananController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('acara', [AcaraController::class, 'store'])->name('acara.store');
     Route::delete('acara/{acara}', [AcaraController::class, 'destroy'])->name('acara.destroy');
     Route::post('kegiatan-tandai', [KegiatanController::class, 'tandai'])->name('kegiatan.tandai');
+
+    Route::get('sekolah/{sekolah}/pdf/{tahun}/{bulan}', PdfBulananController::class)
+        ->where(['tahun' => '\d{4}', 'bulan' => '0?[1-9]|1[0-2]'])
+        ->name('pdf.bulanan');
 
     Route::get('impor', [ImporController::class, 'index'])->name('impor.index');
     Route::post('impor/pratinjau', [ImporController::class, 'pratinjau'])->name('impor.pratinjau');

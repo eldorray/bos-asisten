@@ -10,7 +10,7 @@
     let {
         kegiatan,
         pilihan = null,
-        dipilih = $bindable(false),
+        dipilih = $bindable(),
     }: {
         kegiatan: BarisKegiatanData;
         pilihan?: 'tandai' | null;

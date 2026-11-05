@@ -4,6 +4,7 @@ use App\Enums\SistemAnggaran;
 use App\Enums\TataLetakBerkas;
 use App\Models\Acara;
 use App\Models\Foto;
+use App\Models\JenisBerkas;
 use App\Models\JenisKegiatan;
 use App\Models\Kegiatan;
 use App\Models\Kuitansi;
@@ -51,15 +52,20 @@ it('mengisi jenis kegiatan awal beserta berkasnya', function () {
     expect($lainnya->cadangan)->toBeTrue()->and($lainnya->kata_kunci)->toBe([]);
 });
 
-it('aman dijalankan dua kali dan tidak menimpa nomor awal', function () {
-    Sekolah::where('kode_bukti', 'SMPG')->update(['nomor_awal' => ['2026' => 12]]);
+it('aman dijalankan dua kali dan tidak menimpa ubahan pemilik', function () {
+    Sekolah::where('kode_bukti', 'SMPG')->update(['nomor_awal' => ['2026' => 12], 'nama_kepala' => 'Kepala Baru']);
+    JenisKegiatan::where('nama', 'Langganan')->update(['kata_kunci' => ['air']]);
+    JenisBerkas::where('nama', 'Dokumentasi foto')->update(['tata_letak' => TataLetakBerkas::Penuh]);
 
     $this->seed(DataAwalSeeder::class);
 
     expect(Sekolah::count())->toBe(2)
         ->and(JenisKegiatan::count())->toBe(5)
         ->and(JenisKegiatan::where('nama', 'Rapat/Pelatihan')->firstOrFail()->jenisBerkas)->toHaveCount(4)
-        ->and(Sekolah::where('kode_bukti', 'SMPG')->firstOrFail()->nomor_awal)->toBe(['2026' => 12]);
+        ->and(Sekolah::where('kode_bukti', 'SMPG')->firstOrFail()->nomor_awal)->toBe(['2026' => 12])
+        ->and(Sekolah::where('kode_bukti', 'SMPG')->firstOrFail()->nama_kepala)->toBe('Kepala Baru')
+        ->and(JenisKegiatan::where('nama', 'Langganan')->firstOrFail()->kata_kunci)->toBe(['air'])
+        ->and(JenisBerkas::where('nama', 'Dokumentasi foto')->firstOrFail()->tata_letak)->toBe(TataLetakBerkas::Penuh);
 });
 
 it('mengembalikan acara sebagai pemilik berkas kalau kegiatan punya acara', function () {

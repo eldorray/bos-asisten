@@ -46,20 +46,13 @@ class DataAwalSeeder extends Seeder
     }
 
     /**
-     * nomor_awal hanya diisi saat sekolah baru dibuat, supaya pengaturan pemilik tidak tertimpa.
+     * Baris yang sudah ada tidak disentuh, supaya ubahan pemilik tidak tertimpa.
      *
      * @param  array<string, mixed>  $atribut
      */
     private function simpanSekolah(string $identitas, array $atribut): void
     {
-        $sekolah = Sekolah::firstOrNew(['identitas' => $identitas]);
-        $sekolah->fill($atribut);
-
-        if (! $sekolah->exists) {
-            $sekolah->nomor_awal = [];
-        }
-
-        $sekolah->save();
+        Sekolah::firstOrCreate(['identitas' => $identitas], $atribut + ['nomor_awal' => []]);
     }
 
     private function jenisKegiatan(): void
@@ -102,14 +95,14 @@ class DataAwalSeeder extends Seeder
         $urutan = 0;
 
         foreach ($jenis as $nama => $data) {
-            $kegiatan = JenisKegiatan::updateOrCreate(['nama' => $nama], [
+            $kegiatan = JenisKegiatan::firstOrCreate(['nama' => $nama], [
                 'kata_kunci' => $data['kata_kunci'],
                 'urutan' => ++$urutan,
                 'cadangan' => $data['cadangan'] ?? false,
             ]);
 
             foreach ($data['berkas'] as $i => [$namaBerkas, $tataLetak]) {
-                $kegiatan->jenisBerkas()->updateOrCreate(['nama' => $namaBerkas], [
+                $kegiatan->jenisBerkas()->firstOrCreate(['nama' => $namaBerkas], [
                     'urutan' => $i + 1,
                     'tata_letak' => $tataLetak,
                 ]);

@@ -11,8 +11,6 @@ use App\Enums\SistemAnggaran;
  */
 class ArkasParser
 {
-    private const TOLERANSI_BARIS = 1.5;
-
     private const JARAK_URAIAN_MAKS = 20.0;
 
     private const BULAN = [
@@ -42,8 +40,8 @@ class ArkasParser
         if ($terbaca !== $total) {
             throw new ImporDitolak(sprintf(
                 'Total tidak cocok: dokumen %s, terbaca %s. Impor dibatalkan.',
-                $this->rupiah($total),
-                $this->rupiah($terbaca),
+                BacaToken::rupiah($total),
+                BacaToken::rupiah($terbaca),
             ));
         }
 
@@ -73,8 +71,8 @@ class ArkasParser
         }
 
         foreach ($token as $nilai) {
-            if ($this->sebaris($nilai, $terakhir) && $nilai->x > 780) {
-                return $this->angka($nilai->teks, 'Jumlah total dokumen');
+            if (BacaToken::sebaris($nilai, $terakhir) && $nilai->x > 780) {
+                return BacaToken::angka($nilai->teks, 'Jumlah total dokumen');
             }
         }
 
@@ -92,7 +90,7 @@ class ArkasParser
             }
 
             foreach ($token as $nilai) {
-                if ($this->sebaris($nilai, $t) && abs($nilai->x - 135) <= 5) {
+                if (BacaToken::sebaris($nilai, $t) && abs($nilai->x - 135) <= 5) {
                     return $nilai->teks;
                 }
             }
@@ -138,7 +136,7 @@ class ArkasParser
             }
 
             foreach ($barisJumlah as $j) {
-                if ($this->sebaris($t, $j)) {
+                if (BacaToken::sebaris($t, $j)) {
                     continue 2;
                 }
             }
@@ -163,7 +161,7 @@ class ArkasParser
         $hasil = [];
 
         foreach ($jangkar as $i => $j) {
-            $kolom = array_values(array_filter($token, fn (Token $t) => $this->sebaris($t, $j)));
+            $kolom = array_values(array_filter($token, fn (Token $t) => BacaToken::sebaris($t, $j)));
             $kode = $this->kolom($kolom, 0, 160, fn (Token $t) => preg_match('/^\d(\.\d+){5}$/', $t->teks) === 1);
 
             $nomor = rtrim($j->teks, '.');
@@ -192,9 +190,9 @@ class ArkasParser
                 $program !== null ? rtrim(str_replace(' ', '', $program), '.') : null,
                 $this->susunUraian($uraianPerJangkar[$i] ?? []),
                 trim(($volume ?? '').' '.($satuan ?? '')),
-                $tarif !== null ? $this->angka($tarif, "Tarif pada baris {$nomor}") : 0,
+                $tarif !== null ? BacaToken::angka($tarif, "Tarif pada baris {$nomor}") : 0,
                 0,
-                $this->angka($jumlah, "Jumlah pada baris {$nomor}"),
+                BacaToken::angka($jumlah, "Jumlah pada baris {$nomor}"),
                 null,
             );
         }
@@ -227,29 +225,10 @@ class ArkasParser
      */
     private function susunUraian(array $potongan): string
     {
-        usort($potongan, fn (Token $a, Token $b) => abs($a->y - $b->y) <= self::TOLERANSI_BARIS
+        usort($potongan, fn (Token $a, Token $b) => abs($a->y - $b->y) <= BacaToken::TOLERANSI_BARIS
             ? $a->x <=> $b->x
             : $b->y <=> $a->y);
 
         return trim(implode(' ', array_map(fn (Token $t) => $t->teks, $potongan)));
-    }
-
-    private function sebaris(Token $a, Token $b): bool
-    {
-        return $a->halaman === $b->halaman && abs($a->y - $b->y) <= self::TOLERANSI_BARIS;
-    }
-
-    private function angka(string $teks, string $konteks): int
-    {
-        if (preg_match('/^\d{1,3}(\.\d{3})*$|^\d+$/', $teks) !== 1) {
-            throw new ImporDitolak("{$konteks} tidak terbaca: \"{$teks}\".");
-        }
-
-        return (int) str_replace('.', '', $teks);
-    }
-
-    private function rupiah(int $nilai): string
-    {
-        return 'Rp '.number_format($nilai, 0, ',', '.');
     }
 }

@@ -50,6 +50,7 @@
     function kirim(item: Antrean, file: File): Promise<string | null> {
         return new Promise((selesai) => {
             let pesan: string | null = null;
+            let berhasil = false;
 
             router.post(
                 FotoController.store(kegiatanId),
@@ -58,6 +59,19 @@
                     forceFormData: true,
                     preserveScroll: true,
                     preserveState: true,
+                    onSuccess: () => {
+                        berhasil = true;
+                    },
+                    onHttpException: () => {
+                        pesan = 'Gagal mengunggah. Coba lagi.';
+
+                        return false;
+                    },
+                    onNetworkError: () => {
+                        pesan = 'Koneksi terputus. Coba lagi.';
+
+                        return false;
+                    },
                     onError: (errors) => {
                         pesan =
                             errors.foto ??
@@ -67,7 +81,12 @@
                     onCancel: () => {
                         pesan = 'Unggahan dibatalkan.';
                     },
-                    onFinish: () => selesai(pesan),
+                    onFinish: () =>
+                        selesai(
+                            berhasil
+                                ? null
+                                : (pesan ?? 'Gagal mengunggah. Coba lagi.'),
+                        ),
                 },
             );
         });

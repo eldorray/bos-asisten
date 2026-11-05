@@ -118,7 +118,7 @@
     >
         <Label
             for="files"
-            class="grid cursor-pointer justify-items-center gap-2.5 rounded-xl border border-dashed border-input bg-background px-5 py-8 text-center"
+            class="grid min-w-0 cursor-pointer justify-items-center gap-2.5 rounded-xl border border-dashed border-input bg-background px-5 py-8 text-center"
         >
             <span
                 class="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground"

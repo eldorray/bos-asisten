@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pengaturan/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::patch('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'update'])->name('sekolah.update');
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
+    Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 
     Route::resource('pengaturan/jenis-kegiatan', JenisKegiatanController::class)
         ->parameters(['jenis-kegiatan' => 'jenis_kegiatan'])

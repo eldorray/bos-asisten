@@ -199,3 +199,17 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Di luar @layer agar menang dari text-sm: iOS memperbesar halaman kalau input di bawah 16px. */
+@media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}

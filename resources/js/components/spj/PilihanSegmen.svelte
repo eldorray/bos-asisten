@@ -25,14 +25,14 @@
 <div
     role="group"
     aria-label={label}
-    class="flex max-w-full gap-0.5 overflow-x-auto rounded-xl bg-accent p-1"
+    class="grid max-w-full auto-cols-[minmax(max-content,1fr)] grid-flow-col gap-0.5 overflow-x-auto rounded-xl bg-accent p-1 md:flex"
 >
     {#each pilihan as p (p.nilai)}
         <button
             type="button"
             aria-pressed={p.nilai === nilai}
             class={cn(
-                'inline-flex h-11 shrink-0 items-center gap-2 rounded-[9px] px-3.5 text-sm font-medium focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[9px] px-2.5 text-sm font-medium focus-visible:ring-2 md:px-3.5 focus-visible:ring-ring focus-visible:outline-none',
                 p.nilai === nilai
                     ? 'bg-card shadow-xs'
                     : 'text-muted-foreground hover:text-foreground',

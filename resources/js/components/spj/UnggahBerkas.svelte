@@ -1,140 +1,57 @@
 <script lang="ts">
-    import { router } from '@inertiajs/svelte';
-    import FotoController from '@/actions/App/Http/Controllers/FotoController';
+    import Camera from '@lucide/svelte/icons/camera';
+    import Image from '@lucide/svelte/icons/image';
     import { Button } from '@/components/ui/button';
-    import { compressImage } from '@/lib/compressImage';
-
-    type Antrean = {
-        kunci: number;
-        file: File;
-        status: 'menunggu' | 'mengunggah' | 'gagal';
-        pesan: string | null;
-    };
+    import { antreanFoto } from '@/lib/antreanFoto.svelte';
 
     let {
         kegiatanId,
         jenisBerkasId,
+        onpilih,
     }: {
         kegiatanId: number;
         jenisBerkasId: number;
+        onpilih?: () => void;
     } = $props();
 
-    let antrean = $state<Antrean[]>([]);
-    let berjalan = false;
-    let kunciBerikut = 0;
+    const antrean = $derived(antreanFoto.untuk(kegiatanId, jenisBerkasId));
+
     let inputKamera: HTMLInputElement;
     let inputBerkas: HTMLInputElement;
 
     function tambah(event: Event): void {
         const input = event.currentTarget as HTMLInputElement;
-
-        for (const file of Array.from(input.files ?? [])) {
-            antrean.push({
-                kunci: kunciBerikut++,
-                file,
-                status: 'menunggu',
-                pesan: null,
-            });
-        }
+        const berkas = Array.from(input.files ?? []);
 
         input.value = '';
-        void jalankan();
-    }
 
-    function ulangi(item: Antrean): void {
-        item.status = 'menunggu';
-        item.pesan = null;
-        void jalankan();
-    }
-
-    function kirim(item: Antrean, file: File): Promise<string | null> {
-        return new Promise((resolve) => {
-            let pesan: string | null = null;
-            let berhasil = false;
-            // onFinish tidak berjalan saat kunjungan dibatalkan, jadi onCancel juga menyelesaikan.
-            const selesai = (): void =>
-                resolve(
-                    berhasil
-                        ? null
-                        : (pesan ?? 'Gagal mengunggah. Coba lagi.'),
-                );
-
-            router.post(
-                FotoController.store(kegiatanId),
-                { jenis_berkas_id: jenisBerkasId, foto: file },
-                {
-                    forceFormData: true,
-                    preserveScroll: true,
-                    preserveState: true,
-                    onSuccess: () => {
-                        berhasil = true;
-                    },
-                    onHttpException: () => {
-                        pesan = 'Gagal mengunggah. Coba lagi.';
-
-                        return false;
-                    },
-                    onNetworkError: () => {
-                        pesan = 'Koneksi terputus. Coba lagi.';
-
-                        return false;
-                    },
-                    onError: (errors) => {
-                        pesan =
-                            errors.foto ??
-                            errors.jenis_berkas_id ??
-                            'Gagal mengunggah.';
-                    },
-                    onCancel: () => {
-                        pesan = 'Unggahan dibatalkan.';
-                        selesai();
-                    },
-                    onFinish: selesai,
-                },
-            );
-        });
-    }
-
-    // Satu per satu: Inertia membatalkan kunjungan yang tumpang tindih.
-    async function jalankan(): Promise<void> {
-        if (berjalan) {
-            return;
-        }
-
-        berjalan = true;
-
-        try {
-            let item = antrean.find((a) => a.status === 'menunggu');
-
-            while (item) {
-                item.status = 'mengunggah';
-                const kecil = await compressImage(item.file);
-                const pesan = await kirim(item, kecil).catch(
-                    () => 'Koneksi terputus.',
-                );
-
-                if (pesan === null) {
-                    antrean = antrean.filter((a) => a.kunci !== item!.kunci);
-                } else {
-                    item.status = 'gagal';
-                    item.pesan = pesan;
-                }
-
-                item = antrean.find((a) => a.status === 'menunggu');
-            }
-        } finally {
-            berjalan = false;
+        if (berkas.length > 0) {
+            void antreanFoto.tambah(kegiatanId, jenisBerkasId, berkas);
+            onpilih?.();
         }
     }
 </script>
 
 <div class="grid gap-2">
     <div class="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onclick={() => inputKamera.click()}>
+        <Button
+            type="button"
+            variant="outline"
+            class="max-md:h-15 max-md:w-full max-md:border-0 max-md:bg-primary max-md:text-base max-md:font-semibold max-md:text-primary-foreground"
+            onclick={() => inputKamera.click()}
+        >
+            <Camera class="size-5 md:size-4" />
             Ambil foto
         </Button>
-        <Button type="button" variant="outline" onclick={() => inputBerkas.click()}>
-            Pilih file
+        <Button
+            type="button"
+            variant="outline"
+            class="max-md:h-13 max-md:w-full max-md:font-semibold"
+            onclick={() => inputBerkas.click()}
+        >
+            <Image class="size-5 md:size-4" />
+            <span class="md:hidden">Pilih dari galeri</span>
+            <span class="max-md:hidden">Pilih file</span>
         </Button>
         <input
             bind:this={inputKamera}
@@ -156,16 +73,29 @@
 
     {#each antrean as item (item.kunci)}
         <div class="flex flex-wrap items-center gap-2 text-sm">
-            <span class="max-w-48 truncate">{item.file.name}</span>
+            <span class="max-w-48 truncate">{item.namaFile}</span>
             {#if item.status === 'gagal'}
                 <span class="text-belum-foreground">{item.pesan}</span>
-                <Button type="button" size="sm" variant="outline" onclick={() => ulangi(item)}>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onclick={() => antreanFoto.ulangi(item)}
+                >
                     Coba lagi
+                </Button>
+                <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onclick={() => antreanFoto.buang(item)}
+                >
+                    Buang
                 </Button>
             {:else if item.status === 'mengunggah'}
                 <span class="text-muted-foreground">Mengunggah…</span>
             {:else}
-                <span class="text-muted-foreground">Menunggu</span>
+                <span class="text-kurang-foreground">Menunggu dikirim</span>
             {/if}
         </div>
     {/each}

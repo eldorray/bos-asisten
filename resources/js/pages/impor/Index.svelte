@@ -106,19 +106,19 @@
 
 <AppHead title="Impor Anggaran" />
 
-<div class="flex flex-col gap-5 p-5 md:p-7">
+<div class="flex flex-col gap-3.5 p-4 md:gap-5 md:p-7">
     <Heading
         title="Impor Anggaran"
         description="Unggah PDF kertas kerja ARKAS atau RKAM ERKAM. Periksa pratinjau dulu sebelum menyimpan."
     />
 
     <form
-        class="grid gap-3.5 rounded-[14px] border bg-card p-4"
+        class="grid grid-cols-1 gap-3.5 rounded-[14px] border bg-card p-4"
         onsubmit={kirimUnggah}
     >
         <Label
             for="files"
-            class="grid min-w-0 cursor-pointer justify-items-center gap-2.5 rounded-xl border border-dashed border-input bg-background px-5 py-8 text-center"
+            class="grid min-w-0 cursor-pointer grid-cols-1 justify-items-center gap-2.5 rounded-xl border border-dashed border-input bg-background px-5 py-8 text-center leading-normal"
         >
             <span
                 class="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground"
@@ -230,9 +230,12 @@
             </div>
 
             {#if bisaDisimpan.length > 0}
-                <div>
+                <div
+                    class="max-md:sticky max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] max-md:z-10 max-md:-mx-4 max-md:border-t max-md:bg-card max-md:px-4 max-md:py-2.5"
+                >
                     <InputError message={simpan.errors.tokens} />
                     <Button
+                        class="max-md:h-14 max-md:w-full max-md:text-base max-md:font-semibold"
                         onclick={kirimSimpan}
                         disabled={simpan.processing}
                     >

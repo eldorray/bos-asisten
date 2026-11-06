@@ -37,7 +37,41 @@
     }
 </script>
 
-<div class="flex max-w-full flex-wrap items-center gap-2">
+<!-- Di HP cukup satu kontrol ringkas; daftar bulan tetap terbuka lewat select bawaan. -->
+<div class="flex items-center rounded-xl border border-input bg-card p-0.5 md:hidden">
+    <button
+        type="button"
+        class="grid size-11 place-items-center"
+        aria-label="Bulan sebelumnya"
+        onclick={() => pergi(tahun, nomor - 1)}
+    >
+        <ChevronLeft class="size-[18px]" />
+    </button>
+    <label class="relative flex h-11 min-w-[76px] items-center justify-center text-sm font-semibold">
+        {namaBulan[nomor - 1].slice(0, 3)}
+        {tahun}
+        <select
+            class="absolute inset-0 opacity-0"
+            aria-label="Pilih bulan"
+            value={nomor}
+            onchange={(e) => pergi(tahun, Number(e.currentTarget.value))}
+        >
+            {#each namaBulan as nama, i (nama)}
+                <option value={i + 1}>{label(nama, i + 1)}</option>
+            {/each}
+        </select>
+    </label>
+    <button
+        type="button"
+        class="grid size-11 place-items-center"
+        aria-label="Bulan berikutnya"
+        onclick={() => pergi(tahun, nomor + 1)}
+    >
+        <ChevronRight class="size-[18px]" />
+    </button>
+</div>
+
+<div class="hidden max-w-full flex-wrap items-center gap-2 md:flex">
     <Button
         variant="outline"
         size="icon"

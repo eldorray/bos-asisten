@@ -10,18 +10,20 @@ use App\Models\Foto;
 use App\Models\JenisBerkas;
 use App\Models\Kegiatan;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FotoController extends Controller
 {
-    public function store(SimpanFotoRequest $request, Kegiatan $kegiatan, SimpanFoto $simpan): RedirectResponse
+    public function store(SimpanFotoRequest $request, Kegiatan $kegiatan, SimpanFoto $simpan): RedirectResponse|Response
     {
         $jenis = JenisBerkas::findOrFail($request->integer('jenis_berkas_id'));
 
         $simpan->jalankan($kegiatan, $jenis, $request->file('foto'));
 
-        return back();
+        // Antrean foto mengirim di latar belakang, tanpa memindahkan halaman yang sedang dibuka.
+        return $request->wantsJson() ? response()->noContent() : back();
     }
 
     public function show(Foto $foto): BinaryFileResponse

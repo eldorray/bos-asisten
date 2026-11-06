@@ -67,7 +67,7 @@ class NilaiAwalKuitansi
         }
 
         $daftar = array_values($semua);
-        usort($daftar, fn (Kegiatan $a, Kegiatan $b): int => ($a->bulan ?? 0) <=> ($b->bulan ?? 0));
+        usort($daftar, fn (Kegiatan $a, Kegiatan $b): int => ($a->bulanKerja() ?? 0) <=> ($b->bulanKerja() ?? 0));
 
         return $daftar;
     }
@@ -77,7 +77,7 @@ class NilaiAwalKuitansi
      */
     private static function bulanTerakhir(array $dicakup): int
     {
-        return max([0, ...array_map(fn (Kegiatan $k): int => $k->bulan ?? 0, $dicakup)]);
+        return max([0, ...array_map(fn (Kegiatan $k): int => $k->bulanKerja() ?? 0, $dicakup)]);
     }
 
     /**
@@ -89,7 +89,7 @@ class NilaiAwalKuitansi
     private static function labelBulan(array $dicakup): string
     {
         $bulan = array_values(array_unique(array_filter(
-            array_map(fn (Kegiatan $k): int => $k->bulan ?? 0, $dicakup),
+            array_map(fn (Kegiatan $k): int => $k->bulanKerja() ?? 0, $dicakup),
             fn (int $b): bool => $b > 0,
         )));
         sort($bulan);

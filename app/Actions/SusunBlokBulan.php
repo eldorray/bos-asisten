@@ -45,7 +45,7 @@ class SusunBlokBulan
             ->where('tahun', $tahun)
             ->whereNull('status_manual')
             ->where(fn ($q) => $q
-                ->whereDoesntHave('kuitansi')->where('bulan', $bulan)
+                ->whereDoesntHave('kuitansi')->padaBulan($bulan)
                 ->orWhereHas('kuitansi', fn ($k) => $k->where('tahun', $tahun)->where('bulan', $bulan)))
             ->with(['jenisKegiatan.jenisBerkas', 'fotos.jenisBerkas', 'acara.fotos.jenisBerkas', 'kuitansi.kegiatans'])
             ->orderBy('bulan')

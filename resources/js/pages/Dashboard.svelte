@@ -87,6 +87,11 @@
         aktif?.peringatan !== null && aktif?.kegiatan.length === 0,
     );
 
+    const perluDiperiksa = (s: SekolahBulan): BarisKegiatanData[] =>
+        s.kegiatan.filter((k) => k.perluDiperiksa);
+
+    let periksaId = $state<number | null>(null);
+
     const jumlahBelumBerbulan = (s: SekolahBulan): number =>
         s.belumBerbulan.reduce((n, k) => n + k.kegiatan.length, 0);
 
@@ -308,6 +313,62 @@
                     {/snippet}
                 </Button>
             </div>
+        {/each}
+
+        {#each sekolah.filter((s) => perluDiperiksa(s).length > 0) as s (s.id)}
+            <div
+                role="alert"
+                class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-kurang py-2 pr-2 pl-3 text-sm text-kurang-foreground"
+            >
+                <div class="flex min-w-60 flex-1 items-center gap-3">
+                    <CircleAlert class="size-5 shrink-0" />
+                    <p>
+                        {s.nama}: {perluDiperiksa(s).length} kegiatan perlu
+                        diperiksa.
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    class="text-foreground"
+                    onclick={() => (periksaId = s.id)}
+                >
+                    Lihat
+                </Button>
+            </div>
+            <LembarBawah
+                judul={`Perlu diperiksa: ${s.nama}`}
+                terbuka={periksaId === s.id}
+                ontutup={() => {
+                    if (periksaId === s.id) {
+                        periksaId = null;
+                    }
+                }}
+            >
+                <ul class="max-h-[60dvh] divide-y overflow-y-auto rounded-2xl border">
+                    {#each perluDiperiksa(s) as k (k.id)}
+                        <li>
+                            <Link
+                                href={KegiatanController.show(k.id)}
+                                class="flex min-h-14 items-center gap-2 py-2 pr-2.5 pl-3.5 text-sm"
+                            >
+                                <span class="min-w-0 flex-1">
+                                    <span class="block font-semibold">
+                                        {k.nama}
+                                    </span>
+                                    <span
+                                        class="block text-[13px] text-belum-foreground"
+                                    >
+                                        {k.perluDiperiksa}
+                                    </span>
+                                </span>
+                                <ChevronRight
+                                    class="size-5 shrink-0 text-muted-foreground"
+                                />
+                            </Link>
+                        </li>
+                    {/each}
+                </ul>
+            </LembarBawah>
         {/each}
 
         {#each sekolah.filter((s) => jumlahBelumBerbulan(s) > 0) as s (s.id)}
@@ -611,6 +672,34 @@
                     </p>
                 {/each}
             </div>
+        {/if}
+
+        {#if aktif.ditunda.length > 0}
+            <section
+                aria-label="Kegiatan yang ditunda"
+                class="grid gap-2 rounded-[14px] border bg-card p-4 text-sm"
+            >
+                <h2 class="text-[15px] font-semibold">
+                    {aktif.ditunda.length} kegiatan bulan ini ditunda
+                </h2>
+                <ul class="grid gap-1">
+                    {#each aktif.ditunda as k (k.id)}
+                        <li>
+                            <Link
+                                href={KegiatanController.show(k.id)}
+                                class="flex min-h-11 items-center justify-between gap-3"
+                            >
+                                <span class="min-w-0 [overflow-wrap:anywhere]">
+                                    {k.nama}
+                                </span>
+                                <span class="shrink-0 text-dirapel-foreground">
+                                    ke {namaBulan[(k.bulanPelaksanaan ?? 1) - 1]}
+                                </span>
+                            </Link>
+                        </li>
+                    {/each}
+                </ul>
+            </section>
         {/if}
 
         {#if jumlahKeputusan > 0}

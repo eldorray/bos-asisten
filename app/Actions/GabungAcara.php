@@ -102,6 +102,7 @@ class GabungAcara
             $kegiatans->pluck('jenis_kegiatan_id')->unique()->count() > 1 => 'Baris harus berjenis kegiatan yang sama.',
             $kegiatans->contains(fn (Kegiatan $k): bool => $k->acara_id !== null) => 'Ada baris yang sudah menjadi bagian acara lain.',
             $kegiatans->contains(fn (Kegiatan $k): bool => $k->status_manual !== null || $k->hilang_dari_anggaran) => 'Baris yang ditandai manual atau sudah tidak ada di anggaran tidak bisa digabung.',
+            $kegiatans->contains(fn (Kegiatan $k): bool => $k->bulan_pelaksanaan !== null) => 'Baris yang ditunda tidak bisa digabung.',
             $kegiatans->contains(fn (Kegiatan $k): bool => $this->rapel($k)) => 'Baris bagian dari kuitansi rapel tidak bisa digabung.',
             default => null,
         };
@@ -115,6 +116,7 @@ class GabungAcara
     {
         return $kegiatan->acara_id === null
             && $kegiatan->status_manual === null
+            && $kegiatan->bulan_pelaksanaan === null
             && ! $kegiatan->hilang_dari_anggaran
             && ! $this->rapel($kegiatan);
     }

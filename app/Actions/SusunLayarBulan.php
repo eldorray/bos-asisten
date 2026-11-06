@@ -26,7 +26,7 @@ class SusunLayarBulan
         /** @var Collection<int, array{kegiatan: Kegiatan, status: StatusKegiatan}> $baris */
         $baris = $kegiatans->map(fn (Kegiatan $k): array => ['kegiatan' => $k, 'status' => HitungStatusKegiatan::untuk($k)]);
 
-        $bulanIni = $baris->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan);
+        $bulanIni = $baris->filter(fn (array $b): bool => $b['kegiatan']->bulanKerja() === $bulan);
 
         $sekolahs = Sekolah::query()
             ->with(['imporAnggarans' => fn ($q) => $q->where('tahun', $tahun)])
@@ -51,7 +51,7 @@ class SusunLayarBulan
     {
         return Kegiatan::query()
             ->where('tahun', $tahun)
-            ->where('bulan', $bulan)
+            ->padaBulan($bulan)
             ->with(HitungStatusKegiatan::RELASI)
             ->get()
             ->filter(fn (Kegiatan $k): bool => HitungStatusKegiatan::untuk($k)->menunggak())
@@ -65,7 +65,7 @@ class SusunLayarBulan
     private function sekolah(Sekolah $sekolah, int $tahun, int $bulan, Collection $baris): array
     {
         $milik = $baris->filter(fn (array $b): bool => $b['kegiatan']->sekolah_id === $sekolah->id);
-        $bulanIni = $milik->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan);
+        $bulanIni = $milik->filter(fn (array $b): bool => $b['kegiatan']->bulanKerja() === $bulan);
 
         return [
             'id' => $sekolah->id,
@@ -79,6 +79,11 @@ class SusunLayarBulan
                 'nama' => $kelompok[0]->nama,
                 'baris' => array_map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah], $kelompok),
             ], SaranAcara::untukBulan($sekolah, $tahun, $bulan)),
+            'ditunda' => $milik
+                ->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan && $b['kegiatan']->bulan_pelaksanaan !== null)
+                ->map(fn (array $b): array => $this->baris($b['kegiatan'], $b['status']))
+                ->values()
+                ->all(),
             'belumBerbulan' => $milik
                 ->filter(fn (array $b): bool => $b['kegiatan']->bulan === null && $b['kegiatan']->status_manual === null)
                 ->groupBy(fn (array $b): int => (int) $b['kegiatan']->tahap)
@@ -116,6 +121,9 @@ class SusunLayarBulan
             'koefisien' => $kegiatan->koefisien,
             'jumlah' => $kegiatan->jumlah,
             'bulan' => $kegiatan->bulan,
+            'bulanPelaksanaan' => $kegiatan->bulan_pelaksanaan,
+            'ditundaDari' => $kegiatan->bulan_pelaksanaan === null ? null : $kegiatan->bulan,
+            'perluDiperiksa' => $status->perluDiperiksa,
             'tahap' => $kegiatan->tahap,
             'jenis' => $kegiatan->jenisKegiatan->nama,
             'status' => $status->status,
@@ -176,8 +184,10 @@ class SusunLayarBulan
         $hasil = array_fill(1, 12, 0);
 
         foreach ($baris as $b) {
-            if ($b['kegiatan']->bulan !== null && $b['status']->menunggak()) {
-                $hasil[$b['kegiatan']->bulan]++;
+            $bulan = $b['kegiatan']->bulanKerja();
+
+            if ($bulan !== null && $b['status']->menunggak()) {
+                $hasil[$bulan]++;
             }
         }
 

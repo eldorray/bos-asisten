@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\StatusManual;
 use Database\Factories\KegiatanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property int $sekolah_id
  * @property int $tahun
  * @property int|null $bulan
+ * @property int|null $bulan_pelaksanaan
  * @property int|null $tahap
  * @property int $periode_impor
  * @property string $kunci_impor
@@ -37,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property bool $hilang_dari_anggaran
  */
 #[Fillable([
-    'sekolah_id', 'tahun', 'bulan', 'tahap', 'periode_impor', 'kunci_impor', 'kode', 'kode_program',
+    'sekolah_id', 'tahun', 'bulan', 'bulan_pelaksanaan', 'tahap', 'periode_impor', 'kunci_impor', 'kode', 'kode_program',
     'uraian', 'nama', 'koefisien', 'harga', 'pajak', 'jumlah', 'jenis_kegiatan_id', 'jenis_dikonfirmasi',
     'acara_id', 'status_manual', 'catatan_status', 'hilang_dari_anggaran',
 ])]
@@ -96,6 +98,23 @@ class Kegiatan extends Model
     public function fotos(): MorphMany
     {
         return $this->morphMany(Foto::class, 'pemilik');
+    }
+
+    /**
+     * Bulan kegiatan ini dikerjakan: bulan pelaksanaan kalau ditunda, selain itu bulan anggarannya.
+     */
+    public function bulanKerja(): ?int
+    {
+        return $this->bulan_pelaksanaan ?? $this->bulan;
+    }
+
+    /**
+     * @param  Builder<Kegiatan>  $query
+     * @return Builder<Kegiatan>
+     */
+    public function scopePadaBulan(Builder $query, int $bulan): Builder
+    {
+        return $query->whereRaw('coalesce(bulan_pelaksanaan, bulan) = ?', [$bulan]);
     }
 
     /**

@@ -25,6 +25,7 @@ class SaranAcara
             ->where('sekolah_id', $sekolah->id)
             ->where('tahun', $tahun)
             ->where('bulan', $bulan)
+            ->whereNull('bulan_pelaksanaan')
             ->whereNull('acara_id')
             ->whereNull('status_manual')
             ->where('hilang_dari_anggaran', false)

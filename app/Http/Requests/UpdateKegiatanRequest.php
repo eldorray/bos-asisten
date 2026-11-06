@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Actions\TundaKegiatan;
 use App\Enums\SistemAnggaran;
 use App\Enums\StatusManual;
 use App\Models\Kegiatan;
@@ -20,6 +21,7 @@ class UpdateKegiatanRequest extends FormRequest
     {
         return [
             'bulan' => ['sometimes', 'integer', 'between:1,12'],
+            'bulan_pelaksanaan' => ['sometimes', 'nullable', 'integer', 'between:1,12'],
             'jenis_kegiatan_id' => ['sometimes', 'integer', Rule::exists('jenis_kegiatans', 'id')],
             'status_manual' => ['sometimes', 'nullable', Rule::enum(StatusManual::class)],
             'catatan_status' => [
@@ -53,6 +55,19 @@ class UpdateKegiatanRequest extends FormRequest
                 && $kegiatan->fotos()->exists()
             ) {
                 $validator->errors()->add('jenis_kegiatan_id', 'Kegiatan ini sudah punya foto berkas. Hapus fotonya dulu sebelum mengubah jenis.');
+            }
+
+            if (
+                $this->has('bulan_pelaksanaan')
+                && $kegiatan instanceof Kegiatan
+                && ! $validator->errors()->has('bulan_pelaksanaan')
+            ) {
+                $bulan = $this->input('bulan_pelaksanaan');
+                $pesan = TundaKegiatan::pesan($kegiatan, $bulan === null ? null : (int) $bulan);
+
+                if ($pesan !== null) {
+                    $validator->errors()->add('bulan_pelaksanaan', $pesan);
+                }
             }
 
             if (! $this->has('bulan') || $validator->errors()->has('bulan')) {

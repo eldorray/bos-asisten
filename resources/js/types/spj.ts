@@ -18,6 +18,9 @@ export type BarisKegiatanData = {
     koefisien: string;
     jumlah: number;
     bulan: number | null;
+    bulanPelaksanaan: number | null;
+    ditundaDari: number | null;
+    perluDiperiksa: string | null;
     tahap: number | null;
     jenis: string;
     status: StatusKode;
@@ -44,6 +47,7 @@ export type SekolahBulan = {
     peringatan: string | null;
     kegiatan: BarisKegiatanData[];
     saranAcara: SaranAcaraData[];
+    ditunda: BarisKegiatanData[];
     belumBerbulan: { tahap: number; kegiatan: BarisKegiatanData[] }[];
 };
 

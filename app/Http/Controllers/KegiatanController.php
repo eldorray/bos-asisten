@@ -9,6 +9,7 @@ use App\Actions\HitungStatusKegiatan;
 use App\Actions\KelayakanKuitansi;
 use App\Actions\NilaiAwalKuitansi;
 use App\Actions\SimpanKuitansi;
+use App\Actions\TundaKegiatan;
 use App\Enums\SistemAnggaran;
 use App\Enums\StatusManual;
 use App\Http\Requests\TandaiKegiatanRequest;
@@ -43,6 +44,8 @@ class KegiatanController extends Controller
                 'sekolah' => $kegiatan->sekolah->nama,
                 'tahun' => $kegiatan->tahun,
                 'bulan' => $kegiatan->bulan,
+                'bulanPelaksanaan' => $kegiatan->bulan_pelaksanaan,
+                'perluDiperiksa' => $status->perluDiperiksa,
                 'tahap' => $kegiatan->tahap,
                 'koefisien' => $kegiatan->koefisien,
                 'harga' => $kegiatan->harga,
@@ -78,6 +81,10 @@ class KegiatanController extends Controller
                 'jumlah' => $k->jumlah,
             ])->values()->all(),
             'pilihanBulan' => $this->pilihanBulan($kegiatan),
+            'tunda' => $kegiatan->sekolah->sistem === SistemAnggaran::Arkas ? [
+                'pilihan' => TundaKegiatan::pilihan($kegiatan),
+                'alasan' => TundaKegiatan::alasanTolak($kegiatan),
+            ] : null,
             'kandidatAcara' => $gabung->kandidat($kegiatan)
                 ->map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah])
                 ->all(),
@@ -118,7 +125,7 @@ class KegiatanController extends Controller
         abort_unless($kegiatan->hilang_dari_anggaran, 422, 'Hanya kegiatan yang sudah tidak ada di anggaran yang boleh dihapus.');
 
         $kuitansi = $kegiatan->kuitansi()->first();
-        $bulanLayar = $kegiatan->bulan ?? ($kegiatan->tahap === null ? null : ($kegiatan->tahap - 1) * 6 + 1);
+        $bulanLayar = $kegiatan->bulanKerja() ?? ($kegiatan->tahap === null ? null : ($kegiatan->tahap - 1) * 6 + 1);
 
         abort_if(
             $kuitansi !== null && $kuitansi->kegiatans()->count() > 1,
@@ -217,7 +224,7 @@ class KegiatanController extends Controller
             'jumlah' => $kuitansi->jumlah,
             'sumberDana' => $kuitansi->sumber_dana,
             'terbilang' => Terbilang::rupiah($kuitansi->jumlah),
-            'bulanCakupan' => array_values($kuitansi->kegiatans->pluck('bulan')->filter()->sort()->values()->all()),
+            'bulanCakupan' => array_values($kuitansi->kegiatans->map(fn (Kegiatan $k): ?int => $k->bulanKerja())->filter()->sort()->values()->all()),
         ];
     }
 

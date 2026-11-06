@@ -22,6 +22,7 @@ final readonly class StatusKegiatan
         public array $berkas,
         public int $kurang,
         public ?Kuitansi $kuitansiRapel,
+        public ?string $perluDiperiksa = null,
     ) {}
 
     /**

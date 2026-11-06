@@ -33,7 +33,7 @@ class SimpanKuitansi
                 $kuitansi = Kuitansi::create([
                     'sekolah_id' => $sekolah->id,
                     'tahun' => $acuan->tahun,
-                    'bulan' => (int) $kegiatans->max('bulan'),
+                    'bulan' => (int) $kegiatans->max(fn (Kegiatan $k): ?int => $k->bulanKerja()),
                     'tahap' => $acuan->tahap,
                     'nomor_urut' => $this->nomorUrut($data['nomor']),
                     'nomor' => $data['nomor'],

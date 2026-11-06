@@ -28,6 +28,7 @@ class KelayakanKuitansi
         return match (true) {
             ! $sama => 'Rapel hanya untuk kegiatan yang sama: sekolah, tahun, tahap, kode, kode program, dan uraiannya harus sama.',
             $lain->bulan === null => 'Tentukan bulan kegiatan dulu sebelum membuat kuitansi.',
+            $acuan->bulan_pelaksanaan !== null || $lain->bulan_pelaksanaan !== null => 'Kegiatan yang ditunda tidak bisa dirapel.',
             $lain->acara_id !== null => 'Anggota acara tidak bisa dirapel.',
             $lain->status_manual !== null => 'Kegiatan yang sudah ditandai manual tidak bisa dirapel.',
             $lain->hilang_dari_anggaran => 'Kegiatan yang tidak ada lagi di anggaran tidak bisa dirapel.',
@@ -47,7 +48,7 @@ class KelayakanKuitansi
      */
     public static function kandidatRapel(Kegiatan $acuan): Collection
     {
-        if ($acuan->bulan === null || $acuan->acara_id !== null || $acuan->status_manual !== null) {
+        if ($acuan->bulan === null || $acuan->bulan_pelaksanaan !== null || $acuan->acara_id !== null || $acuan->status_manual !== null) {
             return new Collection;
         }
 

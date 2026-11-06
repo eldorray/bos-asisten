@@ -120,7 +120,7 @@ class ImporController extends Controller
     }
 
     /**
-     * @return array<string, int|string|null>
+     * @return array<string, mixed>
      */
     private function ringkasan(RingkasanImpor $r): array
     {
@@ -133,6 +133,7 @@ class ImporController extends Controller
             'baru' => $r->baru,
             'berubah' => $r->berubah,
             'hilang' => $r->hilang,
+            'rincian' => $r->rincian,
         ];
     }
 }

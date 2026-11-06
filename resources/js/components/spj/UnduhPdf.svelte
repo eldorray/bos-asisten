@@ -33,6 +33,8 @@
             })),
     );
 
+    const diperiksa = $derived(sekolah.kegiatan.filter((k) => k.perluDiperiksa));
+
     function unduh(): void {
         peringatanTerbuka = false;
 
@@ -52,7 +54,7 @@
     }
 
     function tekanUnduh(): void {
-        if (menunggak.length > 0) {
+        if (menunggak.length > 0 || diperiksa.length > 0) {
             peringatanTerbuka = true;
         } else {
             unduh();
@@ -66,16 +68,37 @@
 </Button>
 
 <LembarBawah
-    judul={`Berkas ${sekolah.nama} belum lengkap`}
+    judul={`Periksa dulu SPJ ${sekolah.nama}`}
     terbuka={peringatanTerbuka}
     ontutup={() => (peringatanTerbuka = false)}
 >
     <p class="rounded-xl bg-kurang p-3.5 text-[15px] text-kurang-foreground">
-        {menunggak.length} kegiatan masih kurang berkas. PDF tetap bisa diunduh
-        sebagai draf untuk diperiksa.
+        {#if menunggak.length > 0}
+            {menunggak.length} kegiatan masih kurang berkas.
+        {/if}
+        {#if diperiksa.length > 0}
+            {diperiksa.length} kegiatan perlu diperiksa dan tetap ikut tercetak.
+        {/if}
+        PDF tetap bisa diunduh sebagai draf untuk diperiksa.
     </p>
 
     <ul class="max-h-[45dvh] divide-y overflow-y-auto rounded-2xl border">
+        {#each diperiksa as k (k.id)}
+            <li>
+                <Link
+                    href={KegiatanController.show(k.id)}
+                    class="flex min-h-14 items-center gap-2 py-2 pr-2.5 pl-3.5 text-sm"
+                >
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-semibold">{k.nama}</span>
+                        <span class="block text-[13px] text-belum-foreground">
+                            {k.perluDiperiksa}
+                        </span>
+                    </span>
+                    <ChevronRight class="size-5 shrink-0 text-muted-foreground" />
+                </Link>
+            </li>
+        {/each}
         {#each menunggak as k (k.id)}
             <li>
                 <Link

@@ -47,6 +47,8 @@
         sekolah: string;
         tahun: number;
         bulan: number | null;
+        bulanPelaksanaan: number | null;
+        perluDiperiksa: string | null;
         tahap: number | null;
         koefisien: string;
         harga: number;
@@ -72,6 +74,7 @@
         kandidatRapel,
         rapelDipilih,
         pilihanBulan,
+        tunda,
         kandidatAcara,
         selisihAnggaran,
     }: {
@@ -84,6 +87,7 @@
         kandidatRapel: KandidatRapel[];
         rapelDipilih: number[];
         pilihanBulan: number[];
+        tunda: { pilihan: number[]; alasan: string | null } | null;
         kandidatAcara: { id: number; nama: string; jumlah: number }[];
         selisihAnggaran: { kuitansi: number; anggaran: number } | null;
     } = $props();
@@ -109,15 +113,34 @@
         berkasFoto.find((b) => jumlahFoto(b) === 0),
     );
 
+    const bulanKerja = $derived(kegiatan.bulanPelaksanaan ?? kegiatan.bulan);
+
     const tautanBulan = $derived(
-        kegiatan.bulan === null
+        bulanKerja === null
             ? halamanBulan()
             : halamanBulan({
                   query: {
-                      bulan: `${kegiatan.tahun}-${String(kegiatan.bulan).padStart(2, '0')}`,
+                      bulan: `${kegiatan.tahun}-${String(bulanKerja).padStart(2, '0')}`,
                   },
               }),
     );
+
+    /* svelte-ignore state_referenced_locally */
+    const formTunda = useForm({
+        bulan_pelaksanaan: (kegiatan.bulanPelaksanaan ?? '') as number | '',
+    });
+
+    function simpanTunda(event: SubmitEvent): void {
+        event.preventDefault();
+        formTunda
+            .transform((data) => ({
+                bulan_pelaksanaan:
+                    data.bulan_pelaksanaan === '' ? null : data.bulan_pelaksanaan,
+            }))
+            .submit(KegiatanController.update(kegiatan.id), {
+                preserveScroll: true,
+            });
+    }
 
     // Nilai awal formulir memang diambil sekali dari props.
     /* svelte-ignore state_referenced_locally */
@@ -205,7 +228,9 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <Heading
             title={kegiatan.nama}
-            description={`${kegiatan.sekolah} · ${kegiatan.bulan ? namaBulan[kegiatan.bulan - 1] : 'Belum punya bulan'} ${kegiatan.tahun}`}
+            description={kegiatan.bulanPelaksanaan && kegiatan.bulan
+                ? `${kegiatan.sekolah} · Anggaran ${namaBulan[kegiatan.bulan - 1]}, dilaksanakan ${namaBulan[kegiatan.bulanPelaksanaan - 1]} ${kegiatan.tahun}`
+                : `${kegiatan.sekolah} · ${kegiatan.bulan ? namaBulan[kegiatan.bulan - 1] : 'Belum punya bulan'} ${kegiatan.tahun}`}
         />
         <StatusPill
             status={kegiatan.status}
@@ -213,17 +238,17 @@
         />
     </div>
 
-    {#if kegiatan.hilangDariAnggaran}
+    {#if kegiatan.perluDiperiksa || kegiatan.hilangDariAnggaran}
         <p
             role="alert"
             class="rounded-xl bg-belum px-4 py-3 text-sm font-semibold text-belum-foreground"
         >
-            Tidak ada lagi di anggaran
+            {kegiatan.perluDiperiksa ?? 'Tidak ada lagi di anggaran'}
         </p>
     {/if}
 
     <p class="text-[15px] text-muted-foreground tabular-nums md:hidden">
-        {kegiatan.koefisien} × Rp {rupiah(kegiatan.harga)} =
+        {kegiatan.koefisien} · Harga Rp {rupiah(kegiatan.harga)} · Jumlah
         <strong class="font-semibold text-foreground">
             Rp {rupiah(kegiatan.jumlah)}
         </strong>
@@ -560,7 +585,7 @@
                 {#if selisihAnggaran}
                     <p
                         role="alert"
-                        class="rounded-xl bg-kurang px-3 py-2 text-sm text-kurang-foreground"
+                        class="rounded-xl bg-kurang px-3 py-2 text-sm text-kurang-foreground md:hidden"
                     >
                         Kuitansi Rp {rupiah(selisihAnggaran.kuitansi)}, anggaran
                         Rp {rupiah(selisihAnggaran.anggaran)}. Periksa sebelum
@@ -595,7 +620,12 @@
                 class="flex min-h-13 items-center justify-between rounded-[14px] border bg-card px-3.5 text-left font-semibold max-md:order-3 md:hidden"
                 onclick={() => (pengaturanTerbuka = !pengaturanTerbuka)}
             >
-                Pengaturan kegiatan
+                <span>
+                    Pengaturan kegiatan
+                    <span class="block text-[13px] font-normal text-muted-foreground">
+                        Tunda, jenis, dan status
+                    </span>
+                </span>
                 <ChevronDown
                     class={cn('size-5', pengaturanTerbuka && 'rotate-180')}
                 />
@@ -607,6 +637,50 @@
                     pengaturanTerbuka ? 'grid' : 'hidden',
                 )}
             >
+                {#if tunda}
+                    <form class="grid gap-3 border-b pb-4" onsubmit={simpanTunda}>
+                        <Label for="bulan_pelaksanaan">Bulan pelaksanaan</Label>
+                        {#if tunda.alasan}
+                            <p class="text-sm text-muted-foreground">
+                                {tunda.alasan}
+                            </p>
+                        {:else if tunda.pilihan.length === 0}
+                            <p class="text-sm text-muted-foreground">
+                                Tidak ada bulan berikutnya di tahun ini.
+                            </p>
+                        {:else}
+                            <select
+                                id="bulan_pelaksanaan"
+                                class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
+                                bind:value={formTunda.bulan_pelaksanaan}
+                            >
+                                <option value="">
+                                    Sesuai anggaran ({kegiatan.bulan
+                                        ? namaBulan[kegiatan.bulan - 1]
+                                        : ''})
+                                </option>
+                                {#each tunda.pilihan as b (b)}
+                                    <option value={b}>
+                                        Ditunda ke {namaBulan[b - 1]}
+                                    </option>
+                                {/each}
+                            </select>
+                            <InputError
+                                message={formTunda.errors.bulan_pelaksanaan}
+                            />
+                            <div>
+                                <Button
+                                    type="submit"
+                                    variant="outline"
+                                    disabled={formTunda.processing}
+                                >
+                                    Simpan bulan pelaksanaan
+                                </Button>
+                            </div>
+                        {/if}
+                    </form>
+                {/if}
+
                 {#if pilihanBulan.length > 0}
                     <form class="grid gap-3 border-b pb-4" onsubmit={simpanBulan}>
                         <Label for="bulan_kegiatan">Bulan kegiatan</Label>

@@ -28,6 +28,8 @@
     } from '@/components/ui/card';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
+    import RincianImpor from '@/components/spj/RincianImpor.svelte';
+    import type { Rincian } from '@/components/spj/RincianImpor.svelte';
 
     type Ringkasan = {
         sekolah: string;
@@ -38,6 +40,7 @@
         baru: number;
         berubah: number;
         hilang: number;
+        rincian: Rincian;
     };
 
     type Item = {
@@ -217,6 +220,7 @@
                                         Hilang {item.ringkasan.hilang}
                                     </Badge>
                                 </div>
+                                <RincianImpor rincian={item.ringkasan.rincian} />
                             {:else}
                                 <Alert variant="destructive">
                                     <AlertDescription>

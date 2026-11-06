@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { namaBulan } from '@/types';
     import type { BarisKegiatanData } from '@/types';
 
     let { kegiatan }: { kegiatan: BarisKegiatanData } = $props();
@@ -14,7 +15,16 @@
         Jenis: {kegiatan.jenis}, perlu ditinjau
     </p>
 {/if}
-{#if kegiatan.hilangDariAnggaran}
+{#if kegiatan.ditundaDari}
+    <p class="text-[13px] text-dirapel-foreground">
+        Ditunda dari anggaran {namaBulan[kegiatan.ditundaDari - 1]}
+    </p>
+{/if}
+{#if kegiatan.perluDiperiksa}
+    <p class="text-[13px] font-semibold text-belum-foreground">
+        Perlu diperiksa: {kegiatan.perluDiperiksa}
+    </p>
+{:else if kegiatan.hilangDariAnggaran}
     <p class="text-[13px] font-semibold text-belum-foreground">
         Tidak ada lagi di anggaran
     </p>

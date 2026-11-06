@@ -31,7 +31,7 @@ class SimpanAnggaran
         [$sekolah, $periode, $rencana] = $this->rencana($anggaran);
         [$baru, $berubah, $hilang] = $this->selisih($sekolah, $anggaran->tahun, $periode, $rencana);
 
-        return $this->ringkasan($sekolah, $anggaran, $rencana, count($baru), count($berubah), count($hilang));
+        return $this->ringkasan($sekolah, $anggaran, $rencana, $this->rincian($baru, $berubah, $hilang));
     }
 
     public function simpan(AnggaranTerbaca $anggaran, string $namaFile): RingkasanImpor
@@ -40,6 +40,7 @@ class SimpanAnggaran
 
         return DB::transaction(function () use ($anggaran, $namaFile, $sekolah, $periode, $rencana): RingkasanImpor {
             [$baru, $berubah, $hilang] = $this->selisih($sekolah, $anggaran->tahun, $periode, $rencana);
+            $rincian = $this->rincian($baru, $berubah, $hilang);
 
             foreach ($baru as $baris) {
                 Kegiatan::create($baris + [
@@ -70,16 +71,53 @@ class SimpanAnggaran
                 ['total' => $anggaran->totalDokumen, 'nama_file' => $namaFile],
             );
 
-            return $this->ringkasan($sekolah, $anggaran, $rencana, count($baru), count($berubah), count($hilang));
+            return $this->ringkasan($sekolah, $anggaran, $rencana, $rincian);
         });
     }
 
     /**
-     * @param  list<Rencana>  $rencana
+     * @param  list<Rencana>  $baru
+     * @param  list<array{Kegiatan, Rencana}>  $berubah
+     * @param  list<Kegiatan>  $hilang
+     * @return array{baru: list<array{nama: string, jumlah: int}>, berubah: list<array{nama: string, koefisienLama: string, koefisienBaru: string, jumlahLama: int, jumlahBaru: int, adaKuitansi: bool}>, hilang: list<array{nama: string, jumlah: int, disimpan: bool}>}
      */
-    private function ringkasan(Sekolah $sekolah, AnggaranTerbaca $anggaran, array $rencana, int $baru, int $berubah, int $hilang): RingkasanImpor
+    private function rincian(array $baru, array $berubah, array $hilang): array
     {
-        return new RingkasanImpor($sekolah, $anggaran->bulan, $anggaran->tahun, count($rencana), $anggaran->totalDokumen, $baru, $berubah, $hilang);
+        return [
+            'baru' => array_map(fn (array $b): array => ['nama' => $b['nama'], 'jumlah' => $b['jumlah']], $baru),
+            'berubah' => array_map(fn (array $p): array => [
+                'nama' => $p[1]['nama'],
+                'koefisienLama' => $p[0]->koefisien,
+                'koefisienBaru' => $p[1]['koefisien'],
+                'jumlahLama' => $p[0]->jumlah,
+                'jumlahBaru' => $p[1]['jumlah'],
+                'adaKuitansi' => $p[0]->getAttribute('kuitansi_count') > 0,
+            ], $berubah),
+            'hilang' => array_map(fn (Kegiatan $k): array => [
+                'nama' => $k->nama,
+                'jumlah' => $k->jumlah,
+                'disimpan' => $this->punyaBerkas($k),
+            ], $hilang),
+        ];
+    }
+
+    /**
+     * @param  list<Rencana>  $rencana
+     * @param  array{baru: list<array{nama: string, jumlah: int}>, berubah: list<array{nama: string, koefisienLama: string, koefisienBaru: string, jumlahLama: int, jumlahBaru: int, adaKuitansi: bool}>, hilang: list<array{nama: string, jumlah: int, disimpan: bool}>}  $rincian
+     */
+    private function ringkasan(Sekolah $sekolah, AnggaranTerbaca $anggaran, array $rencana, array $rincian): RingkasanImpor
+    {
+        return new RingkasanImpor(
+            $sekolah,
+            $anggaran->bulan,
+            $anggaran->tahun,
+            count($rencana),
+            $anggaran->totalDokumen,
+            count($rincian['baru']),
+            count($rincian['berubah']),
+            count($rincian['hilang']),
+            $rincian,
+        );
     }
 
     /**
@@ -254,6 +292,7 @@ class SimpanAnggaran
     private function punyaBerkas(Kegiatan $kegiatan): bool
     {
         return $kegiatan->acara_id !== null
+            || $kegiatan->bulan_pelaksanaan !== null
             || $kegiatan->status_manual !== null
             || $kegiatan->getAttribute('kuitansi_count') > 0
             || $kegiatan->getAttribute('fotos_count') > 0;

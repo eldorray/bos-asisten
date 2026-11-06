@@ -28,10 +28,13 @@
             return lainnya();
         }
 
-        const { tahun, bulan } = page.props.kegiatan as {
+        const { tahun, bulan: bulanAnggaran, bulanPelaksanaan } = page.props
+            .kegiatan as {
             tahun: number;
             bulan: number | null;
+            bulanPelaksanaan: number | null;
         };
+        const bulan = bulanPelaksanaan ?? bulanAnggaran;
 
         return bulan === null
             ? dashboard()

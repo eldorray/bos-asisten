@@ -50,7 +50,7 @@
             onclick={() => inputBerkas.click()}
         >
             <Image class="size-5 md:size-4" />
-            <span class="md:hidden">Pilih dari galeri</span>
+            <span class="md:hidden">Pilih foto atau PDF</span>
             <span class="max-md:hidden">Pilih file</span>
         </Button>
         <input
@@ -64,7 +64,7 @@
         <input
             bind:this={inputBerkas}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             multiple
             class="hidden"
             onchange={tambah}

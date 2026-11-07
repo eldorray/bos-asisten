@@ -2,6 +2,11 @@ import { page, router } from '@inertiajs/svelte';
 import { toast } from 'svelte-sonner';
 import FotoController from '@/actions/App/Http/Controllers/FotoController';
 import { compressImage, FormatTidakDidukung } from '@/lib/compressImage';
+import {
+    HALAMAN_MAKS,
+    PdfTidakBisaDibaca,
+    pdfKeGambar,
+} from '@/lib/pdfKeGambar';
 
 export type ItemAntrean = {
     kunci: number;
@@ -182,6 +187,35 @@ async function jalankan(): Promise<void> {
     }
 }
 
+/**
+ * PDF dipecah menjadi gambar per halaman; selain PDF dikembalikan apa adanya.
+ */
+async function sebagaiGambar(file: File): Promise<File[]> {
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+        return [file];
+    }
+
+    try {
+        const hasil = await pdfKeGambar(file);
+
+        if (hasil.halamanTotal > HALAMAN_MAKS) {
+            toast.warning(
+                `${file.name} punya ${hasil.halamanTotal} halaman; hanya ${HALAMAN_MAKS} halaman pertama yang diunggah.`,
+            );
+        }
+
+        return hasil.berkas;
+    } catch (galat) {
+        toast.error(
+            galat instanceof PdfTidakBisaDibaca
+                ? `${file.name} tidak bisa dibaca. Pastikan PDF-nya tidak diberi kata sandi.`
+                : `${file.name} tidak bisa diproses.`,
+        );
+
+        return [];
+    }
+}
+
 export const antreanFoto = {
     get daftar() {
         return daftar;
@@ -208,34 +242,36 @@ export const antreanFoto = {
     ): Promise<void> {
         void navigator.storage?.persist?.();
 
-        for (const file of berkas) {
-            try {
-                const foto = await compressImage(file);
-                const rekaman: Rekaman = {
-                    kegiatanId,
-                    jenisBerkasId,
-                    namaFile: file.name,
-                    pesan: null,
-                    foto,
-                };
-                const kunci = await simpanan('readwrite', (s) =>
-                    s.add(rekaman),
-                );
+        for (const asli of berkas) {
+            for (const file of await sebagaiGambar(asli)) {
+                try {
+                    const foto = await compressImage(file);
+                    const rekaman: Rekaman = {
+                        kegiatanId,
+                        jenisBerkasId,
+                        namaFile: file.name,
+                        pesan: null,
+                        foto,
+                    };
+                    const kunci = await simpanan('readwrite', (s) =>
+                        s.add(rekaman),
+                    );
 
-                daftar.push({
-                    kunci: kunci as number,
-                    kegiatanId,
-                    jenisBerkasId,
-                    namaFile: file.name,
-                    status: 'menunggu',
-                    pesan: null,
-                });
-            } catch (galat) {
-                toast.error(
-                    galat instanceof FormatTidakDidukung
-                        ? `${file.name}: format foto tidak didukung. Ubah ke JPG lalu pilih lagi.`
-                        : `${file.name} tidak bisa disimpan di HP. Coba ambil ulang.`,
-                );
+                    daftar.push({
+                        kunci: kunci as number,
+                        kegiatanId,
+                        jenisBerkasId,
+                        namaFile: file.name,
+                        status: 'menunggu',
+                        pesan: null,
+                    });
+                } catch (galat) {
+                    toast.error(
+                        galat instanceof FormatTidakDidukung
+                            ? `${file.name}: format foto tidak didukung. Ubah ke JPG lalu pilih lagi.`
+                            : `${file.name} tidak bisa disimpan di HP. Coba ambil ulang.`,
+                    );
+                }
             }
         }
 

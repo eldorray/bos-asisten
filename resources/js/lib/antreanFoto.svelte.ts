@@ -1,7 +1,7 @@
 import { page, router } from '@inertiajs/svelte';
 import { toast } from 'svelte-sonner';
 import FotoController from '@/actions/App/Http/Controllers/FotoController';
-import { compressImage } from '@/lib/compressImage';
+import { compressImage, FormatTidakDidukung } from '@/lib/compressImage';
 
 export type ItemAntrean = {
     kunci: number;
@@ -230,9 +230,11 @@ export const antreanFoto = {
                     status: 'menunggu',
                     pesan: null,
                 });
-            } catch {
+            } catch (galat) {
                 toast.error(
-                    `${file.name} tidak bisa disimpan di HP. Coba ambil ulang.`,
+                    galat instanceof FormatTidakDidukung
+                        ? `${file.name}: format foto tidak didukung. Ubah ke JPG lalu pilih lagi.`
+                        : `${file.name} tidak bisa disimpan di HP. Coba ambil ulang.`,
                 );
             }
         }

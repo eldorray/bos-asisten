@@ -26,6 +26,7 @@
     import BarisKegiatan from '@/components/spj/BarisKegiatan.svelte';
     import BarisKegiatanHp from '@/components/spj/BarisKegiatanHp.svelte';
     import LembarBawah from '@/components/spj/LembarBawah.svelte';
+    import GrafikRealisasi from '@/components/spj/GrafikRealisasi.svelte';
     import KartuKegiatan from '@/components/spj/KartuKegiatan.svelte';
     import KotakBelumBerbulan from '@/components/spj/KotakBelumBerbulan.svelte';
     import PemilihBulan from '@/components/spj/PemilihBulan.svelte';
@@ -46,6 +47,7 @@
         menunggakPerBulan,
         pdfBelumPerBulan,
         anggaranPerBulan,
+        realisasiPerBulan,
     }: {
         bulan: string;
         ringkasan: { selesai: number; kurang: number; belum: number };
@@ -53,6 +55,7 @@
         menunggakPerBulan: Record<string, number>;
         pdfBelumPerBulan: Record<string, boolean>;
         anggaranPerBulan: Record<string, Record<string, number>>;
+        realisasiPerBulan: Record<string, Record<string, number>>;
     } = $props();
 
     const simpanan = (kunci: string): string | null =>
@@ -444,6 +447,14 @@
                 </div>
             </section>
         {/if}
+
+        <GrafikRealisasi
+            tahun={Number(bulan.slice(0, 4))}
+            sekolah={aktif.nama}
+            bulanDipilih={Number(bulan.slice(5, 7))}
+            anggaran={anggaranPerBulan[aktif.id] ?? {}}
+            realisasi={realisasiPerBulan[aktif.id] ?? {}}
+        />
 
         {#if jumlahKeputusan > 0}
             <button

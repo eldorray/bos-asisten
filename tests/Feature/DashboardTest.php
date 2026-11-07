@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Kegiatan;
+use App\Models\Kuitansi;
 use App\Models\Sekolah;
 use App\Models\User;
 
@@ -39,4 +40,23 @@ test('dashboard mengirim anggaran per sekolah per bulan', function () {
         ->where("anggaranPerBulan.{$sekolah->id}.7", 1_500_000)
         ->where("anggaranPerBulan.{$sekolah->id}.8", 2_000_000)
         ->where("anggaranPerBulan.{$sekolah->id}.9", 0));
+});
+
+test('realisasi per bulan memakai jumlah kuitansi, rapel dibagi menurut porsi anggaran', function () {
+    $this->actingAs(User::factory()->create());
+    $sekolah = Sekolah::factory()->create();
+    $kegiatan = fn (int $bulan, int $jumlah) => Kegiatan::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => $bulan, 'jumlah' => $jumlah]);
+    $satu = $kegiatan(1, 1_000_000);
+    $dua = $kegiatan(2, 3_000_000);
+    $tanpaKuitansi = $kegiatan(3, 500_000);
+
+    $rapel = Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => 2, 'jumlah' => 3_600_000]);
+    $rapel->kegiatans()->attach([$satu->id, $dua->id]);
+
+    $this->get(route('dashboard', ['bulan' => '2026-01']))->assertInertia(fn ($page) => $page
+        ->where("realisasiPerBulan.{$sekolah->id}.1", 900_000)
+        ->where("realisasiPerBulan.{$sekolah->id}.2", 2_700_000)
+        ->where("realisasiPerBulan.{$sekolah->id}.3", 0));
+
+    expect($tanpaKuitansi->kuitansi)->toHaveCount(0);
 });

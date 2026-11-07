@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 class SusunLayarBulan
 {
     /**
-     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>, pdfBelumPerBulan: array<int, bool>, anggaranPerBulan: array<int, array<int, int>>}
+     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>, pdfBelumPerBulan: array<int, bool>, anggaranPerBulan: array<int, array<int, int>>, realisasiPerBulan: array<int, array<int, int>>}
      */
     public function susun(int $tahun, int $bulan): array
     {
@@ -42,6 +42,7 @@ class SusunLayarBulan
             'menunggakPerBulan' => $this->menunggakPerBulan($baris),
             'pdfBelumPerBulan' => $this->pdfBelumPerBulan($sekolahs, $tahun),
             'anggaranPerBulan' => $this->anggaranPerBulan($sekolahs, $baris),
+            'realisasiPerBulan' => $this->realisasiPerBulan($sekolahs, $baris),
         ];
     }
 
@@ -221,5 +222,40 @@ class SusunLayarBulan
         }
 
         return $hasil;
+    }
+
+    /**
+     * Realisasi = jumlah kuitansi. Kuitansi rapel mencakup beberapa kegiatan (dan bulan), jadi jumlahnya
+     * dibagi menurut porsi anggaran tiap kegiatan; dengan begitu tiap bulan dibandingkan dengan anggarannya sendiri.
+     *
+     * @param  EloquentCollection<int, Sekolah>  $sekolahs
+     * @param  Collection<int, array{kegiatan: Kegiatan, status: StatusKegiatan}>  $baris
+     * @return array<int, array<int, int>>
+     */
+    private function realisasiPerBulan(EloquentCollection $sekolahs, Collection $baris): array
+    {
+        $hasil = [];
+
+        foreach ($sekolahs as $sekolah) {
+            $hasil[$sekolah->id] = array_fill(1, 12, 0.0);
+        }
+
+        foreach ($baris as $b) {
+            $kegiatan = $b['kegiatan'];
+            $kuitansi = $kegiatan->kuitansi->first();
+            $bulan = $kegiatan->bulanKerja();
+
+            if ($kuitansi === null || $bulan === null || ! isset($hasil[$kegiatan->sekolah_id])) {
+                continue;
+            }
+
+            $anggaran = (int) $kuitansi->kegiatans->sum('jumlah');
+
+            if ($anggaran > 0) {
+                $hasil[$kegiatan->sekolah_id][$bulan] += $kuitansi->jumlah * $kegiatan->jumlah / $anggaran;
+            }
+        }
+
+        return array_map(fn (array $bulanan): array => array_map(fn (float $nilai): int => (int) round($nilai), $bulanan), $hasil);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Enums\SistemAnggaran;
+use App\Enums\StatusManual;
 use App\Models\Kegiatan;
 use App\Models\Sekolah;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -225,7 +226,7 @@ class SusunLayarBulan
     }
 
     /**
-     * Realisasi = jumlah kuitansi. Kuitansi rapel mencakup beberapa kegiatan (dan bulan), jadi jumlahnya
+     * Realisasi = jumlah kuitansi, atau anggaran penuh bagi kegiatan yang ditandai selesai di luar aplikasi. Kuitansi rapel mencakup beberapa kegiatan (dan bulan), jadi jumlahnya
      * dibagi menurut porsi anggaran tiap kegiatan; dengan begitu tiap bulan dibandingkan dengan anggarannya sendiri.
      *
      * @param  EloquentCollection<int, Sekolah>  $sekolahs
@@ -245,7 +246,18 @@ class SusunLayarBulan
             $kuitansi = $kegiatan->kuitansi->first();
             $bulan = $kegiatan->bulanKerja();
 
-            if ($kuitansi === null || $bulan === null || ! isset($hasil[$kegiatan->sekolah_id])) {
+            if ($bulan === null || ! isset($hasil[$kegiatan->sekolah_id])) {
+                continue;
+            }
+
+            // Ditandai selesai di luar aplikasi: tidak ada kuitansi di sini, dianggap terealisasi penuh.
+            if ($kegiatan->status_manual === StatusManual::DiLuarAplikasi) {
+                $hasil[$kegiatan->sekolah_id][$bulan] += $kegiatan->jumlah;
+
+                continue;
+            }
+
+            if ($kuitansi === null) {
                 continue;
             }
 

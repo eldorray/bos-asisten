@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\StatusManual;
 use App\Models\Kegiatan;
 use App\Models\Kuitansi;
 use App\Models\Sekolah;
@@ -59,4 +60,17 @@ test('realisasi per bulan memakai jumlah kuitansi, rapel dibagi menurut porsi an
         ->where("realisasiPerBulan.{$sekolah->id}.3", 0));
 
     expect($tanpaKuitansi->kuitansi)->toHaveCount(0);
+});
+
+test('kegiatan selesai di luar aplikasi dihitung terealisasi penuh', function () {
+    $this->actingAs(User::factory()->create());
+    $sekolah = Sekolah::factory()->create();
+    $buat = fn (array $ubah) => Kegiatan::factory()->create($ubah + ['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => 4, 'jumlah' => 2_000_000]);
+    $buat(['status_manual' => StatusManual::DiLuarAplikasi]);
+    $buat(['status_manual' => StatusManual::TidakDilaksanakan]);
+    $buat([]);
+
+    $this->get(route('dashboard', ['bulan' => '2026-04']))->assertInertia(fn ($page) => $page
+        ->where("anggaranPerBulan.{$sekolah->id}.4", 6_000_000)
+        ->where("realisasiPerBulan.{$sekolah->id}.4", 2_000_000));
 });

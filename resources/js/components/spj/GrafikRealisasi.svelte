@@ -93,7 +93,7 @@
     </ol>
 
     <p class="text-meta text-muted-foreground">
-        Realisasi dihitung dari jumlah kuitansi, dibagi per bulan menurut porsi anggaran kegiatannya.
+        Realisasi dihitung dari jumlah kuitansi, dibagi per bulan menurut porsi anggaran kegiatannya. Kegiatan yang ditandai selesai di luar aplikasi dihitung penuh.
         Batang penuh berarti 100% atau lebih.
     </p>
 </section>

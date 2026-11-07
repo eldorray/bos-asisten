@@ -58,6 +58,7 @@ class KegiatanController extends Controller
                 'hilangDariAnggaran' => $kegiatan->hilang_dari_anggaran,
                 'status' => $status->status,
                 'berkas' => $status->berkas,
+                'bisaUnduhPdf' => $status->bisaUnduhPdf(),
                 'rapel' => $status->kuitansiRapel === null ? null : [
                     'bulan' => $status->kuitansiRapel->bulan,
                     'nomor' => $status->kuitansiRapel->nomor,

@@ -33,6 +33,15 @@ class SusunBlokBulan
     }
 
     /**
+     * Isi PDF satu kegiatan: kuitansi, lalu foto menurut urutan jenis berkas (nota/struk dulu, foto barang terakhir).
+     * Relasi HitungStatusKegiatan::RELASI plus fotos.jenisBerkas dan acara.fotos.jenisBerkas harus sudah dimuat.
+     */
+    public static function untukKegiatan(Kegiatan $kegiatan): BlokPdf
+    {
+        return self::blok(new Collection([$kegiatan]));
+    }
+
+    /**
      * Baris berkuitansi ikut bulan kuitansinya, sehingga rapel masuk bulan terakhir cakupannya
      * dan tidak muncul di bulan lain. Baris tanpa kuitansi ikut bulannya sendiri.
      *

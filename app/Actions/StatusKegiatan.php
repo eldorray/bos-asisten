@@ -32,4 +32,12 @@ final readonly class StatusKegiatan
     {
         return $this->status === 'kurang' || $this->status === 'belum';
     }
+
+    /**
+     * PDF satu kegiatan boleh diunduh bila berkasnya lengkap atau kurang satu (sebagai draf).
+     */
+    public function bisaUnduhPdf(): bool
+    {
+        return $this->status === 'selesai' || ($this->status === 'kurang' && $this->kurang === 1);
+    }
 }

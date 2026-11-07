@@ -129,6 +129,7 @@ class SusunLayarBulan
             'status' => $status->status,
             'berkas' => $status->berkas,
             'kurang' => $status->kurang,
+            'bisaUnduhPdf' => $status->bisaUnduhPdf(),
             'catatanStatus' => $kegiatan->catatan_status,
             'rapel' => $status->kuitansiRapel === null ? null : [
                 'bulan' => $status->kuitansiRapel->bulan,

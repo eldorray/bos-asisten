@@ -1,6 +1,7 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
+    import UnduhPdfKegiatan from '@/components/spj/UnduhPdfKegiatan.svelte';
     import { Button } from '@/components/ui/button';
     import type { BarisKegiatanData } from '@/types';
 
@@ -23,6 +24,12 @@
     }
 </script>
 
+{#if kegiatan.bisaUnduhPdf}
+    <UnduhPdfKegiatan
+        kegiatanId={kegiatan.id}
+        draf={kegiatan.status === 'kurang'}
+    />
+{/if}
 {#if kegiatan.status === 'di_luar_aplikasi'}
     <Button variant="outline" size="sm" onclick={batalkanTanda}>Batalkan</Button>
 {/if}

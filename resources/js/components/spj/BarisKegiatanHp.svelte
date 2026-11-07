@@ -85,7 +85,7 @@
             <ChevronRight class="size-5 shrink-0 text-muted-foreground" />
         </Link>
     </div>
-    {#if kegiatan.status === 'di_luar_aplikasi' || kegiatan.hilangDariAnggaran}
+    {#if kegiatan.status === 'di_luar_aplikasi' || kegiatan.hilangDariAnggaran || kegiatan.bisaUnduhPdf}
         <div class="flex flex-wrap gap-2 px-4 pb-4">
             <AksiKegiatan {kegiatan} />
         </div>

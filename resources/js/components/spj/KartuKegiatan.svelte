@@ -94,7 +94,7 @@
         </span>
     </div>
 
-    {#if kegiatan.status === 'di_luar_aplikasi' || kegiatan.hilangDariAnggaran}
+    {#if kegiatan.status === 'di_luar_aplikasi' || kegiatan.hilangDariAnggaran || kegiatan.bisaUnduhPdf}
         <div class="flex flex-wrap gap-2">
             <AksiKegiatan {kegiatan} />
         </div>

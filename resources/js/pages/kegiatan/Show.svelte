@@ -29,6 +29,7 @@
         KuitansiData,
         NilaiAwal,
     } from '@/components/spj/FormKuitansi.svelte';
+    import UnduhPdfKegiatan from '@/components/spj/UnduhPdfKegiatan.svelte';
     import UnggahBerkas from '@/components/spj/UnggahBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@
         hilangDariAnggaran: boolean;
         status: StatusKode;
         berkas: BerkasStatus[];
+        bisaUnduhPdf: boolean;
         rapel: { bulan: number; nomor: string } | null;
     };
 
@@ -232,10 +234,18 @@
                 ? `${kegiatan.sekolah} · Anggaran ${namaBulan[kegiatan.bulan - 1]}, dilaksanakan ${namaBulan[kegiatan.bulanPelaksanaan - 1]} ${kegiatan.tahun}`
                 : `${kegiatan.sekolah} · ${kegiatan.bulan ? namaBulan[kegiatan.bulan - 1] : 'Belum punya bulan'} ${kegiatan.tahun}`}
         />
-        <StatusPill
-            status={kegiatan.status}
-            kurang={kegiatan.berkas.filter((b) => !b.ada).length}
-        />
+        <div class="flex items-center gap-2">
+            {#if kegiatan.bisaUnduhPdf}
+                <UnduhPdfKegiatan
+                    kegiatanId={kegiatan.id}
+                    draf={kegiatan.status === 'kurang'}
+                />
+            {/if}
+            <StatusPill
+                status={kegiatan.status}
+                kurang={kegiatan.berkas.filter((b) => !b.ada).length}
+            />
+        </div>
     </div>
 
     {#if kegiatan.perluDiperiksa || kegiatan.hilangDariAnggaran}

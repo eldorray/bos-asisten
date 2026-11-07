@@ -9,6 +9,7 @@ use App\Http\Controllers\JenisKegiatanController;
 use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\PdfBulananController;
+use App\Http\Controllers\PdfKegiatanController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('sekolah/{sekolah}/pdf/{tahun}/{bulan}', PdfBulananController::class)
         ->where(['tahun' => '\d{4}', 'bulan' => '0?[1-9]|1[0-2]'])
         ->name('pdf.bulanan');
+
+    Route::get('kegiatan/{kegiatan}/pdf', PdfKegiatanController::class)->name('pdf.kegiatan');
 
     Route::get('impor', [ImporController::class, 'index'])->name('impor.index');
     Route::post('impor/pratinjau', [ImporController::class, 'pratinjau'])->name('impor.pratinjau');

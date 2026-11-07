@@ -26,6 +26,7 @@ export type BarisKegiatanData = {
     status: StatusKode;
     berkas: BerkasStatus[];
     kurang: number;
+    bisaUnduhPdf: boolean;
     catatanStatus: string | null;
     rapel: { bulan: number; nomor: string } | null;
     acara: { id: number; nama: string } | null;
@@ -66,5 +67,4 @@ export const namaBulan = [
     'Desember',
 ];
 
-export const rupiah = (angka: number): string =>
-    angka.toLocaleString('id-ID');
+export const rupiah = (angka: number): string => angka.toLocaleString('id-ID');

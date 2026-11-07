@@ -17,7 +17,7 @@
     };
 
     const base =
-        'inline-flex items-center justify-center gap-2 rounded-[10px] text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+        'inline-flex items-center justify-center gap-2 rounded-[10px] text-sm font-medium transition-[color,background-color,border-color,opacity,transform] duration-150 ease-tenang active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
 
     const variants: Record<Variant, string> = {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',

@@ -39,7 +39,7 @@
     onclose={ontutup}
     onclick={(e) => e.target === dialog && ontutup()}
     class={cn(
-        'fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-card p-0 text-foreground backdrop:bg-black/45',
+        'max-md:animate-in max-md:fade-in max-md:slide-in-from-bottom-4 max-md:duration-300 max-md:ease-tenang fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-card p-0 text-foreground backdrop:bg-black/45',
         penuh && 'top-0 h-dvh max-h-dvh rounded-none',
         sebarisDiDesktop
             ? 'md:static md:block md:h-auto md:max-h-none md:overflow-visible md:rounded-none md:bg-transparent'

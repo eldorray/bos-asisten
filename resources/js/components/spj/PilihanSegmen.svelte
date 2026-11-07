@@ -32,7 +32,7 @@
             type="button"
             aria-pressed={p.nilai === nilai}
             class={cn(
-                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:ring-2 md:px-4 focus-visible:ring-ring focus-visible:outline-none',
+                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-[color,background-color,transform] duration-150 ease-tenang active:scale-[0.98] focus-visible:ring-2 md:px-4 focus-visible:ring-ring focus-visible:outline-none',
                 p.nilai === nilai
                     ? 'bg-card shadow-xs'
                     : 'text-muted-foreground hover:text-foreground',

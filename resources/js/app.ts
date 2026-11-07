@@ -25,6 +25,13 @@ void createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+    defaults: {
+        // Hanya pindah halaman yang bergerak; simpan form dan muat sebagian tetap langsung.
+        visitOptions: (_href, options) =>
+            (options.method ?? 'get') === 'get' && !options.only?.length
+                ? { viewTransition: true }
+                : {},
+    },
 });
 
 // This will set light / dark mode on page load...

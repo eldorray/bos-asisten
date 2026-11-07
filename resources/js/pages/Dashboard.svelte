@@ -35,6 +35,7 @@
     import UnduhPdf from '@/components/spj/UnduhPdf.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
+    import { transisi } from '@/lib/transisi';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData, SekolahBulan, StatusKode } from '@/types';
 
@@ -260,7 +261,7 @@
                 label="Sekolah"
                 nilai={aktif.id}
                 pilihan={pilihanSekolah}
-                onpilih={(id) => (sekolahId = id)}
+                onpilih={(id) => transisi(() => (sekolahId = id))}
             />
         </div>
 
@@ -456,7 +457,7 @@
                     label="Sekolah"
                     nilai={aktif.id}
                     pilihan={pilihanSekolah}
-                    onpilih={(id) => (sekolahId = id)}
+                    onpilih={(id) => transisi(() => (sekolahId = id))}
                 />
                 <PilihanSegmen
                     label="Tampilan"
@@ -469,7 +470,7 @@
                         },
                         { nilai: 'daftar' as const, label: 'Daftar', ikon: List },
                     ]}
-                    onpilih={(t) => (tampilan = t)}
+                    onpilih={(t) => transisi(() => (tampilan = t))}
                 />
                 <Input
                     type="search"
@@ -524,12 +525,12 @@
                             type="button"
                             aria-pressed={s.kunci === saringanHp}
                             class={[
-                                'h-11 shrink-0 rounded-full border px-3 text-sm font-medium whitespace-nowrap',
+                                'h-11 shrink-0 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,transform] duration-150 ease-tenang active:scale-[0.98]',
                                 s.kunci === saringanHp
                                     ? 'border-primary bg-primary text-primary-foreground'
                                     : 'border-input bg-card',
                             ]}
-                            onclick={() => (saringanHp = s.kunci)}
+                            onclick={() => transisi(() => (saringanHp = s.kunci))}
                         >
                             {s.label}
                             {kelompokHp[s.kunci].length}

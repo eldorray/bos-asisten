@@ -41,7 +41,7 @@
             href={t.href}
             aria-current={t.aktif ? 'page' : undefined}
             class={cn(
-                'relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium',
+                'relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-xs font-medium transition-[color,background-color,transform] duration-150 ease-tenang active:scale-[0.98]',
                 t.aktif
                     ? 'bg-muted font-semibold text-foreground'
                     : 'text-muted-foreground',

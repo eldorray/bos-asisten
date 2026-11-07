@@ -78,7 +78,7 @@
             aria-label={judul(nama, n)}
             title={judul(nama, n)}
             class={[
-                'grid gap-1 rounded-md p-2 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                'grid gap-1 rounded-md p-2 transition-[background-color,transform] duration-150 ease-tenang active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                 n === nomor ? 'bg-card shadow-xs' : 'hover:bg-card/60',
             ]}
         >

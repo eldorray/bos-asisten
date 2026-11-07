@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
+        // Sesi lain berakhir saat password berubah; sesi yang mengganti tetap masuk.
+        $middleware->authenticateSessions();
+
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,

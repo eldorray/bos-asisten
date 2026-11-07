@@ -4,12 +4,16 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
@@ -32,6 +36,18 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureResetLink();
+    }
+
+    /**
+     * Tautan di email memakai APP_URL, karena header Host bisa dipalsukan pengirim permintaan.
+     */
+    private function configureResetLink(): void
+    {
+        ResetPassword::createUrlUsing(fn (User $user, string $token): string => rtrim((string) config('app.url'), '/').route('password.reset', [
+            'token' => $token,
+            'email' => $user->getEmailForPasswordReset(),
+        ], false));
     }
 
     /**
@@ -41,6 +57,35 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+        Fortify::confirmPasswordsUsing($this->confirmPassword(...));
+    }
+
+    /**
+     * Konfirmasi password (langkah sebelum kelola 2FA/passkey), dibatasi 5 percobaan gagal per menit
+     * agar sesi curian tidak bisa dipakai menebak password tanpa batas.
+     */
+    private function confirmPassword(User $user, ?string $password): bool
+    {
+        $key = 'confirm-password:'.$user->getKey().'|'.request()->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            throw ValidationException::withMessages([
+                'password' => __('auth.throttle', ['seconds' => RateLimiter::availableIn($key)]),
+            ]);
+        }
+
+        $valid = Auth::guard(config('fortify.guard'))->validate([
+            Fortify::username() => $user->{Fortify::username()},
+            'password' => $password,
+        ]);
+
+        if ($valid) {
+            RateLimiter::clear($key);
+        } else {
+            RateLimiter::hit($key);
+        }
+
+        return $valid;
     }
 
     /**

@@ -45,12 +45,14 @@
         sekolah,
         menunggakPerBulan,
         pdfBelumPerBulan,
+        anggaranPerBulan,
     }: {
         bulan: string;
         ringkasan: { selesai: number; kurang: number; belum: number };
         sekolah: SekolahBulan[];
         menunggakPerBulan: Record<string, number>;
         pdfBelumPerBulan: Record<string, boolean>;
+        anggaranPerBulan: Record<string, Record<string, number>>;
     } = $props();
 
     const simpanan = (kunci: string): string | null =>
@@ -253,7 +255,13 @@
         <PemilihBulan {bulan} {menunggakPerBulan} {pdfBelumPerBulan} />
     </div>
 
-    <StripBulan {bulan} {menunggakPerBulan} {pdfBelumPerBulan} />
+    <StripBulan
+        {bulan}
+        {menunggakPerBulan}
+        {pdfBelumPerBulan}
+        {anggaranPerBulan}
+        sekolah={sekolah.map((s) => ({ id: s.id, nama: s.nama }))}
+    />
 
     {#if aktif}
         <div class="md:hidden">

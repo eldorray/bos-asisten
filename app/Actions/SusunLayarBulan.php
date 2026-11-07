@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 class SusunLayarBulan
 {
     /**
-     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>, pdfBelumPerBulan: array<int, bool>}
+     * @return array{bulan: string, ringkasan: array{selesai: int, kurang: int, belum: int}, sekolah: list<array<string, mixed>>, menunggakPerBulan: array<int, int>, pdfBelumPerBulan: array<int, bool>, anggaranPerBulan: array<int, array<int, int>>}
      */
     public function susun(int $tahun, int $bulan): array
     {
@@ -41,6 +41,7 @@ class SusunLayarBulan
                 ->all()),
             'menunggakPerBulan' => $this->menunggakPerBulan($baris),
             'pdfBelumPerBulan' => $this->pdfBelumPerBulan($sekolahs, $tahun),
+            'anggaranPerBulan' => $this->anggaranPerBulan($sekolahs, $baris),
         ];
     }
 
@@ -189,6 +190,33 @@ class SusunLayarBulan
 
             if ($bulan !== null && $b['status']->menunggak()) {
                 $hasil[$bulan]++;
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Jumlah anggaran per sekolah per bulan kerja, untuk menjumlahkan beberapa bulan sekaligus di strip bulan.
+     * Aturan hitungnya sama dengan 'total' tiap sekolah di layar bulan.
+     *
+     * @param  EloquentCollection<int, Sekolah>  $sekolahs
+     * @param  Collection<int, array{kegiatan: Kegiatan, status: StatusKegiatan}>  $baris
+     * @return array<int, array<int, int>>
+     */
+    private function anggaranPerBulan(EloquentCollection $sekolahs, Collection $baris): array
+    {
+        $hasil = [];
+
+        foreach ($sekolahs as $sekolah) {
+            $hasil[$sekolah->id] = array_fill(1, 12, 0);
+        }
+
+        foreach ($baris as $b) {
+            $bulan = $b['kegiatan']->bulanKerja();
+
+            if ($bulan !== null && isset($hasil[$b['kegiatan']->sekolah_id])) {
+                $hasil[$b['kegiatan']->sekolah_id][$bulan] += $b['kegiatan']->jumlah;
             }
         }
 

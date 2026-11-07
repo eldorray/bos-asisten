@@ -17,6 +17,7 @@
         label?: string;
         loadingLabel?: string;
         separator?: string;
+        diBawahForm?: boolean;
     };
 
     let props: Props = $props();
@@ -38,7 +39,24 @@
     });
 </script>
 
+{#snippet pemisah()}
+    <div class="relative my-6">
+        <div class="absolute inset-0 flex items-center">
+            <Separator class="w-full" />
+        </div>
+        <div class="relative flex justify-center text-xs">
+            <span class="bg-background px-2 text-muted-foreground">
+                {props.separator ?? 'atau'}
+            </span>
+        </div>
+    </div>
+{/snippet}
+
 {#if passkeyVerify.isSupported}
+    {#if props.diBawahForm}
+        {@render pemisah()}
+    {/if}
+
     <div class="grid gap-2">
         <Button
             type="button"
@@ -53,8 +71,8 @@
                 <KeyRound class="h-4 w-4" />
             {/if}
             {passkeyVerify.isLoading
-                ? (props.loadingLabel ?? 'Authenticating...')
-                : (props.label ?? 'Sign in with a passkey')}
+                ? (props.loadingLabel ?? 'Memeriksa...')
+                : (props.label ?? 'Masuk dengan passkey')}
         </Button>
 
         {#if passkeyVerify.error}
@@ -64,14 +82,7 @@
         {/if}
     </div>
 
-    <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-            <Separator class="w-full" />
-        </div>
-        <div class="relative flex justify-center text-xs uppercase">
-            <span class="bg-background px-2 text-muted-foreground">
-                {props.separator ?? 'Or continue with email'}
-            </span>
-        </div>
-    </div>
+    {#if !props.diBawahForm}
+        {@render pemisah()}
+    {/if}
 {/if}

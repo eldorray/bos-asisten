@@ -1,7 +1,7 @@
 <script module lang="ts">
     export const layout = {
-        title: 'Masuk ke akun Anda',
-        description: 'Masukkan email dan password Anda',
+        title: 'Masuk ke SPJ BOS',
+        description: 'Kegiatan, berkas, dan kuitansi ARKAS dan ERKAM dalam satu tempat',
     };
 </script>
 
@@ -37,8 +37,6 @@
     </div>
 {/if}
 
-<PasskeyVerify />
-
 <Form
     {...store.form()}
     resetOnSuccess={['password']}
@@ -54,7 +52,6 @@
                     name="email"
                     required
                     autocomplete="email"
-                    placeholder="email@example.com"
                 />
                 <InputError message={errors.email} />
             </div>
@@ -73,7 +70,6 @@
                     name="password"
                     required
                     autocomplete="current-password"
-                    placeholder="Password"
                 />
                 <InputError message={errors.password} />
             </div>
@@ -97,3 +93,5 @@
         </div>
     {/snippet}
 </Form>
+
+<PasskeyVerify diBawahForm />

@@ -9,6 +9,7 @@ use App\Models\Kuitansi;
 use App\Models\Sekolah;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Smalot\PdfParser\Parser;
 
 /**
  * @return array{0: Kegiatan, 1: JenisKegiatan}
@@ -104,4 +105,31 @@ test('tamu ditolak', function () {
     [$kegiatan] = kegiatanBelanja();
 
     $this->get(route('pdf.kegiatan', $kegiatan))->assertRedirect(route('login'));
+});
+
+test('dashboard menandai kegiatan selesai bisa diunduh', function () {
+    [$kegiatan] = kegiatanBelanja();
+    pasangKuitansi($kegiatan);
+    pasangFoto($kegiatan, 'Nota');
+    pasangFoto($kegiatan, 'Foto barang');
+
+    $this->get(route('dashboard', ['bulan' => '2026-03']))
+        ->assertInertia(fn ($page) => $page
+            ->where('sekolah.0.kegiatan.0.status', 'selesai')
+            ->where('sekolah.0.kegiatan.0.bisaUnduhPdf', true));
+});
+
+test('pdf kegiatan memuat kuitansi satu halaman penuh lalu lampiran', function () {
+    [$kegiatan] = kegiatanBelanja();
+    pasangKuitansi($kegiatan);
+    pasangFoto($kegiatan, 'Nota');
+    pasangFoto($kegiatan, 'Foto barang');
+
+    $isi = (string) $this->get(route('pdf.kegiatan', $kegiatan))->getContent();
+    $pdf = (new Parser)->parseContent($isi);
+    $halaman = $pdf->getPages();
+
+    expect($halaman)->toHaveCount(3)
+        ->and($halaman[0]->getText())->toContain('KUITANSI/BUKTI PEMBAYARAN')->toContain('Sumber Dana')->toContain('Lunas dibayar tanggal')
+        ->and($halaman[1]->getText())->not->toContain('KUITANSI');
 });

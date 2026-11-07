@@ -23,6 +23,7 @@ class PdfBulanan
         $pdf = new FPDF('P', 'mm', 'A4');
         $pdf->SetAutoPageBreak(false);
         $kuitansi = new GambarKuitansi($pdf, $sekolah);
+        $penuh = new GambarKuitansiPenuh($pdf, $sekolah);
 
         foreach ($lembar as $satu) {
             $pdf->AddPage();
@@ -30,6 +31,8 @@ class PdfBulanan
             foreach ($satu->penempatan as $i => $tempat) {
                 if ($tempat->isi instanceof LampiranPdf) {
                     self::foto($pdf, $tempat, $tempat->isi);
+                } elseif ($tempat->jenis === 'kuitansi_penuh') {
+                    $penuh->gambar($tempat->isi instanceof Kuitansi ? $tempat->isi : null);
                 } elseif ($tempat->isi === null || $tempat->isi instanceof Kuitansi) {
                     $kuitansi->gambar($tempat->isi, $tempat->x, $tempat->y, $tempat->lebar, $tempat->tinggi, isset($satu->penempatan[$i + 1]));
                 }

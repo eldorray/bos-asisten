@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\HitungStatusKegiatan;
-use App\Actions\SusunBlokBulan;
+use App\Actions\SusunLembarKegiatan;
 use App\Models\Kegiatan;
 use App\Pdf\PdfBulanan;
-use App\Pdf\TataLetakPdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
@@ -28,9 +27,8 @@ class PdfKegiatanController extends Controller
 
         $kode = preg_replace('/[^A-Za-z0-9_-]+/', '-', $kegiatan->sekolah->kode_bukti);
         $namaFile = sprintf('SPJ-%s-%s.pdf', $kode, Str::slug(Str::limit($kegiatan->nama, 50, '')) ?: $kegiatan->id);
-        $lembar = TataLetakPdf::susun([SusunBlokBulan::untukKegiatan($kegiatan)]);
 
-        return response(PdfBulanan::buat($kegiatan->sekolah, $lembar), 200, [
+        return response(PdfBulanan::buat($kegiatan->sekolah, SusunLembarKegiatan::untuk($kegiatan)), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => "attachment; filename=\"{$namaFile}\"",
         ]);

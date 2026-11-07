@@ -71,7 +71,7 @@
         {/if}
     </div>
     {#if url.isCurrentUrl(dashboard(), url.currentUrl)}
-        <Button asChild>
+        <Button variant="outline" asChild>
             {#snippet children(props)}
                 <Link href={ImporController.index()} class={props.class}>
                     <Upload class="size-4" />

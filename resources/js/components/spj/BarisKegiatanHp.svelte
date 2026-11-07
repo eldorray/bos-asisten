@@ -4,6 +4,7 @@
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import AksiKegiatan from '@/components/spj/AksiKegiatan.svelte';
     import CatatanKegiatan from '@/components/spj/CatatanKegiatan.svelte';
+    import SlotBerkas from '@/components/spj/SlotBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData } from '@/types';
@@ -42,7 +43,7 @@
 </script>
 
 <li class="rounded-2xl border bg-card">
-    <div class="flex items-center gap-2.5 py-3.5 pr-2.5 pl-3.5">
+    <div class="flex items-center gap-2 py-4 pr-3 pl-4">
         {#if menandai}
             <input
                 type="checkbox"
@@ -55,22 +56,26 @@
             href={KegiatanController.show(kegiatan.id)}
             prefetch={simpanUntukOffline ? 'mount' : false}
             cacheFor="5m"
-            class="flex min-w-0 flex-1 items-center gap-2.5"
+            class="flex min-w-0 flex-1 items-center gap-2"
         >
             <span class="grid min-w-0 flex-1 gap-1">
-                <span class="font-semibold tracking-tight [overflow-wrap:anywhere]">
+                <span class="font-medium [overflow-wrap:anywhere]">
                     {kegiatan.nama}
                 </span>
-                <span class="text-[13px] text-muted-foreground tabular-nums">
+                <span class="text-meta text-muted-foreground tabular-nums">
                     {kegiatan.koefisien} · Rp {rupiah(kegiatan.jumlah)}
                 </span>
-                <span class="mt-0.5 flex flex-wrap items-center gap-1.5">
-                    <StatusPill
-                        status={kegiatan.status}
-                        kurang={kegiatan.kurang}
-                    />
+                <span class="mt-0.5 flex flex-wrap items-center gap-2">
+                    {#if kegiatan.status === 'belum' || kegiatan.status === 'kurang' || kegiatan.status === 'selesai'}
+                        <SlotBerkas berkas={kegiatan.berkas} />
+                    {:else}
+                        <StatusPill
+                            status={kegiatan.status}
+                            kurang={kegiatan.kurang}
+                        />
+                    {/if}
                     <span
-                        class={`text-[13px] ${kegiatan.status === 'kurang' ? 'text-belum-foreground' : 'text-muted-foreground'}`}
+                        class={`text-meta ${kegiatan.status === 'kurang' ? 'text-kurang-foreground' : 'text-muted-foreground'}`}
                     >
                         {keterangan}
                     </span>
@@ -81,7 +86,7 @@
         </Link>
     </div>
     {#if kegiatan.status === 'di_luar_aplikasi' || kegiatan.hilangDariAnggaran}
-        <div class="flex flex-wrap gap-2 px-3.5 pb-3.5">
+        <div class="flex flex-wrap gap-2 px-4 pb-4">
             <AksiKegiatan {kegiatan} />
         </div>
     {/if}

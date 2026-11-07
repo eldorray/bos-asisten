@@ -48,7 +48,7 @@
 >
     <div
         class={cn(
-            'grid grid-cols-1 gap-3.5 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]',
+            'grid grid-cols-1 gap-4 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]',
             sebarisDiDesktop ? 'md:gap-3 md:p-0' : 'md:p-5',
         )}
     >
@@ -60,7 +60,7 @@
                     : 'md:static md:mx-0 md:bg-transparent md:p-0',
             )}
         >
-            <h2 class="text-lg font-semibold tracking-tight">{judul}</h2>
+            <h2 class="text-lg font-medium">{judul}</h2>
             <Button
                 variant="ghost"
                 size="icon"

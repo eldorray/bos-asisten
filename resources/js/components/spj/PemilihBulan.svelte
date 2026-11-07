@@ -45,9 +45,9 @@
         aria-label="Bulan sebelumnya"
         onclick={() => pergi(tahun, nomor - 1)}
     >
-        <ChevronLeft class="size-[18px]" />
+        <ChevronLeft class="size-4" />
     </button>
-    <label class="relative flex h-11 min-w-[76px] items-center justify-center text-sm font-semibold">
+    <label class="relative flex h-11 min-w-[76px] items-center justify-center text-sm font-medium">
         {namaBulan[nomor - 1].slice(0, 3)}
         {tahun}
         <select
@@ -67,32 +67,23 @@
         aria-label="Bulan berikutnya"
         onclick={() => pergi(tahun, nomor + 1)}
     >
-        <ChevronRight class="size-[18px]" />
+        <ChevronRight class="size-4" />
     </button>
 </div>
 
-<div class="hidden max-w-full flex-wrap items-center gap-2 md:flex">
+<!-- Di desktop bulan dipilih lewat strip; di sini tinggal tahunnya. -->
+<div class="hidden items-center gap-2 md:flex">
     <Button
         variant="outline"
         size="icon"
-        aria-label="Bulan sebelumnya"
-        onclick={() => pergi(tahun, nomor - 1)}
+        aria-label="Tahun sebelumnya"
+        onclick={() => pergi(tahun - 1, nomor)}
     >
         <ChevronLeft class="size-4" />
     </Button>
-    <select
-        class="h-11 max-w-full rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
-        aria-label="Pilih bulan"
-        value={nomor}
-        onchange={(e) => pergi(tahun, Number(e.currentTarget.value))}
-    >
-        {#each namaBulan as nama, i (nama)}
-            <option value={i + 1}>{label(nama, i + 1)}</option>
-        {/each}
-    </select>
     <input
         type="number"
-        class="h-11 w-24 rounded-[10px] border border-input bg-card px-2.5 text-sm font-semibold"
+        class="h-11 w-24 rounded-lg border border-input bg-card px-3 text-center text-sm font-medium tabular-nums"
         aria-label="Tahun"
         min="2000"
         max="2100"
@@ -102,8 +93,8 @@
     <Button
         variant="outline"
         size="icon"
-        aria-label="Bulan berikutnya"
-        onclick={() => pergi(tahun, nomor + 1)}
+        aria-label="Tahun berikutnya"
+        onclick={() => pergi(tahun + 1, nomor)}
     >
         <ChevronRight class="size-4" />
     </Button>

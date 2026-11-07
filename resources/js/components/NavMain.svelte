@@ -58,7 +58,7 @@
                                 {#if item.badge && item.badge.jumlah > 0}
                                     <span
                                         aria-label={item.badge.label}
-                                        class="min-w-5 rounded-md bg-destructive px-1.5 text-center text-xs font-semibold text-destructive-foreground tabular-nums group-data-[collapsible=icon]:hidden"
+                                        class="min-w-5 rounded-md bg-sidebar-accent px-1.5 text-center text-xs font-semibold text-muted-foreground tabular-nums group-data-[collapsible=icon]:hidden"
                                     >
                                         {item.badge.jumlah}
                                     </span>

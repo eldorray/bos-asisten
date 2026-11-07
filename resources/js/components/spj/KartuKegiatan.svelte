@@ -1,9 +1,9 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
-    import Tag from '@lucide/svelte/icons/tag';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import AksiKegiatan from '@/components/spj/AksiKegiatan.svelte';
     import CatatanKegiatan from '@/components/spj/CatatanKegiatan.svelte';
+    import SlotBerkas from '@/components/spj/SlotBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData } from '@/types';
@@ -38,15 +38,15 @@
     });
 </script>
 
-<article class="grid grid-cols-1 gap-2.5 rounded-[14px] border bg-card p-3.5">
+<article class="flex flex-col gap-2 rounded-xl border bg-card p-4">
     <div class="flex items-center justify-between gap-2">
-        <span
-            class="inline-flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground"
-        >
-            <Tag class="size-3.5 shrink-0" />
-            <span class="truncate">{kegiatan.jenis}</span>
+        <span class="min-w-0 truncate text-meta text-muted-foreground">
+            {kegiatan.jenis}
         </span>
-        <StatusPill status={kegiatan.status} kurang={kegiatan.kurang} />
+        <!-- Kolom papan sudah menyebut status biasa; hanya yang khusus diberi label. -->
+        {#if kegiatan.status === 'dirapel' || kegiatan.status === 'di_luar_aplikasi'}
+            <StatusPill status={kegiatan.status} kurang={kegiatan.kurang} />
+        {/if}
     </div>
 
     <div class="flex items-start gap-2">
@@ -61,19 +61,19 @@
         <div class="min-w-0">
             <Link
                 href={KegiatanController.show(kegiatan.id)}
-                class="block text-[15px] font-semibold tracking-tight [overflow-wrap:anywhere] hover:underline"
+                class="block text-nama font-medium [overflow-wrap:anywhere] hover:underline"
             >
                 {kegiatan.nama}
             </Link>
-            <p class="mt-0.5 text-[13px] text-muted-foreground">
+            <p class="mt-0.5 text-meta text-muted-foreground">
                 {kegiatan.koefisien}
             </p>
         </div>
     </div>
 
     {#if kegiatan.status === 'kurang'}
-        <p class="text-[13px] text-belum-foreground">
-            <span class="font-semibold">Kurang:</span>
+        <p class="text-meta text-kurang-foreground">
+            <span class="font-medium">Kurang:</span>
             {berkasKurang.join(', ')}
         </p>
     {/if}
@@ -81,10 +81,15 @@
     <CatatanKegiatan {kegiatan} />
 
     <div
-        class="flex flex-wrap items-center justify-between gap-1.5 border-t pt-2.5 text-[13px]"
+        class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t pt-2 text-meta"
     >
-        <span class="text-muted-foreground">{keterangan}</span>
-        <span class="font-semibold tabular-nums">
+        <span class="inline-flex items-center gap-2 text-muted-foreground">
+            {#if !kegiatan.rapel && kegiatan.status !== 'tidak_dilaksanakan' && kegiatan.status !== 'di_luar_aplikasi'}
+                <SlotBerkas berkas={kegiatan.berkas} />
+            {/if}
+            {keterangan}
+        </span>
+        <span class="font-medium tabular-nums">
             Rp {rupiah(kegiatan.jumlah)}
         </span>
     </div>

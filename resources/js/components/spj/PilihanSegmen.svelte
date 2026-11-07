@@ -32,7 +32,7 @@
             type="button"
             aria-pressed={p.nilai === nilai}
             class={cn(
-                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-[9px] px-2.5 text-sm font-medium focus-visible:ring-2 md:px-3.5 focus-visible:ring-ring focus-visible:outline-none',
+                'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:ring-2 md:px-4 focus-visible:ring-ring focus-visible:outline-none',
                 p.nilai === nilai
                     ? 'bg-card shadow-xs'
                     : 'text-muted-foreground hover:text-foreground',
@@ -51,7 +51,7 @@
             {/if}
             {#if p.lencana}
                 <span
-                    class="min-w-5 rounded-md bg-belum px-1.5 text-center text-xs font-semibold text-belum-foreground tabular-nums"
+                    class="min-w-5 rounded-md bg-card px-1.5 text-center text-xs font-medium text-muted-foreground tabular-nums"
                 >
                     {p.lencana}
                 </span>

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { Link, router } from '@inertiajs/svelte';
-    import Calendar from '@lucide/svelte/icons/calendar';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData } from '@/types';
@@ -40,24 +39,17 @@
     {@const awal = (kelompok.tahap - 1) * 6}
     <section
         aria-label={`Tahap ${kelompok.tahap} belum punya bulan`}
-        class="grid content-start gap-3 rounded-[14px] border bg-card p-4 text-sm"
+        class="grid content-start gap-3 rounded-xl border bg-card p-4 text-sm"
     >
-        <div class="flex items-start gap-3">
-            <span
-                class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-kurang text-kurang-foreground"
-            >
-                <Calendar class="size-[18px]" />
-            </span>
-            <div>
-                <h2 class="text-[15px] font-semibold">
+        <div>
+                <h2 class="text-nama font-medium">
                     {kelompok.kegiatan.length} kegiatan Tahap {kelompok.tahap}
                     {sekolah} belum punya bulan
                 </h2>
                 <p class="mt-0.5 text-muted-foreground">
-                    Pilih bulannya agar tidak terlewat.
+                    Pilih bulannya agar tidak terlewat
                 </p>
             </div>
-        </div>
         {#each kelompok.kegiatan as k (k.id)}
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="min-w-0">
@@ -71,14 +63,14 @@
                     <span class="tabular-nums">Rp {rupiah(k.jumlah)}</span>
                     {#if k.perluDitinjau}
                         <span
-                            class="text-xs font-semibold text-kurang-foreground"
+                            class="text-xs font-medium text-kurang-foreground"
                         >
                             Jenis: {k.jenis}
                         </span>
                     {/if}
                 </span>
                 <select
-                    class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
+                    class="h-11 rounded-lg border border-input bg-card px-3 text-sm"
                     aria-label={`Bulan untuk ${k.nama}`}
                     aria-invalid={galat[k.id] ? true : undefined}
                     onchange={(e) => pilihBulan(k.id, e.currentTarget)}

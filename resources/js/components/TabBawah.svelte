@@ -52,7 +52,7 @@
             {#if t.lencana > 0}
                 <span
                     aria-label={`${t.lencana} kegiatan bulan ini belum selesai`}
-                    class="absolute top-0.5 left-[calc(50%+8px)] min-w-[18px] rounded-full bg-destructive px-1 text-center text-[11px] leading-[18px] font-semibold text-destructive-foreground tabular-nums"
+                    class="absolute top-0.5 left-[calc(50%+8px)] min-w-[18px] rounded-full bg-primary px-1 text-center text-[11px] leading-[18px] font-semibold text-primary-foreground tabular-nums"
                 >
                     {t.lencana}
                 </span>

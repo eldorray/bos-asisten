@@ -72,7 +72,7 @@
     terbuka={peringatanTerbuka}
     ontutup={() => (peringatanTerbuka = false)}
 >
-    <p class="rounded-xl bg-kurang p-3.5 text-[15px] text-kurang-foreground">
+    <p class="rounded-xl bg-kurang p-4 text-nama text-kurang-foreground">
         {#if menunggak.length > 0}
             {menunggak.length} kegiatan masih kurang berkas.
         {/if}
@@ -87,11 +87,11 @@
             <li>
                 <Link
                     href={KegiatanController.show(k.id)}
-                    class="flex min-h-14 items-center gap-2 py-2 pr-2.5 pl-3.5 text-sm"
+                    class="flex min-h-14 items-center gap-2 py-2 pr-3 pl-4 text-sm"
                 >
                     <span class="min-w-0 flex-1">
-                        <span class="block font-semibold">{k.nama}</span>
-                        <span class="block text-[13px] text-belum-foreground">
+                        <span class="block font-medium">{k.nama}</span>
+                        <span class="block text-meta text-belum-foreground">
                             {k.perluDiperiksa}
                         </span>
                     </span>
@@ -103,11 +103,11 @@
             <li>
                 <Link
                     href={KegiatanController.show(k.id)}
-                    class="flex min-h-14 items-center gap-2 py-2 pr-2.5 pl-3.5 text-sm"
+                    class="flex min-h-14 items-center gap-2 py-2 pr-3 pl-4 text-sm"
                 >
                     <span class="min-w-0 flex-1">
-                        <span class="block font-semibold">{k.nama}</span>
-                        <span class="block text-[13px] text-belum-foreground">
+                        <span class="block font-medium">{k.nama}</span>
+                        <span class="block text-meta text-belum-foreground">
                             Kurang: {k.kurang.join(', ')}
                         </span>
                     </span>

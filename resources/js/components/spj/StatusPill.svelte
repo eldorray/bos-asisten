@@ -1,5 +1,4 @@
 <script lang="ts">
-    import Flag from '@lucide/svelte/icons/flag';
     import { cn } from '@/lib/utils';
     import type { StatusKode } from '@/types';
 
@@ -22,7 +21,7 @@
         },
         belum: {
             label: 'Belum',
-            kelas: 'bg-belum text-belum-foreground',
+            kelas: 'bg-batal text-batal-foreground',
         },
         dirapel: {
             label: 'Dirapel',
@@ -45,10 +44,9 @@
 
 <span
     class={cn(
-        'inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap',
         tampil[status].kelas,
     )}
 >
-    <Flag class="size-3" />
     {label}
 </span>

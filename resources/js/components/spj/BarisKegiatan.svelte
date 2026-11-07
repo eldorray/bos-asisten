@@ -1,10 +1,9 @@
 <script lang="ts">
     import { Link } from '@inertiajs/svelte';
-    import Check from '@lucide/svelte/icons/check';
-    import X from '@lucide/svelte/icons/x';
     import KegiatanController from '@/actions/App/Http/Controllers/KegiatanController';
     import AksiKegiatan from '@/components/spj/AksiKegiatan.svelte';
     import CatatanKegiatan from '@/components/spj/CatatanKegiatan.svelte';
+    import SlotBerkas from '@/components/spj/SlotBerkas.svelte';
     import StatusPill from '@/components/spj/StatusPill.svelte';
     import { namaBulan, rupiah } from '@/types';
     import type { BarisKegiatanData } from '@/types';
@@ -35,11 +34,11 @@
         <div class="min-w-0">
             <Link
                 href={KegiatanController.show(kegiatan.id)}
-                class="font-semibold [overflow-wrap:anywhere] hover:underline"
+                class="font-medium [overflow-wrap:anywhere] hover:underline"
             >
                 {kegiatan.nama}
             </Link>
-            <p class="text-[13px] text-muted-foreground">
+            <p class="text-meta text-muted-foreground">
                 {kegiatan.koefisien} · {kegiatan.jenis}
             </p>
             <CatatanKegiatan {kegiatan} />
@@ -50,7 +49,7 @@
         Rp {rupiah(kegiatan.jumlah)}
     </div>
 
-    <div class="flex flex-wrap gap-x-2.5 gap-y-1 text-[13px]">
+    <div class="flex flex-wrap gap-x-2.5 gap-y-1 text-meta">
         {#if kegiatan.rapel}
             <span>
                 Dirapel di kuitansi {kegiatan.rapel.nomor} ({namaBulan[
@@ -61,19 +60,18 @@
             <span class="text-muted-foreground">Tidak masuk PDF</span>
         {:else}
             {#each kegiatan.berkas as berkas (berkas.nama)}
-                {#if berkas.ada}
-                    <span class="inline-flex items-center gap-1">
-                        <Check class="size-3.5" aria-label="Ada" />
-                        {berkas.nama}
-                    </span>
-                {:else}
-                    <span
-                        class="inline-flex items-center gap-1 font-semibold text-belum-foreground"
-                    >
-                        <X class="size-3.5" aria-label="Kurang" />
-                        {berkas.nama}
-                    </span>
-                {/if}
+                <span
+                    class={[
+                        'inline-flex items-center gap-1',
+                        berkas.ada && 'text-muted-foreground',
+                    ]}
+                >
+                    <SlotBerkas
+                        berkas={[berkas]}
+                        label={berkas.ada ? 'Ada' : 'Kurang'}
+                    />
+                    {berkas.nama}
+                </span>
             {/each}
         {/if}
     </div>

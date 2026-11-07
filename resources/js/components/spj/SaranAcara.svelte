@@ -1,6 +1,5 @@
 <script lang="ts">
     import { router } from '@inertiajs/svelte';
-    import Link2 from '@lucide/svelte/icons/link-2';
     import AcaraController from '@/actions/App/Http/Controllers/AcaraController';
     import InputError from '@/components/InputError.svelte';
     import { Button } from '@/components/ui/button';
@@ -35,22 +34,15 @@
 
 <section
     aria-label="Saran satu acara"
-    class="grid content-start gap-3 rounded-[14px] border bg-card p-4 text-sm"
+    class="grid content-start gap-3 rounded-xl border bg-card p-4 text-sm"
 >
-    <div class="flex items-start gap-3">
-        <span
-            class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-dirapel text-dirapel-foreground"
-        >
-            <Link2 class="size-[18px]" />
-        </span>
-        <div>
-            <h2 class="text-[15px] font-semibold">Mungkin satu acara</h2>
+    <div>
+            <h2 class="text-nama font-medium">Mungkin satu acara</h2>
             <p class="mt-0.5 text-muted-foreground">
-                Undangan, daftar hadir, notulen, dan foto cukup diunggah sekali.
+                Undangan, daftar hadir, notulen, dan foto cukup diunggah sekali
             </p>
         </div>
-    </div>
-    <ul class="grid gap-1.5">
+    <ul class="grid gap-2">
         {#each saran.baris as b (b.id)}
             <li class="flex justify-between gap-3">
                 <span class="min-w-0">{b.nama}</span>

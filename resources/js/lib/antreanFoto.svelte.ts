@@ -208,7 +208,9 @@ async function sebagaiGambar(file: File): Promise<File[]> {
     } catch (galat) {
         toast.error(
             galat instanceof PdfTidakBisaDibaca
-                ? `${file.name} tidak bisa dibaca. Pastikan PDF-nya tidak diberi kata sandi.`
+                ? galat.kataSandi
+                    ? `${file.name} diberi kata sandi. Buka kuncinya dulu.`
+                    : `${file.name} tidak bisa diproses (${galat.sebab}).`
                 : `${file.name} tidak bisa diproses.`,
         );
 

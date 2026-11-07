@@ -32,6 +32,17 @@ export default defineConfig({
             formVariants: true,
         }),
     ]),
+    build: {
+        rolldownOptions: {
+            output: {
+                // Worker pdf.js dimuat sebagai modul; hosting sering menyajikan .mjs tanpa tipe JavaScript, jadi pakai .js.
+                assetFileNames: (info) =>
+                    info.names.some((nama) => nama.endsWith('.mjs'))
+                        ? 'assets/[name]-[hash].js'
+                        : 'assets/[name]-[hash][extname]',
+            },
+        },
+    },
     server: {
         watch: {
             ignored: [

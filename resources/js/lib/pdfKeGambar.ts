@@ -1,7 +1,21 @@
 const SISI_MAKS = 1600;
 export const HALAMAN_MAKS = 10;
 
-export class PdfTidakBisaDibaca extends Error {}
+export class PdfTidakBisaDibaca extends Error {
+    constructor(
+        nama: string,
+        readonly kataSandi = false,
+        readonly sebab = '',
+    ) {
+        super(nama);
+    }
+}
+
+function sebabDari(galat: unknown): string {
+    return galat instanceof Error
+        ? `${galat.name}: ${galat.message}`.slice(0, 120)
+        : String(galat).slice(0, 120);
+}
 
 /**
  * Ubah PDF menjadi satu gambar JPEG per halaman (sisi terpanjang maks 1600 px), di peramban,
@@ -11,12 +25,21 @@ export class PdfTidakBisaDibaca extends Error {}
 export async function pdfKeGambar(
     file: File,
 ): Promise<{ berkas: File[]; halamanTotal: number }> {
-    const [pdfjs, worker] = await Promise.all([
-        import('pdfjs-dist/legacy/build/pdf.mjs'),
-        import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'),
-    ]);
+    let pdfjs;
 
-    pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+    try {
+        const [pustaka, worker] = await Promise.all([
+            import('pdfjs-dist/legacy/build/pdf.mjs'),
+            import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'),
+        ]);
+
+        pdfjs = pustaka;
+        pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+    } catch (galat) {
+        console.error('pdf.js gagal dimuat', galat);
+
+        throw new PdfTidakBisaDibaca(file.name, false, sebabDari(galat));
+    }
 
     const tugas = pdfjs.getDocument({
         data: new Uint8Array(await file.arrayBuffer()),
@@ -25,10 +48,15 @@ export async function pdfKeGambar(
 
     try {
         dokumen = await tugas.promise;
-    } catch {
+    } catch (galat) {
+        console.error('PDF gagal dibuka', galat);
         void tugas.destroy();
 
-        throw new PdfTidakBisaDibaca(file.name);
+        throw new PdfTidakBisaDibaca(
+            file.name,
+            galat instanceof Error && galat.name === 'PasswordException',
+            sebabDari(galat),
+        );
     }
 
     try {
@@ -74,9 +102,11 @@ export async function pdfKeGambar(
 
         return { berkas, halamanTotal: dokumen.numPages };
     } catch (galat) {
+        console.error('PDF gagal digambar', galat);
+
         throw galat instanceof PdfTidakBisaDibaca
             ? galat
-            : new PdfTidakBisaDibaca(file.name);
+            : new PdfTidakBisaDibaca(file.name, false, sebabDari(galat));
     } finally {
         void tugas.destroy();
     }

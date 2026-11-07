@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-    import { useForm } from '@inertiajs/svelte';
+    import { router, useForm } from '@inertiajs/svelte';
     import School from '@lucide/svelte/icons/school';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
@@ -88,6 +88,20 @@
             .submit(SekolahController.update(sekolahs[i].id), {
                 preserveScroll: true,
             });
+    }
+
+    function urutkanNomor(sekolah: SekolahData): void {
+        if (
+            confirm(
+                `Urutkan nomor bukti ${sekolah.nama} tahun ${tahun} per bulan? Nomor di kuitansi yang sudah dicetak atau ditandatangani bisa berubah, jadi cetak ulang bila perlu.`,
+            )
+        ) {
+            router.post(
+                SekolahController.urutkanNomor(sekolah.id).url,
+                { tahun },
+                { preserveScroll: true },
+            );
+        }
     }
 
     type Kunci =
@@ -195,9 +209,16 @@
                             <InputError message={form.errors.nomor_awal} />
                             <InputError message={(form.errors as Record<string, string>).tahun} />
                         </div>
-                        <div class="sm:col-span-2">
+                        <div class="flex flex-wrap gap-2 sm:col-span-2">
                             <Button type="submit" disabled={form.processing}>
                                 Simpan
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onclick={() => urutkanNomor(sekolah)}
+                            >
+                                Urutkan nomor per bulan
                             </Button>
                         </div>
                     </form>

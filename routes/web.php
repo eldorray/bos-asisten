@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('pengaturan/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::patch('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'update'])->name('sekolah.update');
+    Route::post('pengaturan/sekolah/{sekolah}/urutkan-nomor', [SekolahController::class, 'urutkanNomor'])->name('sekolah.urutkan-nomor');
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
     Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 

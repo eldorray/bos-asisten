@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\UrutkanNomorKuitansi;
 use App\Http\Requests\UpdateSekolahRequest;
 use App\Models\Sekolah;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,6 +46,19 @@ class SekolahController extends Controller
         }
 
         $sekolah->update($data);
+
+        return back();
+    }
+
+    public function urutkanNomor(Request $request, Sekolah $sekolah, UrutkanNomorKuitansi $urutkan): RedirectResponse
+    {
+        $tahun = $request->validate(['tahun' => ['required', 'integer', 'between:2000,2100']])['tahun'];
+        $berubah = $urutkan->jalankan($sekolah, (int) $tahun);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $berubah === 0 ? 'Nomor bukti sudah urut per bulan' : "{$berubah} nomor bukti diurutkan per bulan",
+        ]);
 
         return back();
     }

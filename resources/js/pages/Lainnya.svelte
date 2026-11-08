@@ -12,6 +12,7 @@
     import Smartphone from '@lucide/svelte/icons/smartphone';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
     import PengaturanRkasController from '@/actions/App/Http/Controllers/Rkas/PengaturanRkasController';
+    import ReferensiRkasController from '@/actions/App/Http/Controllers/Rkas/ReferensiRkasController';
     import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
     import AppHead from '@/components/AppHead.svelte';
     import UserInfo from '@/components/UserInfo.svelte';
@@ -40,6 +41,11 @@
             judul: 'Pengaturan RKAS',
             keterangan: 'Batas juknis dan kode kegiatan per tahun',
             href: PengaturanRkasController.edit(),
+        },
+        {
+            judul: 'Referensi RKAS',
+            keterangan: 'Kegiatan, rekening, barang acuan, satuan, dan PTK',
+            href: ReferensiRkasController.index(),
         },
     ];
 

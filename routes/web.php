@@ -11,6 +11,7 @@ use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\PdfBulananController;
 use App\Http\Controllers\PdfKegiatanController;
 use App\Http\Controllers\Rkas\PengaturanRkasController;
+use App\Http\Controllers\Rkas\ReferensiRkasController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +48,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('pengaturan/sekolah/{sekolah}/urutkan-nomor', [SekolahController::class, 'urutkanNomor'])->name('sekolah.urutkan-nomor');
     Route::get('pengaturan/rkas', [PengaturanRkasController::class, 'edit'])->name('rkas.pengaturan.edit');
     Route::patch('pengaturan/rkas/{pengaturan}', [PengaturanRkasController::class, 'update'])->name('rkas.pengaturan.update');
+    Route::prefix('pengaturan/rkas/referensi')->name('rkas.referensi.')->group(function () {
+        Route::get('/', [ReferensiRkasController::class, 'index'])->name('index');
+        Route::post('salin', [ReferensiRkasController::class, 'salin'])->name('salin');
+        Route::post('{jenis}', [ReferensiRkasController::class, 'store'])
+            ->where('jenis', 'kegiatan|rekening|barang|satuan|ptk')->name('store');
+        Route::delete('{jenis}/{id}', [ReferensiRkasController::class, 'destroy'])
+            ->where(['jenis' => 'kegiatan|rekening|barang|satuan|ptk', 'id' => '\d+'])->name('destroy');
+    });
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
     Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 

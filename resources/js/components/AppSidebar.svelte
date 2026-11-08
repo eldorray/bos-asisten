@@ -10,6 +10,7 @@
     import ImporController from '@/actions/App/Http/Controllers/ImporController';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
     import PengaturanRkasController from '@/actions/App/Http/Controllers/Rkas/PengaturanRkasController';
+    import ReferensiRkasController from '@/actions/App/Http/Controllers/Rkas/ReferensiRkasController';
     import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavMain from '@/components/NavMain.svelte';
@@ -65,6 +66,11 @@
         {
             title: 'Pengaturan RKAS',
             href: PengaturanRkasController.edit(),
+            icon: ClipboardList,
+        },
+        {
+            title: 'Referensi RKAS',
+            href: ReferensiRkasController.index(),
             icon: ClipboardList,
         },
         {

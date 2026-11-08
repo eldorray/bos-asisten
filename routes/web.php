@@ -10,6 +10,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\PdfBulananController;
 use App\Http\Controllers\PdfKegiatanController;
+use App\Http\Controllers\Rkas\KertasKerjaController;
 use App\Http\Controllers\Rkas\PengaturanRkasController;
 use App\Http\Controllers\Rkas\ReferensiRkasController;
 use App\Http\Controllers\SekolahController;
@@ -56,6 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('{jenis}/{id}', [ReferensiRkasController::class, 'destroy'])
             ->where(['jenis' => 'kegiatan|rekening|barang|satuan|ptk', 'id' => '\d+'])->name('destroy');
     });
+    Route::resource('rkas', KertasKerjaController::class)
+        ->parameters(['rkas' => 'kertasKerja'])
+        ->except(['create', 'edit']);
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
     Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 

@@ -9,4 +9,13 @@ enum StatusKertasKerja: string
     case Draf = 'draf';
     case Siap = 'siap';
     case Disahkan = 'disahkan';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Draf => 'Draf',
+            self::Siap => 'Siap',
+            self::Disahkan => 'Disahkan',
+        };
+    }
 }

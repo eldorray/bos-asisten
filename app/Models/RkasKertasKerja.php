@@ -87,6 +87,19 @@ class RkasKertasKerja extends Model
         return $this->status === StatusKertasKerja::Draf;
     }
 
+    /**
+     * Nama versi seperti di ARKAS: "Awal", "Pergeseran 1", "Perubahan 1 / Pergeseran 2".
+     */
+    public function labelVersi(): string
+    {
+        return match ($this->jenis_versi) {
+            JenisVersiRkas::Awal => 'Awal',
+            JenisVersiRkas::Pergeseran => 'Pergeseran '.$this->nomor_pergeseran,
+            JenisVersiRkas::Perubahan => 'Perubahan '.$this->nomor_perubahan
+                .($this->nomor_pergeseran > 0 ? ' / Pergeseran '.$this->nomor_pergeseran : ''),
+        };
+    }
+
     public function label(): string
     {
         return $this->status === StatusKertasKerja::Disahkan ? 'RKAS' : 'Kertas Kerja';

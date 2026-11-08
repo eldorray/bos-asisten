@@ -11,6 +11,7 @@
     import ChevronRight from '@lucide/svelte/icons/chevron-right';
     import Smartphone from '@lucide/svelte/icons/smartphone';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
+    import KertasKerjaController from '@/actions/App/Http/Controllers/Rkas/KertasKerjaController';
     import PengaturanRkasController from '@/actions/App/Http/Controllers/Rkas/PengaturanRkasController';
     import ReferensiRkasController from '@/actions/App/Http/Controllers/Rkas/ReferensiRkasController';
     import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
@@ -36,6 +37,11 @@
             judul: 'Jenis Kegiatan',
             keterangan: 'Kata kunci dan daftar berkas',
             href: JenisKegiatanController.index(),
+        },
+        {
+            judul: 'Draf RKAS',
+            keterangan: 'Kertas kerja anggaran per tahun',
+            href: KertasKerjaController.index(),
         },
         {
             judul: 'Pengaturan RKAS',

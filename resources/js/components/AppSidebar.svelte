@@ -9,6 +9,7 @@
     import type { Snippet } from 'svelte';
     import ImporController from '@/actions/App/Http/Controllers/ImporController';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
+    import KertasKerjaController from '@/actions/App/Http/Controllers/Rkas/KertasKerjaController';
     import PengaturanRkasController from '@/actions/App/Http/Controllers/Rkas/PengaturanRkasController';
     import ReferensiRkasController from '@/actions/App/Http/Controllers/Rkas/ReferensiRkasController';
     import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
@@ -49,6 +50,11 @@
             title: 'Impor Anggaran',
             href: ImporController.index(),
             icon: Upload,
+        },
+        {
+            title: 'Draf RKAS',
+            href: KertasKerjaController.index(),
+            icon: ClipboardList,
         },
     ]);
 

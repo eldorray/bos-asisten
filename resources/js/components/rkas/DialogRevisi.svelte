@@ -19,13 +19,22 @@
         kertasKerjaId,
         jenis,
         paguAwal,
+        tampilkanPagu,
     }: {
         kertasKerjaId: number;
         jenis: 'pergeseran' | 'perubahan';
         paguAwal: number;
+        tampilkanPagu: boolean;
     } = $props();
 
     let terbuka = $state(false);
+
+    function hariIni(): string {
+        const t = new Date();
+        const dua = (n: number): string => String(n).padStart(2, '0');
+
+        return `${t.getFullYear()}-${dua(t.getMonth() + 1)}-${dua(t.getDate())}`;
+    }
 
     // Komponen ini dibuat ulang lewat {#key} oleh pemakainya, jadi nilai awal memang diambil sekali.
     /* svelte-ignore state_referenced_locally */
@@ -36,8 +45,8 @@
         kertas_kerja?: string;
     }>({
         jenis,
-        tanggal_revisi: new Date().toISOString().slice(0, 10),
-        pagu_baru: jenis === 'perubahan' ? paguAwal : '',
+        tanggal_revisi: hariIni(),
+        pagu_baru: tampilkanPagu ? paguAwal : '',
     });
 
     const judul = $derived(jenis === 'perubahan' ? 'Buat Perubahan' : 'Buat Pergeseran');
@@ -77,7 +86,7 @@
                 />
                 <InputError message={form.errors.tanggal_revisi} />
             </div>
-            {#if jenis === 'perubahan'}
+            {#if jenis === 'perubahan' && tampilkanPagu}
                 <div class="grid gap-2">
                     <Label for="pagu-baru">Pagu baru (Rp)</Label>
                     <Input

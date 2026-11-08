@@ -9,6 +9,7 @@ use App\Actions\Rkas\UbahStatusKertasKerja;
 use App\Enums\JenisVersiRkas;
 use App\Enums\SistemAnggaran;
 use App\Enums\StatusKertasKerja;
+use App\Enums\SumberDanaRkas;
 use App\Models\RkasBaris;
 use App\Models\RkasKertasKerja;
 use App\Models\RkasPengaturan;
@@ -85,6 +86,19 @@ it('membuat perubahan dengan pagu baru dan mereset nomor pergeseran', function (
         ->assertSessionHasErrors('pagu_baru');
 });
 
+it('menjaga pagu perubahan sumber dana Lainnya sama dengan jumlah pemberi dana', function () {
+    $kk = ($this->kk)(['sumber_dana' => SumberDanaRkas::Lainnya, 'pagu' => 30]);
+    $kk->pemberiDanas()->create(['nama' => 'A', 'jumlah' => 10]);
+    $kk->pemberiDanas()->create(['nama' => 'B', 'jumlah' => 20]);
+
+    $this->post(route('rkas.revisi.store', $kk), ['jenis' => 'perubahan', 'tanggal_revisi' => '2027-07-15', 'pagu_baru' => 999])
+        ->assertSessionHasNoErrors();
+
+    $baru = RkasKertasKerja::where('induk_id', $kk->id)->firstOrFail();
+    expect($baru->pagu)->toBe(30)
+        ->and($baru->pagu)->toBe((int) $baru->pemberiDanas()->sum('jumlah'));
+});
+
 it('menolak revisi dari versi yang belum disahkan', function () {
     $kk = ($this->kk)(['status' => StatusKertasKerja::Siap]);
 
@@ -156,13 +170,16 @@ it('memperingatkan perubahan volume di bulan sebelum tanggal revisi', function (
         ->and($ringkasan->jumlahBarisBermasalah)->toBe(0);
 
     $baris->update(['volume_bulan' => array_replace($baris->volume_bulan, [3 => 2, 9 => 0])]);
-    $baris->update(['volume_bulan' => array_replace($baris->volume_bulan, [9 => 0])]);
-    ($this->baris)($p, [2 => 1], 1, ['urutan' => 2, 'uraian' => 'Baru']);
+    ($this->baris)($p, [2 => 1], 0, ['urutan' => 2, 'uraian' => 'Baru']);
 
     $ringkasan = app(HitungRingkasan::class)->untuk($p->fresh());
     expect($ringkasan->masalahPerBaris[$baris->id])->toBe([PesanRkas::BULAN_LEWAT])
         ->and($ringkasan->masalahPerBaris)->toHaveCount(2)
         ->and($ringkasan->jumlahBarisBermasalah)->toBe(0);
+
+    // Peringatan tidak memblokir: kertas kerja tetap bisa dinyatakan siap.
+    expect(app(UbahStatusKertasKerja::class)->nyatakanSiap($p->fresh())->lolos())->toBeTrue()
+        ->and($p->fresh()->status)->toBe(StatusKertasKerja::Siap);
 
     // Hanya bulan setelah tanggal revisi yang berubah: tidak ada peringatan.
     $baris->update(['volume_bulan' => array_replace($baris->volume_bulan, [3 => 1, 9 => 3])]);

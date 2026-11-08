@@ -6,6 +6,7 @@ namespace App\Actions\Rkas;
 
 use App\Enums\JenisVersiRkas;
 use App\Enums\StatusKertasKerja;
+use App\Enums\SumberDanaRkas;
 use App\Models\RkasBaris;
 use App\Models\RkasKertasKerja;
 use App\Models\RkasPengaturan;
@@ -23,12 +24,15 @@ class BuatRevisi
         if ($jenis === JenisVersiRkas::Awal) {
             throw new \InvalidArgumentException('Revisi harus berupa pergeseran atau perubahan.');
         }
-        if ($jenis === JenisVersiRkas::Perubahan && $paguBaru === null) {
-            $this->tolak('pagu_baru', PesanRkas::WAJIB);
-        }
 
         return DB::transaction(function () use ($disahkan, $jenis, $tanggalRevisi, $paguBaru): RkasKertasKerja {
             $sumber = RkasKertasKerja::query()->whereKey($disahkan->getKey())->lockForUpdate()->firstOrFail();
+
+            // Sumber dana Lainnya: pagu tetap jumlah pemberi dana (disalin); pagu_baru hanya untuk BOSP Reguler.
+            $paguBerubah = $jenis === JenisVersiRkas::Perubahan && $sumber->sumber_dana === SumberDanaRkas::BospReguler;
+            if ($paguBerubah && $paguBaru === null) {
+                $this->tolak('pagu_baru', PesanRkas::WAJIB);
+            }
 
             if ($sumber->status !== StatusKertasKerja::Disahkan) {
                 $this->tolak('kertas_kerja', sprintf(PesanRkas::TERKUNCI, $sumber->status->label()));
@@ -59,7 +63,7 @@ class BuatRevisi
                 'sekolah_id' => $sumber->sekolah_id,
                 'tahun' => $sumber->tahun,
                 'sumber_dana' => $sumber->sumber_dana,
-                'pagu' => $jenis === JenisVersiRkas::Perubahan ? (int) $paguBaru : $sumber->pagu,
+                'pagu' => $paguBerubah ? (int) $paguBaru : $sumber->pagu,
                 'jenis_versi' => $jenis,
                 'nomor_pergeseran' => $pergeseran,
                 'nomor_perubahan' => $perubahan,

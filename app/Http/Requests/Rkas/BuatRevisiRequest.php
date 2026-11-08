@@ -19,7 +19,7 @@ class BuatRevisiRequest extends FormRequest
         return [
             'jenis' => ['required', Rule::in([JenisVersiRkas::Pergeseran->value, JenisVersiRkas::Perubahan->value])],
             'tanggal_revisi' => ['required', 'date_format:Y-m-d'],
-            'pagu_baru' => ['required_if:jenis,'.JenisVersiRkas::Perubahan->value, 'nullable', 'integer', 'min:0', 'max:9999999999999'],
+            'pagu_baru' => ['nullable', 'integer', 'min:0', 'max:9999999999999'],
         ];
     }
 

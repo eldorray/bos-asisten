@@ -206,11 +206,13 @@
                         kertasKerjaId={kertasKerja.id}
                         jenis="pergeseran"
                         paguAwal={kertasKerja.pagu}
+                        tampilkanPagu={false}
                     />
                     <DialogRevisi
                         kertasKerjaId={kertasKerja.id}
                         jenis="perubahan"
                         paguAwal={kertasKerja.pagu}
+                        tampilkanPagu={kertasKerja.sumber_dana === 'bosp_reguler'}
                     />
                 {/key}
             {/if}

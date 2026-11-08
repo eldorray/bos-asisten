@@ -20,6 +20,8 @@
         BarisRkas,
         Pilihan,
     } from '@/components/rkas/FormBarisRkas.svelte';
+    import RingkasanRkas from '@/components/rkas/RingkasanRkas.svelte';
+    import type { Ringkasan } from '@/components/rkas/RingkasanRkas.svelte';
     import TabelBarisRkas from '@/components/rkas/TabelBarisRkas.svelte';
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import type { SumberDana } from '@/components/rkas/FormKertasKerja.svelte';
@@ -49,11 +51,13 @@
         pemberiDana,
         baris,
         pilihan,
+        ringkasan,
     }: {
         kertasKerja: KertasKerja;
         pemberiDana: PemberiDana[];
         baris: BarisRkas[];
         pilihan: Pilihan;
+        ringkasan: Ringkasan;
     } = $props();
 
     let sedangDiubah = $state<BarisRkas | null>(null);
@@ -96,6 +100,8 @@
             </Link>
         </div>
     </div>
+
+    <RingkasanRkas {ringkasan} />
 
     <Card>
         <CardContent class="grid gap-4">
@@ -159,6 +165,4 @@
         bisaDiubah={kertasKerja.bisa_diubah}
         onUbah={(b) => (sedangDiubah = b)}
     />
-
-    <!-- Task 6: ringkasan dan pemeriksaan juknis. -->
 </div>

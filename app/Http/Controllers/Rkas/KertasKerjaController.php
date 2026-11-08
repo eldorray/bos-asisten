@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Rkas;
 
+use App\Actions\Rkas\HitungRingkasan;
 use App\Actions\Rkas\PropsBarisRkas;
 use App\Actions\Rkas\SimpanKertasKerja;
 use App\Enums\SistemAnggaran;
 use App\Enums\SumberDanaRkas;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Rkas\SimpanKertasKerjaRequest;
+use App\Models\RkasBaris;
 use App\Models\RkasKertasKerja;
 use App\Models\RkasPemberiDana;
 use App\Models\Sekolah;
@@ -34,24 +36,28 @@ class KertasKerjaController extends Controller
         $daftar = RkasKertasKerja::query()
             ->where('sekolah_id', $sekolah->id)
             ->where('tahun', $tahun)
+            ->with('baris')
             ->orderBy('sumber_dana')
             ->orderBy('nomor_perubahan')
             ->orderBy('nomor_pergeseran')
             ->orderBy('id')
             ->get()
-            ->map(fn (RkasKertasKerja $k): array => [
-                'id' => $k->id,
-                'label' => $k->label(),
-                'sumber_dana' => $k->sumber_dana->value,
-                'versi' => $k->labelVersi(),
-                'status' => $k->status->value,
-                'status_label' => $k->status->label(),
-                'pagu' => $k->pagu,
-                // Diganti dengan total baris riil pada Task 6.
-                'dianggarkan' => 0,
-                'sisa' => $k->pagu,
-                'bisa_diubah' => $k->bisaDiubah(),
-            ])
+            ->map(function (RkasKertasKerja $k): array {
+                $dianggarkan = $k->baris->sum(fn (RkasBaris $b): int => $b->jumlah());
+
+                return [
+                    'id' => $k->id,
+                    'label' => $k->label(),
+                    'sumber_dana' => $k->sumber_dana->value,
+                    'versi' => $k->labelVersi(),
+                    'status' => $k->status->value,
+                    'status_label' => $k->status->label(),
+                    'pagu' => $k->pagu,
+                    'dianggarkan' => $dianggarkan,
+                    'sisa' => $k->pagu - $dianggarkan,
+                    'bisa_diubah' => $k->bisaDiubah(),
+                ];
+            })
             ->values();
 
         return Inertia::render('rkas/Index', [
@@ -76,10 +82,12 @@ class KertasKerjaController extends Controller
         return to_route('rkas.show', $kertasKerja);
     }
 
-    public function show(RkasKertasKerja $kertasKerja, PropsBarisRkas $props): Response
+    public function show(RkasKertasKerja $kertasKerja, PropsBarisRkas $props, HitungRingkasan $hitung): Response
     {
         $sekolah = $kertasKerja->sekolah;
         abort_unless($sekolah->sistem === SistemAnggaran::Arkas, 404);
+
+        $ringkasan = $hitung->untuk($kertasKerja);
 
         return Inertia::render('rkas/Show', [
             'kertasKerja' => [
@@ -101,7 +109,8 @@ class KertasKerjaController extends Controller
             'pemberiDana' => $kertasKerja->pemberiDanas()->orderBy('id')->get()
                 ->map(fn (RkasPemberiDana $p): array => ['id' => $p->id, 'nama' => $p->nama, 'jumlah' => $p->jumlah])
                 ->values(),
-            'baris' => $props->baris($kertasKerja),
+            'baris' => $props->baris($kertasKerja, $ringkasan->masalahPerBaris),
+            'ringkasan' => $ringkasan->props(),
             'pilihan' => $props->pilihan($kertasKerja),
         ]);
     }

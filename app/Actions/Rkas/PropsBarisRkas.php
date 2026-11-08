@@ -20,9 +20,10 @@ use Illuminate\Support\Collection;
 class PropsBarisRkas
 {
     /**
+     * @param  array<int, list<string>>  $masalah  pesan referensi per id baris (dari RingkasanRkas)
      * @return array<int, array<string, mixed>>
      */
-    public function baris(RkasKertasKerja $kertasKerja): array
+    public function baris(RkasKertasKerja $kertasKerja, array $masalah = []): array
     {
         $daftar = $kertasKerja->baris()
             ->with(['refKegiatan', 'refRekening', 'refBarang'])
@@ -71,8 +72,7 @@ class PropsBarisRkas
             'volume' => $b->volume(),
             'jumlah' => $b->jumlah(),
             'keterangan' => $b->keterangan,
-            // Diisi pemeriksaan referensi pada Task 6.
-            'masalah' => [],
+            'masalah' => $masalah[$b->id] ?? [],
         ])->values()->all();
     }
 

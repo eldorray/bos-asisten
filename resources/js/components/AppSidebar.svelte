@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Link, page } from '@inertiajs/svelte';
+    import ClipboardList from '@lucide/svelte/icons/clipboard-list';
     import ListChecks from '@lucide/svelte/icons/list-checks';
     import Download from '@lucide/svelte/icons/download';
     import LayoutGrid from '@lucide/svelte/icons/layout-grid';
@@ -8,6 +9,7 @@
     import type { Snippet } from 'svelte';
     import ImporController from '@/actions/App/Http/Controllers/ImporController';
     import JenisKegiatanController from '@/actions/App/Http/Controllers/JenisKegiatanController';
+    import PengaturanRkasController from '@/actions/App/Http/Controllers/Rkas/PengaturanRkasController';
     import SekolahController from '@/actions/App/Http/Controllers/SekolahController';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavMain from '@/components/NavMain.svelte';
@@ -59,6 +61,11 @@
             title: 'Jenis Kegiatan',
             href: JenisKegiatanController.index(),
             icon: ListChecks,
+        },
+        {
+            title: 'Pengaturan RKAS',
+            href: PengaturanRkasController.edit(),
+            icon: ClipboardList,
         },
         {
             title: 'Unduh Cadangan',

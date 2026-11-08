@@ -10,6 +10,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\PdfBulananController;
 use App\Http\Controllers\PdfKegiatanController;
+use App\Http\Controllers\Rkas\PengaturanRkasController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +45,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('pengaturan/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::patch('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'update'])->name('sekolah.update');
     Route::post('pengaturan/sekolah/{sekolah}/urutkan-nomor', [SekolahController::class, 'urutkanNomor'])->name('sekolah.urutkan-nomor');
+    Route::get('pengaturan/rkas', [PengaturanRkasController::class, 'edit'])->name('rkas.pengaturan.edit');
+    Route::patch('pengaturan/rkas/{pengaturan}', [PengaturanRkasController::class, 'update'])->name('rkas.pengaturan.update');
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
     Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 

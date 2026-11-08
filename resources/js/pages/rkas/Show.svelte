@@ -12,7 +12,9 @@
 </script>
 
 <script lang="ts">
-    import { Link } from '@inertiajs/svelte';
+    import { Link, router } from '@inertiajs/svelte';
+    import { toast } from 'svelte-sonner';
+    import StatusKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/StatusKertasKerjaController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import FormBarisRkas from '@/components/rkas/FormBarisRkas.svelte';
@@ -20,13 +22,25 @@
         BarisRkas,
         Pilihan,
     } from '@/components/rkas/FormBarisRkas.svelte';
+    import HasilPemeriksaan from '@/components/rkas/HasilPemeriksaan.svelte';
+    import type { HasilPemeriksaan as Pemeriksaan } from '@/components/rkas/HasilPemeriksaan.svelte';
     import RingkasanRkas from '@/components/rkas/RingkasanRkas.svelte';
     import type { Ringkasan } from '@/components/rkas/RingkasanRkas.svelte';
     import TabelBarisRkas from '@/components/rkas/TabelBarisRkas.svelte';
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import type { SumberDana } from '@/components/rkas/FormKertasKerja.svelte';
     import { Badge } from '@/components/ui/badge';
+    import { Button } from '@/components/ui/button';
     import { Card, CardContent } from '@/components/ui/card';
+    import {
+        Dialog,
+        DialogClose,
+        DialogContent,
+        DialogDescription,
+        DialogFooter,
+        DialogTitle,
+        DialogTrigger,
+    } from '@/components/ui/dialog';
 
     type KertasKerja = {
         id: number;
@@ -66,6 +80,34 @@
         kertasKerja.sumber_dana === 'lainnya' ? 'Lainnya' : 'BOSP Reguler',
     );
 
+    let pemeriksaan = $state<Pemeriksaan | null>(null);
+    let sedangMengubahStatus = $state(false);
+    let dialogDisahkan = $state(false);
+
+    function ubahStatus(rute: { url: string }): void {
+        pemeriksaan = null;
+        router.post(
+            rute.url,
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => (sedangMengubahStatus = true),
+                onFinish: () => (sedangMengubahStatus = false),
+                onFlash: (flash) => {
+                    const hasil = (flash as { pemeriksaan?: Pemeriksaan })
+                        .pemeriksaan;
+                    pemeriksaan = hasil ?? null;
+                },
+                onError: (errors) => {
+                    const pesan = errors.kertas_kerja;
+                    if (pesan) {
+                        toast.error(pesan);
+                    }
+                },
+            },
+        );
+    }
+
     function rupiah(n: number): string {
         return `Rp ${n.toLocaleString('id-ID')}`;
     }
@@ -79,7 +121,76 @@
             title={`${kertasKerja.label} ${kertasKerja.tahun}`}
             description={`${kertasKerja.sekolah.nama} (${kertasKerja.sekolah.identitas}) · ${namaSumber} · ${kertasKerja.versi}`}
         />
-        <div class="flex items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2.5">
+            {#if kertasKerja.status === 'draf'}
+                <Button
+                    disabled={sedangMengubahStatus}
+                    onclick={() =>
+                        ubahStatus({
+                            url: StatusKertasKerjaController.siap.url(
+                                kertasKerja.id,
+                            ),
+                        })}
+                >
+                    Nyatakan Siap
+                </Button>
+            {:else if kertasKerja.status === 'siap'}
+                <Button
+                    variant="secondary"
+                    disabled={sedangMengubahStatus}
+                    onclick={() =>
+                        ubahStatus({
+                            url: StatusKertasKerjaController.draf.url(
+                                kertasKerja.id,
+                            ),
+                        })}
+                >
+                    Kembalikan ke Draf
+                </Button>
+                <Dialog bind:open={dialogDisahkan}>
+                    <DialogTrigger asChild>
+                        {#snippet children(props)}
+                            <Button
+                                disabled={sedangMengubahStatus}
+                                onclick={props.onClick}
+                            >
+                                Tandai Disahkan
+                            </Button>
+                        {/snippet}
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogTitle>Tandai disahkan</DialogTitle>
+                        <DialogDescription>
+                            Setelah disahkan, kertas kerja menjadi RKAS dan
+                            tidak bisa diubah lagi. Lanjutkan?
+                        </DialogDescription>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                {#snippet children(props)}
+                                    <Button
+                                        variant="secondary"
+                                        onclick={props.onClick}
+                                    >
+                                        Batal
+                                    </Button>
+                                {/snippet}
+                            </DialogClose>
+                            <Button
+                                onclick={() => {
+                                    dialogDisahkan = false;
+                                    ubahStatus({
+                                        url: StatusKertasKerjaController.disahkan.url(
+                                            kertasKerja.id,
+                                        ),
+                                    });
+                                }}
+                            >
+                                Ya, tandai disahkan
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            {/if}
             <Badge
                 variant={kertasKerja.status === 'disahkan'
                     ? 'default'
@@ -100,6 +211,10 @@
             </Link>
         </div>
     </div>
+
+    {#if pemeriksaan}
+        <HasilPemeriksaan hasil={pemeriksaan} />
+    {/if}
 
     <RingkasanRkas {ringkasan} />
 

@@ -56,6 +56,6 @@ class RkasRefKegiatan extends Model
             ->where('tahun', $tahun)
             ->where('sumber_dana', $punyaSendiri ? $sumber->value : SumberDanaRkas::BospReguler->value)
             ->where('level', 3)
-            ->where(fn (Builder $q) => $q->whereNull('kedaluwarsa')->orWhere('kedaluwarsa', '>=', now()->toDateString()));
+            ->where(fn (Builder $q) => $q->whereNull('kedaluwarsa')->orWhereDate('kedaluwarsa', '>', now()->toDateString()));
     }
 }

@@ -38,6 +38,7 @@ it('membuat pengaturan tahun dengan nilai awal juknis', function () {
 it('memakai kegiatan BOSP Reguler saat sumber dana Lainnya tidak punya kode sendiri', function () {
     RkasRefKegiatan::factory()->create(['tahun' => 2027, 'level' => 3]);
     RkasRefKegiatan::factory()->create(['tahun' => 2027, 'level' => 3, 'kedaluwarsa' => now()->subDay()]);
+    RkasRefKegiatan::factory()->create(['tahun' => 2027, 'level' => 3, 'kedaluwarsa' => now()->toDateString()]);
 
     expect(RkasRefKegiatan::tersediaUntuk(2027, SumberDanaRkas::Lainnya)->count())->toBe(1);
 });

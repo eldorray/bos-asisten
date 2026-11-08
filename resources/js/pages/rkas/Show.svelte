@@ -14,6 +14,7 @@
 <script lang="ts">
     import { Link, router } from '@inertiajs/svelte';
     import { toast } from 'svelte-sonner';
+    import PdfKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/PdfKertasKerjaController';
     import StatusKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/StatusKertasKerjaController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
@@ -223,6 +224,12 @@
             >
                 {kertasKerja.status_label}
             </Badge>
+            <a
+                href={PdfKertasKerjaController.url(kertasKerja.id)}
+                class="text-sm underline-offset-4 hover:underline"
+            >
+                Cetak rincian (PDF)
+            </a>
             <Link
                 href={KertasKerjaController.index({
                     query: {

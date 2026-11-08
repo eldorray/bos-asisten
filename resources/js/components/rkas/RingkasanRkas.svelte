@@ -1,9 +1,7 @@
 <script module lang="ts">
     export type Ringkasan = {
-        pagu: number;
         dianggarkan: number;
         sisa: number;
-        per_bulan: Record<string, number>;
         tahap: {
             tahap: number;
             alokasi: number;
@@ -47,21 +45,23 @@
 
     const totalJenis = $derived(jenis.reduce((n, j) => n + j.nilai, 0));
 
+    const namaRincian: Record<string, string> = {
+        honor: 'Honor',
+        barang: 'Barang',
+        jasa: 'Jasa',
+        pemeliharaan: 'Pemeliharaan',
+        perjalanan: 'Perjalanan dinas',
+        peralatan_mesin: 'Peralatan dan mesin',
+        aset_lain: 'Aset lainnya',
+    };
+
     function lebar(nilai: number): number {
         return totalJenis === 0 ? 0 : (nilai / totalJenis) * 100;
     }
 </script>
 
 <div class="grid gap-3">
-    <div class="grid gap-3 md:grid-cols-3">
-        <Card>
-            <CardContent class="grid gap-1">
-                <span class="text-sm text-muted-foreground">Pagu</span>
-                <span class="text-lg font-semibold tabular-nums">
-                    {rupiah(ringkasan.pagu)}
-                </span>
-            </CardContent>
-        </Card>
+    <div class="grid gap-3 md:grid-cols-2">
         <Card>
             <CardContent class="grid gap-1">
                 <span class="text-sm text-muted-foreground">Dianggarkan</span>
@@ -133,6 +133,35 @@
         </CardContent>
     </Card>
 
+    <Card>
+        <CardContent class="grid gap-2">
+            <span class="text-sm font-medium">Rincian belanja</span>
+            <ul class="grid gap-1 text-sm">
+                {#each Object.entries(ringkasan.rincian_belanja) as [kunci, nilai] (kunci)}
+                    <li class="flex justify-between">
+                        <span class="text-muted-foreground">
+                            {namaRincian[kunci] ?? kunci}
+                        </span>
+                        <span class="tabular-nums">{rupiah(nilai)}</span>
+                    </li>
+                {/each}
+            </ul>
+        </CardContent>
+    </Card>
+
+    {#if ringkasan.peringatan.length > 0}
+        <ul
+            class="grid gap-1 rounded-md border border-red-600/40 p-3 text-sm text-red-600 dark:text-red-500"
+        >
+            {#each ringkasan.peringatan as pesan (pesan)}
+                <li class="flex items-start gap-2">
+                    <TriangleAlert class="mt-0.5 size-4 shrink-0" />
+                    {pesan}
+                </li>
+            {/each}
+        </ul>
+    {/if}
+
     {#if ringkasan.juknis.length > 0}
         <Card>
             <CardContent class="grid gap-2">
@@ -152,6 +181,10 @@
                             </span>
                             <span class="tabular-nums">
                                 {j.persen.toLocaleString('id-ID')}%
+                                <span class="text-xs text-muted-foreground">
+                                    ({j.nama === 'Buku' ? 'min' : 'maks'}
+                                    {j.batas}%)
+                                </span>
                             </span>
                         </li>
                     {/each}

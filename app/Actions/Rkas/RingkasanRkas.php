@@ -30,17 +30,15 @@ final readonly class RingkasanRkas
     ) {}
 
     /**
-     * Props Inertia ringkasan (tanpa pesan per baris, yang dikirim bersama baris).
+     * Props Inertia ringkasan (tanpa pagu, yang sudah ada di kertas kerja, per bulan, dan pesan per baris).
      *
      * @return array<string, mixed>
      */
     public function props(): array
     {
         return [
-            'pagu' => $this->pagu,
             'dianggarkan' => $this->dianggarkan,
             'sisa' => $this->sisa,
-            'per_bulan' => $this->perBulan,
             'tahap' => $this->tahap,
             'jenis_belanja' => $this->jenisBelanja,
             'rincian_belanja' => $this->rincianBelanja,

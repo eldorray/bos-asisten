@@ -141,7 +141,7 @@ class HitungRingkasan
         return [
             'nama' => $nama,
             'persen' => $pagu === 0 ? 0.0 : round($nilai / $pagu * 100, 2),
-            'batas' => intdiv($pagu * $persenBatas, 100),
+            'batas' => $persenBatas,
             'pesan' => $dilanggar ? sprintf($format, $persenBatas) : null,
         ];
     }

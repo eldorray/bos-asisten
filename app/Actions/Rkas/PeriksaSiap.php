@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Rkas;
 
+use App\Enums\JenisVersiRkas;
 use App\Enums\SumberDanaRkas;
 use App\Models\RkasKertasKerja;
 use App\Models\RkasPengaturan;
@@ -34,12 +35,35 @@ class PeriksaSiap
             $pemblokir[] = sprintf(PesanRkas::LEBIH, PesanRkas::rupiah(abs($ringkasan->sisa)));
         }
 
-        // Pemblokir 3 (pergeseran lintas jenis belanja) ditambahkan di sini oleh Task 8, hanya bila ada induk.
+        if ($kertasKerja->jenis_versi === JenisVersiRkas::Pergeseran && $kertasKerja->induk !== null) {
+            $berubah = $this->jenisBerubah($ringkasan->jenisBelanja, $this->hitung->untuk($kertasKerja->induk)->jenisBelanja);
+            if ($berubah !== []) {
+                $pemblokir[] = sprintf(PesanRkas::LINTAS_JENIS, implode(', ', $berubah));
+            }
+        }
 
         if ($ringkasan->jumlahBarisBermasalah > 0) {
             $pemblokir[] = sprintf(PesanRkas::REFERENSI_BERMASALAH, $ringkasan->jumlahBarisBermasalah);
         }
 
         return new HasilPemeriksaan($pemblokir, $ringkasan->peringatan);
+    }
+
+    /**
+     * @param  array{operasional: int, alat_mesin: int, aset: int}  $baru
+     * @param  array{operasional: int, alat_mesin: int, aset: int}  $lama
+     * @return list<string>
+     */
+    private function jenisBerubah(array $baru, array $lama): array
+    {
+        $nama = ['operasional' => 'Operasional', 'alat_mesin' => 'Alat dan Mesin', 'aset' => 'Aset'];
+        $berubah = [];
+        foreach ($nama as $kunci => $label) {
+            if ($baru[$kunci] !== $lama[$kunci]) {
+                $berubah[] = $label;
+            }
+        }
+
+        return $berubah;
     }
 }

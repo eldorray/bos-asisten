@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Actions\Rkas;
 
+use App\Enums\JenisVersiRkas;
 use App\Enums\SumberDanaRkas;
+use App\Models\RkasBaris;
 use App\Models\RkasKertasKerja;
 use App\Models\RkasPengaturan;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Menghitung ringkasan kertas kerja dengan bilangan bulat (spec §4.3, §7.3, §7.4).
@@ -27,7 +30,11 @@ class HitungRingkasan
         $konteks = $this->periksa->konteks($kertasKerja);
         $pengaturan = RkasPengaturan::untuk($kertasKerja->sekolah, $kertasKerja->tahun);
         $masalah = [];
+        $peringatanBaris = [];
         $nilaiHonor = $nilaiBuku = $nilaiSarpras = 0;
+
+        $asal = $this->asalBaris($kertasKerja, $baris);
+        $batasBulan = $this->batasBulanLewat($kertasKerja);
 
         foreach ($baris as $b) {
             $b->setRelation('kertasKerja', $kertasKerja);
@@ -56,6 +63,15 @@ class HitungRingkasan
             if ($pesan !== []) {
                 $masalah[$b->id] = $pesan;
             }
+
+            if ($this->bulanLewatBerubah($b, $asal, $batasBulan)) {
+                $peringatanBaris[$b->id] = PesanRkas::BULAN_LEWAT;
+            }
+        }
+
+        $jumlahBermasalah = count($masalah);
+        foreach ($peringatanBaris as $id => $pesanLewat) {
+            $masalah[$id] = [...($masalah[$id] ?? []), $pesanLewat];
         }
 
         $dianggarkan = array_sum($perBulan);
@@ -98,8 +114,54 @@ class HitungRingkasan
             juknis: $juknis,
             peringatan: $peringatan,
             masalahPerBaris: $masalah,
-            jumlahBarisBermasalah: count($masalah),
+            jumlahBarisBermasalah: $jumlahBermasalah,
         );
+    }
+
+    /**
+     * @param  Collection<int, RkasBaris>  $baris
+     * @return Collection<int, RkasBaris>
+     */
+    private function asalBaris(RkasKertasKerja $kertasKerja, Collection $baris): Collection
+    {
+        if ($kertasKerja->jenis_versi === JenisVersiRkas::Awal) {
+            return new Collection;
+        }
+
+        return RkasBaris::query()->whereIn('id', $baris->pluck('asal_baris_id')->filter()->all())->get()->keyBy('id');
+    }
+
+    /**
+     * Bulan pertama yang masih boleh berubah; bulan sebelumnya sudah lewat. Null bila bukan revisi.
+     */
+    private function batasBulanLewat(RkasKertasKerja $kertasKerja): ?int
+    {
+        $tanggal = $kertasKerja->tanggal_revisi;
+        if ($kertasKerja->jenis_versi === JenisVersiRkas::Awal || $tanggal === null || $tanggal->year !== $kertasKerja->tahun) {
+            return null;
+        }
+
+        return $tanggal->month;
+    }
+
+    /**
+     * @param  Collection<int, RkasBaris>  $asal
+     */
+    private function bulanLewatBerubah(RkasBaris $baris, Collection $asal, ?int $batas): bool
+    {
+        if ($batas === null) {
+            return false;
+        }
+
+        $lama = $baris->asal_baris_id === null ? null : $asal->get($baris->asal_baris_id);
+        for ($bulan = 1; $bulan < $batas; $bulan++) {
+            $sebelumnya = (int) ($lama?->volume_bulan[$bulan] ?? 0);
+            if ((int) ($baris->volume_bulan[$bulan] ?? 0) !== $sebelumnya) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

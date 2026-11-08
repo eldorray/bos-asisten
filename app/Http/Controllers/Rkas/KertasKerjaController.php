@@ -8,6 +8,7 @@ use App\Actions\Rkas\HitungRingkasan;
 use App\Actions\Rkas\PropsBarisRkas;
 use App\Actions\Rkas\SimpanKertasKerja;
 use App\Enums\SistemAnggaran;
+use App\Enums\StatusKertasKerja;
 use App\Enums\SumberDanaRkas;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Rkas\SimpanKertasKerjaRequest;
@@ -88,6 +89,7 @@ class KertasKerjaController extends Controller
         abort_unless($sekolah->sistem === SistemAnggaran::Arkas, 404);
 
         $ringkasan = $hitung->untuk($kertasKerja);
+        $rantai = $kertasKerja->rantai();
 
         return Inertia::render('rkas/Show', [
             'kertasKerja' => [
@@ -104,8 +106,15 @@ class KertasKerjaController extends Controller
                 'nomor_perubahan' => $kertasKerja->nomor_perubahan,
                 'tanggal_revisi' => $kertasKerja->tanggal_revisi?->toDateString(),
                 'bisa_diubah' => $kertasKerja->bisaDiubah(),
+                'bisa_direvisi' => $kertasKerja->status === StatusKertasKerja::Disahkan && ! $rantai->contains('induk_id', $kertasKerja->id),
                 'sekolah' => ['id' => $sekolah->id, 'nama' => $sekolah->nama, 'identitas' => $sekolah->identitas],
             ],
+            'rantai' => $rantai->map(fn (RkasKertasKerja $k): array => [
+                'id' => $k->id,
+                'versi' => $k->labelVersi(),
+                'status_label' => $k->status->label(),
+                'tanggal_revisi' => $k->tanggal_revisi?->toDateString(),
+            ])->values(),
             'pemberiDana' => $kertasKerja->pemberiDanas()->orderBy('id')->get()
                 ->map(fn (RkasPemberiDana $p): array => ['id' => $p->id, 'nama' => $p->nama, 'jumlah' => $p->jumlah])
                 ->values(),

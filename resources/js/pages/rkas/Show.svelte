@@ -17,6 +17,7 @@
     import StatusKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/StatusKertasKerjaController';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
+    import DialogRevisi from '@/components/rkas/DialogRevisi.svelte';
     import FormBarisRkas from '@/components/rkas/FormBarisRkas.svelte';
     import type {
         BarisRkas,
@@ -56,19 +57,28 @@
         nomor_perubahan: number;
         tanggal_revisi: string | null;
         bisa_diubah: boolean;
+        bisa_direvisi: boolean;
         sekolah: { id: number; nama: string; identitas: string };
     };
     type PemberiDana = { id: number; nama: string; jumlah: number };
+    type VersiRantai = {
+        id: number;
+        versi: string;
+        status_label: string;
+        tanggal_revisi: string | null;
+    };
 
     let {
         kertasKerja,
         pemberiDana,
+        rantai,
         baris,
         pilihan,
         ringkasan,
     }: {
         kertasKerja: KertasKerja;
         pemberiDana: PemberiDana[];
+        rantai: VersiRantai[];
         baris: BarisRkas[];
         pilihan: Pilihan;
         ringkasan: Ringkasan;
@@ -190,6 +200,19 @@
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
+            {:else if kertasKerja.bisa_direvisi}
+                {#key kertasKerja.id}
+                    <DialogRevisi
+                        kertasKerjaId={kertasKerja.id}
+                        jenis="pergeseran"
+                        paguAwal={kertasKerja.pagu}
+                    />
+                    <DialogRevisi
+                        kertasKerjaId={kertasKerja.id}
+                        jenis="perubahan"
+                        paguAwal={kertasKerja.pagu}
+                    />
+                {/key}
             {/if}
             <Badge
                 variant={kertasKerja.status === 'disahkan'
@@ -211,6 +234,35 @@
             </Link>
         </div>
     </div>
+
+    {#if rantai.length > 1}
+        <Card>
+            <CardContent class="grid gap-2">
+                <h2 class="text-base font-semibold">Riwayat versi</h2>
+                <ul class="grid gap-1 text-sm">
+                    {#each rantai as versi (versi.id)}
+                        <li class="flex flex-wrap justify-between gap-2">
+                            {#if versi.id === kertasKerja.id}
+                                <span class="font-medium">{versi.versi} (dibuka)</span>
+                            {:else}
+                                <Link
+                                    href={KertasKerjaController.show(versi.id)}
+                                    class="underline-offset-4 hover:underline"
+                                >
+                                    {versi.versi}
+                                </Link>
+                            {/if}
+                            <span class="text-muted-foreground">
+                                {versi.status_label}{versi.tanggal_revisi
+                                    ? ` · ${versi.tanggal_revisi}`
+                                    : ''}
+                            </span>
+                        </li>
+                    {/each}
+                </ul>
+            </CardContent>
+        </Card>
+    {/if}
 
     {#if pemeriksaan}
         <HasilPemeriksaan hasil={pemeriksaan} />

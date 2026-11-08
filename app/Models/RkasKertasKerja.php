@@ -9,6 +9,7 @@ use App\Enums\StatusKertasKerja;
 use App\Enums\SumberDanaRkas;
 use Database\Factories\RkasKertasKerjaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -80,6 +81,28 @@ class RkasKertasKerja extends Model
     public function induk(): BelongsTo
     {
         return $this->belongsTo(self::class, 'induk_id');
+    }
+
+    /**
+     * Seluruh versi dalam rantai yang sama (induk dan turunan), dari yang paling awal.
+     *
+     * @return Collection<int, RkasKertasKerja>
+     */
+    public function rantai(): Collection
+    {
+        $akar = $this;
+        while ($akar->induk_id !== null) {
+            $akar = self::query()->findOrFail($akar->induk_id);
+        }
+
+        $id = [$akar->id];
+        $tingkat = [$akar->id];
+        while ($tingkat !== []) {
+            $tingkat = self::query()->whereIn('induk_id', $tingkat)->pluck('id')->all();
+            $id = [...$id, ...$tingkat];
+        }
+
+        return self::query()->whereIn('id', $id)->orderBy('id')->get();
     }
 
     public function bisaDiubah(): bool

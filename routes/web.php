@@ -14,6 +14,7 @@ use App\Http\Controllers\Rkas\BarisRkasController;
 use App\Http\Controllers\Rkas\KertasKerjaController;
 use App\Http\Controllers\Rkas\PengaturanRkasController;
 use App\Http\Controllers\Rkas\ReferensiRkasController;
+use App\Http\Controllers\Rkas\RevisiController;
 use App\Http\Controllers\Rkas\StatusKertasKerjaController;
 use App\Http\Controllers\SekolahController;
 use Illuminate\Support\Facades\Route;
@@ -65,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('rkas/{kertasKerja}/siap', [StatusKertasKerjaController::class, 'siap'])->name('rkas.status.siap');
     Route::post('rkas/{kertasKerja}/draf', [StatusKertasKerjaController::class, 'draf'])->name('rkas.status.draf');
     Route::post('rkas/{kertasKerja}/disahkan', [StatusKertasKerjaController::class, 'disahkan'])->name('rkas.status.disahkan');
+    Route::post('rkas/{kertasKerja}/revisi', [RevisiController::class, 'store'])->name('rkas.revisi.store');
     Route::post('rkas/{kertasKerja}/baris', [BarisRkasController::class, 'store'])->name('rkas.baris.store');
     Route::patch('rkas-baris/{baris}', [BarisRkasController::class, 'update'])->name('rkas.baris.update');
     Route::delete('rkas-baris/{baris}', [BarisRkasController::class, 'destroy'])->name('rkas.baris.destroy');

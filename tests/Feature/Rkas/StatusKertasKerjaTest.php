@@ -147,3 +147,29 @@ it('menolak perubahan status untuk sekolah non-ARKAS', function () {
     $this->post(route('rkas.status.siap', $kk))->assertNotFound();
     expect($kk->fresh()->status)->toBe(StatusKertasKerja::Draf);
 });
+
+it('menolak perubahan status dari model basi yang statusnya sudah berubah di database', function () {
+    $ubah = app(UbahStatusKertasKerja::class);
+
+    $basi = ($this->kk)(status: StatusKertasKerja::Siap);
+    RkasKertasKerja::whereKey($basi->id)->update(['status' => StatusKertasKerja::Disahkan->value]);
+    expect(fn () => $ubah->kembalikanKeDraf($basi))->toThrow(ValidationException::class, sprintf(PesanRkas::TERKUNCI, 'Disahkan'))
+        ->and($basi->fresh()->status)->toBe(StatusKertasKerja::Disahkan);
+
+    $draf = ($this->kk)();
+    ($this->baris)($draf, [1 => 1], 100_000_000);
+    RkasKertasKerja::whereKey($draf->id)->update(['status' => StatusKertasKerja::Disahkan->value]);
+    expect(fn () => $ubah->nyatakanSiap($draf))->toThrow(ValidationException::class)
+        ->and($draf->fresh()->status)->toBe(StatusKertasKerja::Disahkan);
+});
+
+it('meloloskan tahap 1 tepat 25 persen pagu', function () {
+    $kk = ($this->kk)();
+    ($this->baris)($kk, [1 => 1], 25_000_000);
+    ($this->baris)($kk, [8 => 1], 75_000_000, ['urutan' => 2]);
+
+    $hasil = app(UbahStatusKertasKerja::class)->nyatakanSiap($kk->fresh());
+
+    expect($hasil->pemblokir)->toBe([])
+        ->and($kk->fresh()->status)->toBe(StatusKertasKerja::Siap);
+});

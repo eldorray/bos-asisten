@@ -6,6 +6,7 @@ namespace App\Actions\Rkas;
 
 use App\Enums\StatusKertasKerja;
 use App\Models\RkasKertasKerja;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UbahStatusKertasKerja
@@ -17,34 +18,67 @@ class UbahStatusKertasKerja
      */
     public function nyatakanSiap(RkasKertasKerja $kertasKerja): HasilPemeriksaan
     {
-        $this->pastikanDari($kertasKerja, StatusKertasKerja::Draf);
+        return DB::transaction(function () use ($kertasKerja): HasilPemeriksaan {
+            $kertasKerja->refresh();
+            $this->pastikanDari($kertasKerja, StatusKertasKerja::Draf);
 
-        $hasil = $this->periksa->untuk($kertasKerja);
-        if ($hasil->lolos()) {
-            $kertasKerja->update(['status' => StatusKertasKerja::Siap]);
-        }
+            $hasil = $this->periksa->untuk($kertasKerja);
+            if ($hasil->lolos()) {
+                $this->pindah($kertasKerja, StatusKertasKerja::Draf, StatusKertasKerja::Siap);
+            }
 
-        return $hasil;
+            return $hasil;
+        });
     }
 
     public function kembalikanKeDraf(RkasKertasKerja $kertasKerja): void
     {
-        $this->pastikanDari($kertasKerja, StatusKertasKerja::Siap);
-        $kertasKerja->update(['status' => StatusKertasKerja::Draf]);
+        $this->ubah($kertasKerja, StatusKertasKerja::Siap, StatusKertasKerja::Draf);
     }
 
     public function tandaiDisahkan(RkasKertasKerja $kertasKerja): void
     {
-        $this->pastikanDari($kertasKerja, StatusKertasKerja::Siap);
-        $kertasKerja->update(['status' => StatusKertasKerja::Disahkan]);
+        $this->ubah($kertasKerja, StatusKertasKerja::Siap, StatusKertasKerja::Disahkan);
+    }
+
+    private function ubah(RkasKertasKerja $kertasKerja, StatusKertasKerja $dari, StatusKertasKerja $ke): void
+    {
+        DB::transaction(function () use ($kertasKerja, $dari, $ke): void {
+            $kertasKerja->refresh();
+            $this->pastikanDari($kertasKerja, $dari);
+            $this->pindah($kertasKerja, $dari, $ke);
+        });
+    }
+
+    /**
+     * Update bersyarat: hanya berhasil bila status di database masih $dari.
+     */
+    private function pindah(RkasKertasKerja $kertasKerja, StatusKertasKerja $dari, StatusKertasKerja $ke): void
+    {
+        $terubah = RkasKertasKerja::query()
+            ->whereKey($kertasKerja->getKey())
+            ->where('status', $dari->value)
+            ->update(['status' => $ke->value]);
+
+        if ($terubah === 0) {
+            $kertasKerja->refresh();
+            $this->tolak($kertasKerja);
+        }
+
+        $kertasKerja->refresh();
     }
 
     private function pastikanDari(RkasKertasKerja $kertasKerja, StatusKertasKerja $dari): void
     {
         if ($kertasKerja->status !== $dari) {
-            throw ValidationException::withMessages([
-                'kertas_kerja' => sprintf(PesanRkas::TERKUNCI, $kertasKerja->status->label()),
-            ]);
+            $this->tolak($kertasKerja);
         }
+    }
+
+    private function tolak(RkasKertasKerja $kertasKerja): never
+    {
+        throw ValidationException::withMessages([
+            'kertas_kerja' => sprintf(PesanRkas::TERKUNCI, $kertasKerja->status->label()),
+        ]);
     }
 }

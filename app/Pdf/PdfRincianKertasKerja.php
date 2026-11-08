@@ -29,6 +29,11 @@ class PdfRincianKertasKerja
     /** @var array<string, float> */
     private const LEBAR = ['rekening' => 25.0, 'uraian' => 72.0, 'satuan' => 14.0, 'harga' => 20.0, 'bulan' => 9.5, 'volume' => 12.0, 'jumlah' => 24.0];
 
+    /** @var array{kode: string, uraian: string}|null */
+    private ?array $kegiatanAktif = null;
+
+    private bool $adaHalaman = false;
+
     private function __construct(private readonly FPDF $pdf, private readonly RkasKertasKerja $kk) {}
 
     public static function buat(RkasKertasKerja $kertasKerja, RingkasanRkas $ringkasan): string
@@ -66,6 +71,7 @@ class PdfRincianKertasKerja
                     $self->judul('Komponen', $k['induk'], 7.0);
                 }
                 $self->judul('Kegiatan', ['kode' => $k['kode'], 'uraian' => $k['uraian']], 7.0);
+                $self->kegiatanAktif = ['kode' => $k['kode'], 'uraian' => $k['uraian']];
             }
 
             /** @var array{kode: string} $rek */
@@ -81,18 +87,16 @@ class PdfRincianKertasKerja
         }
 
         $self->penutup($ringkasan);
+        $self->watermark();
 
         return $pdf->Output('S');
     }
 
     private function halamanBaru(bool $pertama): void
     {
+        $this->watermark();
         $this->pdf->AddPage();
-
-        $this->pdf->SetFont('Helvetica', 'B', 40.0);
-        $this->pdf->SetTextColor(228);
-        $teks = GambarKuitansi::teksPdf(self::WATERMARK);
-        $this->pdf->Text((297.0 - $this->pdf->GetStringWidth($teks)) / 2, 112.0, $teks);
+        $this->adaHalaman = true;
 
         $this->pdf->SetTextColor(0);
         $this->pdf->SetXY(self::MARGIN, self::MARGIN);
@@ -120,6 +124,22 @@ class PdfRincianKertasKerja
         }
 
         $this->kepalaTabel();
+    }
+
+    /**
+     * Digambar setelah isi halaman, supaya tidak tertutup warna latar baris.
+     */
+    private function watermark(): void
+    {
+        if (! $this->adaHalaman) {
+            return;
+        }
+
+        $this->pdf->SetFont('Helvetica', 'B', 40.0);
+        $this->pdf->SetTextColor(200);
+        $teks = GambarKuitansi::teksPdf(self::WATERMARK);
+        $this->pdf->Text((297.0 - $this->pdf->GetStringWidth($teks)) / 2, 112.0, $teks);
+        $this->pdf->SetTextColor(0);
     }
 
     private function kepalaTabel(): void
@@ -152,7 +172,14 @@ class PdfRincianKertasKerja
         $garis = $this->bungkus($teks, 281.0 - 2.0, 'B');
         $tinggi = max(count($garis) * self::TINGGI + 1.0, 4.5);
         $this->pastikanMuat($tinggi + self::TINGGI * 2);
+        $this->gambarJudul($jenis, $garis, $tinggi);
+    }
 
+    /**
+     * @param  list<string>  $garis
+     */
+    private function gambarJudul(string $jenis, array $garis, float $tinggi): void
+    {
         $this->pdf->SetFont('Helvetica', 'B', self::UKURAN + 0.5);
         $this->pdf->SetFillColor($jenis === 'Kegiatan' ? 240 : 228);
         $x = $this->pdf->GetX();
@@ -172,7 +199,8 @@ class PdfRincianKertasKerja
     {
         $l = self::LEBAR;
         $garis = $this->bungkus($uraian, $l['uraian'] - 2.0, '');
-        $tinggi = max(count($garis), 1) * self::TINGGI + 1.0;
+        $garisSatuan = $this->bungkus($satuan, $l['satuan'] - 2.0, '');
+        $tinggi = max(count($garis), count($garisSatuan), 1) * self::TINGGI + 1.0;
         $this->pastikanMuat($tinggi);
 
         $this->pdf->SetFont('Helvetica', '', self::UKURAN);
@@ -182,7 +210,7 @@ class PdfRincianKertasKerja
         $kolom = [
             [$l['rekening'], [$rekening], 'L'],
             [$l['uraian'], $garis, 'L'],
-            [$l['satuan'], $this->bungkus($satuan, $l['satuan'] - 2.0, ''), 'L'],
+            [$l['satuan'], $garisSatuan, 'L'],
             [$l['harga'], [number_format($harga, 0, ',', '.')], 'R'],
         ];
         foreach (self::BULAN as $i => $_) {
@@ -213,6 +241,7 @@ class PdfRincianKertasKerja
         $this->pdf->SetDrawColor(160);
         $this->sel(257.0, 4.5, 'Subtotal kegiatan', 1, 0, 'R', true);
         $this->sel(24.0, 4.5, PesanRkas::rupiah($jumlah), 1, 1, 'R', true);
+        $this->kegiatanAktif = null;
     }
 
     private function penutup(RingkasanRkas $r): void
@@ -240,6 +269,12 @@ class PdfRincianKertasKerja
         // Sisakan ruang bawah satu margin.
         if ($this->pdf->GetY() + $tinggi > 210.0 - self::MARGIN) {
             $this->halamanBaru(false);
+
+            if ($this->kegiatanAktif !== null) {
+                $teks = 'Kegiatan '.$this->kegiatanAktif['kode'].' '.$this->kegiatanAktif['uraian'].' (lanjutan)';
+                $garis = $this->bungkus($teks, 279.0, 'B');
+                $this->gambarJudul('Kegiatan', $garis, max(count($garis) * self::TINGGI + 1.0, 4.5));
+            }
         }
     }
 

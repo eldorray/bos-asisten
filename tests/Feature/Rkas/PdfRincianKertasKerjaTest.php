@@ -83,3 +83,45 @@ it('menolak sekolah non-ARKAS', function () {
 
     $this->get(route('rkas.pdf', $kk))->assertNotFound();
 });
+
+it('membagi sheet panjang ke beberapa halaman dengan watermark, kepala tabel, dan judul kegiatan lanjutan', function () {
+    $this->actingAs(User::factory()->create());
+    $kk = ($this->buat)();
+    $kegiatan = RkasRefKegiatan::where('kode', '07.01.01.')->firstOrFail();
+    $rekening = RkasRefRekening::where('kode', '5.1.02.01.01.0001')->firstOrFail();
+
+    foreach (range(1, 60) as $n) {
+        RkasBaris::factory()->create([
+            'kertas_kerja_id' => $kk->id, 'ref_kegiatan_id' => $kegiatan->id, 'ref_rekening_id' => $rekening->id,
+            'urutan' => $n, 'uraian' => "Perlengkapan nomor {$n} untuk seluruh kelas", 'satuan' => 'Paket sangat besar sekali', 'harga' => 10_000,
+            'volume_bulan' => array_replace(array_fill_keys(range(1, 12), 0), [1 => 1]),
+        ]);
+    }
+
+    $halaman = (new Parser)->parseContent(($this->get(route('rkas.pdf', $kk))->assertOk())->getContent())->getPages();
+
+    expect(count($halaman))->toBeGreaterThanOrEqual(2);
+    foreach ($halaman as $h) {
+        expect($h->getText())->toContain('DRAF')->toContain('Rekening')->toContain('Jumlah');
+    }
+    expect($halaman[1]->getText())->toContain('(lanjutan)');
+});
+
+it('merender uraian berisi emoji dan tanda kutip lengkung', function () {
+    $this->actingAs(User::factory()->create());
+    $kk = ($this->buat)();
+    RkasBaris::where('kertas_kerja_id', $kk->id)->update(['uraian' => 'Alat “tulis” 😀 kelas']);
+
+    $teks = ($this->teks)($this->get(route('rkas.pdf', $kk))->assertOk());
+
+    expect($teks)->toContain('Alat')->toContain('tulis')->toContain('kelas');
+});
+
+it('merender kertas kerja Lainnya dan kertas kerja kosong', function () {
+    $this->actingAs(User::factory()->create());
+    $lainnya = ($this->buat)(['sumber_dana' => SumberDanaRkas::Lainnya, 'pagu' => 0]);
+    $kosong = RkasKertasKerja::factory()->create(['sekolah_id' => $this->smp->id, 'tahun' => 2028, 'pagu' => 5_000_000]);
+
+    expect(($this->teks)($this->get(route('rkas.pdf', $lainnya))->assertOk()))->toContain('Lainnya')->toContain('DRAF')
+        ->and(($this->teks)($this->get(route('rkas.pdf', $kosong))->assertOk()))->toContain('DRAF')->toContain('Sisa pagu');
+});

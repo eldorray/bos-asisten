@@ -103,6 +103,11 @@ class HitungRingkasan
             }
         }
 
+        $dihapus = $this->jumlahBarisLewatDihapus($kertasKerja, $baris, $batasBulan);
+        if ($dihapus > 0) {
+            $peringatan[] = sprintf(PesanRkas::BARIS_LEWAT_DIHAPUS, $dihapus);
+        }
+
         return new RingkasanRkas(
             pagu: $pagu,
             dianggarkan: $dianggarkan,
@@ -145,6 +150,36 @@ class HitungRingkasan
     }
 
     /**
+     * Baris induk yang sudah punya volume di bulan yang lewat tetapi tidak lagi ditunjuk baris mana pun di versi ini.
+     *
+     * @param  Collection<int, RkasBaris>  $baris
+     */
+    private function jumlahBarisLewatDihapus(RkasKertasKerja $kertasKerja, Collection $baris, ?int $batas): int
+    {
+        if ($batas === null || $kertasKerja->induk === null) {
+            return 0;
+        }
+
+        $dirujuk = $baris->pluck('asal_baris_id')->filter()->all();
+
+        return $kertasKerja->induk->baris()->get()
+            ->reject(fn (RkasBaris $lama): bool => in_array($lama->id, $dirujuk, true))
+            ->filter(fn (RkasBaris $lama): bool => $this->punyaVolumeLewat($lama, $batas))
+            ->count();
+    }
+
+    private function punyaVolumeLewat(RkasBaris $baris, int $batas): bool
+    {
+        for ($bulan = 1; $bulan < $batas; $bulan++) {
+            if ((int) ($baris->volume_bulan[$bulan] ?? 0) > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @param  Collection<int, RkasBaris>  $asal
      */
     private function bulanLewatBerubah(RkasBaris $baris, Collection $asal, ?int $batas): bool
@@ -154,6 +189,10 @@ class HitungRingkasan
         }
 
         $lama = $baris->asal_baris_id === null ? null : $asal->get($baris->asal_baris_id);
+        if ($lama !== null && $lama->harga !== $baris->harga && $this->punyaVolumeLewat($lama, $batas)) {
+            return true;
+        }
+
         for ($bulan = 1; $bulan < $batas; $bulan++) {
             $sebelumnya = (int) ($lama?->volume_bulan[$bulan] ?? 0);
             if ((int) ($baris->volume_bulan[$bulan] ?? 0) !== $sebelumnya) {

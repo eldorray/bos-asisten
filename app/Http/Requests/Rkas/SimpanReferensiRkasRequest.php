@@ -53,7 +53,7 @@ class SimpanReferensiRkasRequest extends FormRequest
             ],
             'rekening' => [
                 'tahun' => $tahun,
-                'kode' => ['required', 'string', 'regex:/^\d(\.\d+){5}$/', Rule::unique('rkas_ref_rekenings', 'kode')->where('tahun', $this->input('tahun'))],
+                'kode' => ['required', 'string', 'regex:/^5\.[12](\.\d+){4}$/', Rule::unique('rkas_ref_rekenings', 'kode')->where('tahun', $this->input('tahun'))],
                 'nama' => ['required', 'string', 'max:255'],
             ],
             'barang' => [

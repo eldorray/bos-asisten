@@ -2,15 +2,19 @@
 
 declare(strict_types=1);
 
+use App\Actions\Rkas\BuatRevisi;
 use App\Actions\Rkas\PesanRkas;
+use App\Actions\Rkas\SimpanKertasKerja;
 use App\Enums\JenisVersiRkas;
 use App\Enums\StatusKertasKerja;
 use App\Enums\SumberDanaRkas;
 use App\Models\RkasKertasKerja;
 use App\Models\Sekolah;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Database\Seeders\DataAwalSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -204,4 +208,38 @@ it('wajib login', function () {
     auth()->logout();
 
     $this->get(route('rkas.index'))->assertRedirect(route('login'));
+});
+
+it('menolak mengubah pagu BOSP Reguler pada pergeseran', function () {
+    $induk = RkasKertasKerja::factory()->create(['sekolah_id' => $this->smp->id, 'tahun' => 2027, 'status' => StatusKertasKerja::Disahkan]);
+    $p = app(BuatRevisi::class)->jalankan($induk, JenisVersiRkas::Pergeseran, CarbonImmutable::parse('2027-07-15'));
+
+    $this->patch(route('rkas.update', $p), ['pagu' => 1])
+        ->assertSessionHasErrors(['pagu' => PesanRkas::PAGU_PERGESERAN]);
+
+    expect($p->fresh()->pagu)->toBe(100_000_000);
+});
+
+it('menolak mengganti pemberi dana Lainnya pada pergeseran', function () {
+    $induk = RkasKertasKerja::factory()->create([
+        'sekolah_id' => $this->smp->id, 'tahun' => 2027, 'sumber_dana' => SumberDanaRkas::Lainnya,
+        'pagu' => 1_000_000, 'status' => StatusKertasKerja::Disahkan,
+    ]);
+    $induk->pemberiDanas()->create(['nama' => 'Lama', 'jumlah' => 1_000_000]);
+    $p = app(BuatRevisi::class)->jalankan($induk, JenisVersiRkas::Pergeseran, CarbonImmutable::parse('2027-07-15'));
+
+    $this->patch(route('rkas.update', $p), ['pemberi_dana' => [['nama' => 'Baru', 'jumlah' => 4_000_000]]])
+        ->assertSessionHasErrors(['pagu' => PesanRkas::PAGU_PERGESERAN]);
+
+    expect($p->fresh()->pagu)->toBe(1_000_000)
+        ->and($p->pemberiDanas()->pluck('nama')->all())->toBe(['Lama']);
+});
+
+it('menolak ubahPagu dari action pada kertas kerja yang bukan draf', function () {
+    $kk = RkasKertasKerja::factory()->create(['sekolah_id' => $this->smp->id, 'status' => StatusKertasKerja::Siap]);
+
+    expect(fn () => app(SimpanKertasKerja::class)->ubahPagu($kk, ['pagu' => 1]))
+        ->toThrow(ValidationException::class, sprintf(PesanRkas::TERKUNCI, 'Siap'));
+
+    expect($kk->fresh()->pagu)->toBe(100_000_000);
 });

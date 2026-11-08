@@ -52,6 +52,10 @@ final class PesanRkas
 
     public const BULAN_LEWAT = 'Bulan ini sudah lewat; di ARKAS baris yang sudah dibelanjakan tidak bisa diubah.';
 
+    public const BARIS_LEWAT_DIHAPUS = '%d baris yang sudah punya volume di bulan yang lewat dihapus; di ARKAS baris yang sudah dibelanjakan tidak bisa dihapus.';
+
+    public const PAGU_PERGESERAN = 'Pagu tidak bisa diubah pada pergeseran.';
+
     public const KUOTA_PERGESERAN = 'Anggaran telah mencapai batas pergeseran';
 
     public const KUOTA_PERUBAHAN = 'Anggaran telah mencapai batas perubahan';

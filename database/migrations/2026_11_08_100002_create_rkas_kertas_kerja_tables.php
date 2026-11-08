@@ -69,7 +69,7 @@ return new class extends Migration
             $table->string('satuan');
             $table->unsignedBigInteger('harga')->default(0);
             $table->json('volume_bulan');
-            $table->string('keterangan')->nullable();
+            $table->text('keterangan')->nullable();
             $table->timestamps();
         });
     }

@@ -63,8 +63,8 @@ class UpdatePengaturanRkasRequest extends FormRequest
             'kode_sarpras.*' => ['string', $kodeKegiatan],
             'rekening_sarpras_lain' => ['present', 'array'],
             'rekening_sarpras_lain.*' => ['string', $rekening],
-            'kuota_pergeseran' => ['nullable', 'integer', 'min:0'],
-            'kuota_perubahan' => ['nullable', 'integer', 'min:0'],
+            'kuota_pergeseran' => ['nullable', 'integer', 'between:0,99'],
+            'kuota_perubahan' => ['nullable', 'integer', 'between:0,99'],
         ];
     }
 

@@ -10,6 +10,7 @@ use App\Enums\SumberDanaRkas;
 use App\Models\RkasKertasKerja;
 use App\Models\Sekolah;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SimpanKertasKerja
 {
@@ -42,12 +43,20 @@ class SimpanKertasKerja
     }
 
     /**
-     * Ubah pagu (BOSP Reguler) atau ganti daftar pemberi dana (Lainnya).
+     * Ubah pagu (BOSP Reguler) atau ganti daftar pemberi dana (Lainnya). Hanya untuk draf; pada pergeseran pagu tetap.
      *
      * @param  array{pagu?: int, pemberi_dana?: list<array{nama: string, jumlah: int}>}  $data
      */
     public function ubahPagu(RkasKertasKerja $kertasKerja, array $data): void
     {
+        if (! $kertasKerja->bisaDiubah()) {
+            throw ValidationException::withMessages(['pagu' => sprintf(PesanRkas::TERKUNCI, $kertasKerja->status->label())]);
+        }
+
+        if ($kertasKerja->jenis_versi === JenisVersiRkas::Pergeseran) {
+            throw ValidationException::withMessages(['pagu' => PesanRkas::PAGU_PERGESERAN]);
+        }
+
         DB::transaction(function () use ($kertasKerja, $data): void {
             if ($kertasKerja->sumber_dana === SumberDanaRkas::Lainnya) {
                 $pemberi = $data['pemberi_dana'] ?? [];

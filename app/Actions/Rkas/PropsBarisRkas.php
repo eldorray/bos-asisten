@@ -20,7 +20,7 @@ use Illuminate\Support\Collection;
 class PropsBarisRkas
 {
     /**
-     * @param  array<int, list<string>>  $masalah  pesan referensi per id baris (dari RingkasanRkas)
+     * @param  array<int, list<string>>  $masalah  pesan per id baris (dari RingkasanRkas); BULAN_LEWAT dipisah sebagai peringatan tidak memblokir
      * @return array<int, array<string, mixed>>
      */
     public function baris(RkasKertasKerja $kertasKerja, array $masalah = []): array
@@ -72,7 +72,8 @@ class PropsBarisRkas
             'volume' => $b->volume(),
             'jumlah' => $b->jumlah(),
             'keterangan' => $b->keterangan,
-            'masalah' => $masalah[$b->id] ?? [],
+            'masalah' => array_values(array_filter($masalah[$b->id] ?? [], fn (string $pesan): bool => $pesan !== PesanRkas::BULAN_LEWAT)),
+            'peringatan' => in_array(PesanRkas::BULAN_LEWAT, $masalah[$b->id] ?? [], true) ? [PesanRkas::BULAN_LEWAT] : [],
         ])->values()->all();
     }
 

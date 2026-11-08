@@ -67,9 +67,10 @@ it('menolak persen_tahap_1 di luar 1 sampai 99 dan kode kegiatan yang bukan form
         'rekening_honor' => '5.1.02',
         'rekening_sarpras_lain' => '5.2.02',
         'kuota_pergeseran' => -3,
+        'kuota_perubahan' => 100,
     ]))->assertSessionHasErrors([
         'persen_tahap_1', 'ambang_tahap_1', 'sarpras_maks', 'kode_honor.0', 'kode_honor.1',
-        'rekening_honor', 'rekening_sarpras_lain.0', 'kuota_pergeseran',
+        'rekening_honor', 'rekening_sarpras_lain.0', 'kuota_pergeseran', 'kuota_perubahan',
     ]);
 
     $this->patch(route('rkas.pengaturan.update', $pengaturan), dataPengaturan(['persen_tahap_1' => 0]))

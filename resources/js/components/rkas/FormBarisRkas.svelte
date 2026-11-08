@@ -61,6 +61,7 @@
         jumlah: number;
         keterangan: string | null;
         masalah: string[];
+        peringatan: string[];
     };
 
     export const BULAN = [
@@ -226,7 +227,7 @@
                     !kolomTampil.includes(kunci) &&
                     !kunci.startsWith('volume_bulan'),
             )
-            .map(([, pesan]) => pesan),
+            .map(([kunci, pesan]) => ({ kunci, pesan })),
     );
     const galatVolume = $derived(
         Object.entries(galat)
@@ -270,7 +271,7 @@
 
 <form class="grid gap-4" onsubmit={simpan}>
     <InputError message={galat.kertas_kerja} />
-    {#each galatLain as pesan (pesan)}
+    {#each galatLain as { kunci, pesan } (kunci)}
         <InputError message={pesan} />
     {/each}
 

@@ -297,7 +297,7 @@
                 </span>
             </div>
 
-            {#if kertasKerja.sumber_dana === 'lainnya' && !kertasKerja.bisa_diubah}
+            {#if kertasKerja.sumber_dana === 'lainnya' && (!kertasKerja.bisa_diubah || kertasKerja.jenis_versi === 'pergeseran')}
                 <ul class="grid gap-1 text-sm">
                     {#each pemberiDana as pemberi (pemberi.id)}
                         <li class="flex justify-between">
@@ -308,7 +308,7 @@
                 </ul>
             {/if}
 
-            {#if kertasKerja.bisa_diubah}
+            {#if kertasKerja.bisa_diubah && kertasKerja.jenis_versi !== 'pergeseran'}
                 {#key kertasKerja.id}
                     <FormKertasKerja
                         sekolahId={kertasKerja.sekolah.id}

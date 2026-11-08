@@ -193,6 +193,9 @@
                                             {#each b.masalah as pesan (pesan)}
                                                 <p class="text-xs text-red-600 dark:text-red-500">{pesan}</p>
                                             {/each}
+                                            {#each b.peringatan as pesan (pesan)}
+                                                <p class="text-xs text-amber-600 dark:text-amber-500">{pesan}</p>
+                                            {/each}
                                         </td>
                                         <td class="px-3 py-2">{b.satuan}</td>
                                         <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.harga)}</td>

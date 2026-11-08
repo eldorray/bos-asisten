@@ -153,7 +153,7 @@
         <ul
             class="grid gap-1 rounded-md border border-red-600/40 p-3 text-sm text-red-600 dark:text-red-500"
         >
-            {#each ringkasan.peringatan as pesan (pesan)}
+            {#each ringkasan.peringatan as pesan, i (i)}
                 <li class="flex items-start gap-2">
                     <TriangleAlert class="mt-0.5 size-4 shrink-0" />
                     {pesan}

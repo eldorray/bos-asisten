@@ -20,6 +20,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DataAwalSeeder;
 use Illuminate\Validation\ValidationException;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     $this->seed(DataAwalSeeder::class);
@@ -210,4 +211,68 @@ it('mengirim daftar versi dan hak revisi hanya untuk versi disahkan terakhir', f
 
     $this->get(route('rkas.show', $baru))->assertInertia(fn ($page) => $page->where('kertasKerja.bisa_direvisi', true));
     $this->get(route('rkas.show', $kk))->assertInertia(fn ($page) => $page->where('kertasKerja.bisa_direvisi', false));
+});
+
+it('tidak menerapkan blokir lintas jenis pada sumber dana Lainnya', function () {
+    $kk = ($this->kk)(['sumber_dana' => SumberDanaRkas::Lainnya, 'pagu' => 100_000_000]);
+    ($this->baris)($kk, [1 => 1], 99_000_000);
+    ($this->baris)($kk, [1 => 1], 1_000_000, ['urutan' => 2], '5.1.02.01.01.0002');
+
+    $p = app(BuatRevisi::class)->jalankan($kk, JenisVersiRkas::Pergeseran, $this->tanggal);
+    $alat = RkasRefRekening::firstOrCreate(['tahun' => 2027, 'kode' => '5.2.02.01.01.0001'], ['nama' => 'Alat']);
+    $p->baris()->where('harga', 1_000_000)->firstOrFail()->update(['ref_rekening_id' => $alat->id]);
+
+    $hasil = app(UbahStatusKertasKerja::class)->nyatakanSiap($p->fresh());
+
+    expect($hasil->pemblokir)->toBe([])
+        ->and($p->fresh()->status)->toBe(StatusKertasKerja::Siap);
+});
+
+it('memperingatkan baris bervolume bulan lewat yang dihapus pada revisi', function () {
+    $kk = ($this->kk)();
+    ($this->baris)($kk, [3 => 1], 50_000_000);
+    ($this->baris)($kk, [3 => 1], 10_000_000, ['urutan' => 2]);
+    ($this->baris)($kk, [9 => 1], 1_000_000, ['urutan' => 3]);
+
+    $p = app(BuatRevisi::class)->jalankan($kk, JenisVersiRkas::Pergeseran, $this->tanggal);
+    expect(app(HitungRingkasan::class)->untuk($p->fresh())->peringatan)->not->toContain(sprintf(PesanRkas::BARIS_LEWAT_DIHAPUS, 1));
+
+    // Baris bervolume Maret dihapus: peringatan. Baris yang hanya punya volume September dihapus: tidak dihitung.
+    $p->baris()->where('harga', 10_000_000)->delete();
+    $p->baris()->where('harga', 1_000_000)->delete();
+
+    $ringkasan = app(HitungRingkasan::class)->untuk($p->fresh());
+    expect($ringkasan->peringatan)->toContain(sprintf(PesanRkas::BARIS_LEWAT_DIHAPUS, 1))
+        ->and($ringkasan->jumlahBarisBermasalah)->toBe(0);
+});
+
+it('menandai perubahan harga pada baris salinan yang punya volume bulan lewat', function () {
+    $kk = ($this->kk)();
+    ($this->baris)($kk, [3 => 1], 50_000_000);
+    ($this->baris)($kk, [9 => 1], 1_000_000, ['urutan' => 2]);
+
+    $p = app(BuatRevisi::class)->jalankan($kk, JenisVersiRkas::Pergeseran, $this->tanggal);
+    $lewat = $p->baris()->where('harga', 50_000_000)->firstOrFail();
+    $nanti = $p->baris()->where('harga', 1_000_000)->firstOrFail();
+
+    $lewat->update(['harga' => 40_000_000]);
+    $nanti->update(['harga' => 2_000_000]);
+
+    $ringkasan = app(HitungRingkasan::class)->untuk($p->fresh());
+    expect($ringkasan->masalahPerBaris)->toHaveKey($lewat->id)
+        ->and($ringkasan->masalahPerBaris[$lewat->id])->toBe([PesanRkas::BULAN_LEWAT])
+        ->and($ringkasan->masalahPerBaris)->not->toHaveKey($nanti->id);
+});
+
+it('mengirim peringatan bulan lewat terpisah dari masalah referensi di props baris', function () {
+    $kk = ($this->kk)();
+    ($this->baris)($kk, [3 => 1], 50_000_000);
+
+    $p = app(BuatRevisi::class)->jalankan($kk, JenisVersiRkas::Pergeseran, $this->tanggal);
+    $p->baris()->firstOrFail()->update(['harga' => 40_000_000]);
+
+    $this->get(route('rkas.show', $p))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('baris.0.masalah', [])
+            ->where('baris.0.peringatan', [PesanRkas::BULAN_LEWAT]));
 });

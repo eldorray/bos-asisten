@@ -35,7 +35,7 @@ class PeriksaSiap
             $pemblokir[] = sprintf(PesanRkas::LEBIH, PesanRkas::rupiah(abs($ringkasan->sisa)));
         }
 
-        if ($kertasKerja->jenis_versi === JenisVersiRkas::Pergeseran && $kertasKerja->induk !== null) {
+        if ($kertasKerja->sumber_dana === SumberDanaRkas::BospReguler && $kertasKerja->jenis_versi === JenisVersiRkas::Pergeseran && $kertasKerja->induk !== null) {
             $berubah = $this->jenisBerubah($ringkasan->jenisBelanja, $this->hitung->untuk($kertasKerja->induk)->jenisBelanja);
             if ($berubah !== []) {
                 $pemblokir[] = sprintf(PesanRkas::LINTAS_JENIS, implode(', ', $berubah));

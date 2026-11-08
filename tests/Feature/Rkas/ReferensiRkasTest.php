@@ -201,3 +201,15 @@ it('menolak jenis referensi yang tidak dikenal dan tamu', function () {
     auth()->logout();
     $this->get(route('rkas.referensi.index'))->assertRedirect(route('login'));
 });
+
+it('menolak rekening di luar kelompok 5.1 dan 5.2', function () {
+    foreach (['4.1.02.01.01.0001', '5.3.02.01.01.0001', '6.1.02.01.01.0001'] as $kode) {
+        $this->post(route('rkas.referensi.store', 'rekening'), ['tahun' => 2027, 'kode' => $kode, 'nama' => 'x'])
+            ->assertSessionHasErrors('kode');
+    }
+
+    $this->post(route('rkas.referensi.store', 'rekening'), ['tahun' => 2027, 'kode' => '5.2.02.01.01.0001', 'nama' => 'Alat'])
+        ->assertSessionHasNoErrors();
+
+    expect(RkasRefRekening::count())->toBe(1);
+});

@@ -50,6 +50,9 @@
             program: RefKode | null;
         };
         rekening: { kode: string; nama: string };
+        kegiatan_honor: boolean;
+        rekening_punya_barang: boolean;
+        barang: PilihanBarang | null;
         uraian: string;
         satuan: string;
         harga: number;
@@ -129,6 +132,7 @@
                       id: baris.ref_kegiatan_id,
                       kode: baris.kegiatan.kode,
                       uraian: `${baris.kegiatan.uraian} (kedaluwarsa)`,
+                      honor: baris.kegiatan_honor,
                   },
               ]
             : pilihan.kegiatan,
@@ -141,17 +145,22 @@
                       id: baris.ref_rekening_id,
                       kode: baris.rekening.kode,
                       nama: `${baris.rekening.nama} (kedaluwarsa)`,
-                      punya_barang: false,
+                      punya_barang: baris.rekening_punya_barang,
                   },
               ]
             : pilihan.rekening,
     );
 
     const kegiatan = $derived(
-        pilihan.kegiatan.find((k) => k.id === form.ref_kegiatan_id),
+        kegiatanOpsi.find((k) => k.id === form.ref_kegiatan_id),
     );
     const rekening = $derived(
-        pilihan.rekening.find((r) => r.id === form.ref_rekening_id),
+        rekeningOpsi.find((r) => r.id === form.ref_rekening_id),
+    );
+    const semuaBarang = $derived(
+        baris?.barang && !pilihan.barang.some((b) => b.id === baris.barang?.id)
+            ? [...pilihan.barang, baris.barang]
+            : pilihan.barang,
     );
     const honor = $derived(kegiatan?.honor ?? false);
     const pakaiBarang = $derived(
@@ -161,16 +170,16 @@
         if (!rekening) {
             return [];
         }
-        const sendiri = pilihan.barang.filter(
+        const sendiri = semuaBarang.filter(
             (b) => b.kode_rekening === rekening.kode,
         );
 
         return sendiri.length > 0 || !rekening.kode.startsWith('5.2')
             ? sendiri
-            : pilihan.barang.filter((b) => b.kode_rekening === null);
+            : semuaBarang.filter((b) => b.kode_rekening === null);
     });
     const barang = $derived(
-        pilihan.barang.find((b) => b.id === form.ref_barang_id),
+        semuaBarang.find((b) => b.id === form.ref_barang_id),
     );
 
     // Total dan jumlah hanya untuk tampilan; angka resmi dihitung server.
@@ -188,7 +197,7 @@
 
     function pilihBarang(id: number | ''): void {
         form.ref_barang_id = id;
-        const dipilih = pilihan.barang.find((b) => b.id === id);
+        const dipilih = semuaBarang.find((b) => b.id === id);
         if (dipilih) {
             form.harga = String(dipilih.harga);
         }
@@ -199,6 +208,26 @@
     }
 
     const galat = $derived(form.errors as Record<string, string>);
+    // Galat untuk kolom yang tidak tampil pada mode ini tetap harus terlihat.
+    const kolomTampil = $derived([
+        'kertas_kerja',
+        'ref_kegiatan_id',
+        'ref_rekening_id',
+        'harga',
+        'keterangan',
+        ...(honor ? ['ptk_id', 'satuan'] : []),
+        ...(pakaiBarang ? ['ref_barang_id'] : []),
+        ...(!honor && !pakaiBarang ? ['uraian', 'satuan'] : []),
+    ]);
+    const galatLain = $derived(
+        Object.entries(galat)
+            .filter(
+                ([kunci]) =>
+                    !kolomTampil.includes(kunci) &&
+                    !kunci.startsWith('volume_bulan'),
+            )
+            .map(([, pesan]) => pesan),
+    );
     const galatVolume = $derived(
         Object.entries(galat)
             .filter(([kunci]) => kunci.startsWith('volume_bulan'))
@@ -241,6 +270,9 @@
 
 <form class="grid gap-4" onsubmit={simpan}>
     <InputError message={galat.kertas_kerja} />
+    {#each galatLain as pesan (pesan)}
+        <InputError message={pesan} />
+    {/each}
 
     <div class="grid gap-4 md:grid-cols-2">
         <div class="grid content-start gap-1.5">

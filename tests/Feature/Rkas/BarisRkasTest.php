@@ -16,6 +16,7 @@ use App\Models\RkasRefSatuan;
 use App\Models\Sekolah;
 use App\Models\User;
 use Database\Seeders\DataAwalSeeder;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -54,7 +55,7 @@ it('menyimpan baris dan memberi urutan 001 lalu 002 per kegiatan dan rekening', 
     ($this->kirim)(['uraian' => 'Spidol warna'])->assertSessionHasNoErrors();
 
     $lain = RkasRefRekening::factory()->create(['tahun' => 2027]);
-    ($this->kirim)(['ref_rekening_id' => $lain->id])->assertSessionHasNoErrors();
+    ($this->kirim)(['ref_rekening_id' => $lain->id, 'uraian' => 'Lain'])->assertSessionHasNoErrors();
 
     expect(RkasBaris::orderBy('id')->pluck('urutan')->all())->toBe([1, 2, 1]);
 
@@ -270,4 +271,74 @@ it('menolak baris untuk sekolah yang bukan ARKAS', function () {
     $kk = RkasKertasKerja::factory()->create(['sekolah_id' => $erkam->id]);
 
     $this->post(route('rkas.baris.store', $kk), ($this->data)())->assertNotFound();
+});
+
+it('meminta barang, bukan uraian, bila rekening punya daftar barang dan uraian tidak dikirim', function () {
+    RkasRefBarang::factory()->create(['tahun' => 2027, 'kode_rekening' => $this->rekening->kode]);
+    $isi = Arr::except(($this->data)(), ['uraian', 'satuan']);
+
+    $this->post(route('rkas.baris.store', $this->kk), $isi)
+        ->assertSessionHasErrors(['ref_barang_id' => PesanRkas::WAJIB])
+        ->assertSessionDoesntHaveErrors(['uraian', 'satuan']);
+});
+
+it('meminta PTK, bukan uraian, bila kegiatan honor dan uraian tidak dikirim', function () {
+    $honor = RkasRefKegiatan::factory()->create(['tahun' => 2027, 'kode' => '07.12.01.']);
+    $isi = Arr::except(($this->data)(['ref_kegiatan_id' => $honor->id]), ['uraian']);
+
+    $this->post(route('rkas.baris.store', $this->kk), $isi)
+        ->assertSessionHasErrors(['ptk_id' => PesanRkas::WAJIB])
+        ->assertSessionDoesntHaveErrors(['uraian']);
+});
+
+it('memindahkan urutan ke kelompok tujuan saat kegiatan atau rekening berubah, selain itu tetap', function () {
+    ($this->kirim)()->assertSessionHasNoErrors();
+    ($this->kirim)(['uraian' => 'Spidol warna'])->assertSessionHasNoErrors();
+    $lain = RkasRefRekening::factory()->create(['tahun' => 2027]);
+    ($this->kirim)(['ref_rekening_id' => $lain->id, 'uraian' => 'Lain'])->assertSessionHasNoErrors();
+    [$pertama, $kedua] = RkasBaris::orderBy('id')->get();
+
+    $this->patch(route('rkas.baris.update', $pertama), ($this->data)(['ref_rekening_id' => $lain->id]))
+        ->assertSessionHasNoErrors();
+    expect($pertama->fresh()->urutan)->toBe(2);
+
+    $this->patch(route('rkas.baris.update', $kedua), ($this->data)(['uraian' => 'Spidol warna', 'harga' => 17_000]))
+        ->assertSessionHasNoErrors();
+    expect($kedua->fresh()->urutan)->toBe(2);
+});
+
+it('membatasi harga sampai 700 miliar', function () {
+    ($this->kirim)(['harga' => 700_000_000_001])->assertSessionHasErrors(['harga' => PesanRkas::HARGA_MAKS]);
+    expect(RkasBaris::count())->toBe(0);
+
+    ($this->kirim)(['harga' => 700_000_000_000, 'volume_bulan' => array_fill(1, 12, 999_999)])
+        ->assertSessionHasNoErrors();
+    expect(RkasBaris::firstOrFail()->jumlah())->toBe(700_000_000_000 * 12 * 999_999);
+});
+
+it('mengurutkan baris menurut kegiatan, rekening, lalu urutan', function () {
+    $rekB = RkasRefRekening::factory()->create(['tahun' => 2027, 'kode' => '5.1.02.01.01.0009']);
+    $rekA = RkasRefRekening::factory()->create(['tahun' => 2027, 'kode' => '5.1.02.01.01.0002']);
+    RkasBaris::factory()->create(['kertas_kerja_id' => $this->kk->id, 'ref_kegiatan_id' => $this->kegiatan->id, 'ref_rekening_id' => $rekB->id, 'uraian' => 'b']);
+    RkasBaris::factory()->create(['kertas_kerja_id' => $this->kk->id, 'ref_kegiatan_id' => $this->kegiatan->id, 'ref_rekening_id' => $rekA->id, 'uraian' => 'a']);
+
+    $this->get(route('rkas.show', $this->kk))->assertInertia(fn (Assert $page) => $page
+        ->where('baris.0.uraian', 'a')
+        ->where('baris.1.uraian', 'b'));
+});
+
+it('menyertakan referensi milik baris yang sudah kedaluwarsa agar tetap bisa diubah', function () {
+    $barang = RkasRefBarang::factory()->create(['tahun' => 2027, 'kode_rekening' => $this->rekening->kode, 'nama' => 'Kertas']);
+    ($this->kirim)(['ref_barang_id' => $barang->id])->assertSessionHasNoErrors();
+    $barang->update(['kedaluwarsa' => now()->toDateString()]);
+    $this->rekening->update(['kedaluwarsa' => now()->toDateString()]);
+
+    $this->get(route('rkas.show', $this->kk))->assertInertia(fn (Assert $page) => $page
+        ->where('baris.0.barang.id', $barang->id)
+        ->where('baris.0.kegiatan_honor', false)
+        ->has('pilihan.barang', 0)
+        ->has('pilihan.rekening', 0));
+
+    $this->patch(route('rkas.baris.update', RkasBaris::firstOrFail()), ($this->data)(['ref_barang_id' => $barang->id, 'volume_bulan' => [1 => 7]]))
+        ->assertSessionHasNoErrors();
 });

@@ -8,6 +8,7 @@ use App\Actions\Rkas\PesanRkas;
 use App\Enums\SistemAnggaran;
 use App\Models\RkasBaris;
 use App\Models\RkasKertasKerja;
+use App\Models\RkasPengaturan;
 use App\Models\RkasRefBarang;
 use App\Models\RkasRefKegiatan;
 use App\Models\RkasRefRekening;
@@ -18,6 +19,9 @@ use Illuminate\Validation\Validator;
 
 class SimpanBarisRkasRequest extends FormRequest
 {
+    /** Batas harga agar harga x 12 x 999.999 tidak melewati PHP_INT_MAX. */
+    public const HARGA_MAKS = 700_000_000_000;
+
     public function baris(): ?RkasBaris
     {
         $model = $this->route('baris');
@@ -48,21 +52,47 @@ class SimpanBarisRkasRequest extends FormRequest
         }
     }
 
+    private function kegiatanHonor(): bool
+    {
+        $kegiatan = RkasRefKegiatan::query()->find($this->integer('ref_kegiatan_id'));
+        if ($kegiatan === null) {
+            return false;
+        }
+
+        $kertasKerja = $this->kertasKerja();
+
+        return in_array($kegiatan->kode, RkasPengaturan::untuk($kertasKerja->sekolah, $kertasKerja->tahun)->kode_honor, true);
+    }
+
+    /**
+     * Barang wajib dipilih (dan menjadi sumber uraian/satuan) hanya bila rekening punya daftar barang.
+     */
+    private function barangWajib(): bool
+    {
+        $rekening = RkasRefRekening::query()->find($this->integer('ref_rekening_id'));
+
+        return $rekening !== null
+            && RkasRefBarang::query()->untukRekening($rekening)->belumKedaluwarsa()->exists();
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
-        $tanpaBarangAtauPtk = Rule::requiredIf(fn (): bool => ! $this->filled('ref_barang_id') && ! $this->filled('ptk_id'));
+        $honor = $this->kegiatanHonor();
+        $barangWajib = ! $honor && $this->barangWajib();
+        $barangAda = ! $honor && $this->filled('ref_barang_id');
+        $bebas = ! $honor && ! $barangWajib && ! $barangAda;
 
         return [
             'ref_kegiatan_id' => ['required', 'integer'],
             'ref_rekening_id' => ['required', 'integer'],
-            'ref_barang_id' => ['nullable', 'integer'],
-            'ptk_id' => ['nullable', 'integer'],
-            'uraian' => [$tanpaBarangAtauPtk, 'nullable', 'string', 'max:500'],
-            'satuan' => [Rule::requiredIf(fn (): bool => ! $this->filled('ref_barang_id')), 'nullable', 'string', Rule::exists('rkas_ref_satuans', 'nama')],
-            'harga' => ['required', 'integer', 'min:1', 'max:9999999999999'],
+            'ref_barang_id' => [Rule::requiredIf($barangWajib), 'nullable', 'integer'],
+            'ptk_id' => [Rule::requiredIf($honor), 'nullable', 'integer'],
+            'uraian' => [Rule::requiredIf($bebas), 'nullable', 'string', 'max:500'],
+            'satuan' => [Rule::requiredIf($honor || $bebas), 'nullable', 'string', Rule::exists('rkas_ref_satuans', 'nama')],
+            'harga' => ['required', 'integer', 'min:1', 'max:'.self::HARGA_MAKS],
             'volume_bulan' => ['required', 'array'],
             'volume_bulan.*' => ['integer', 'min:0', 'max:999999'],
             'keterangan' => ['nullable', 'string', 'max:500'],
@@ -78,6 +108,7 @@ class SimpanBarisRkasRequest extends FormRequest
             'required' => PesanRkas::WAJIB,
             'harga.integer' => PesanRkas::WAJIB,
             'harga.min' => PesanRkas::WAJIB,
+            'harga.max' => PesanRkas::HARGA_MAKS,
             'uraian.max' => PesanRkas::URAIAN_MAKS,
             'volume_bulan.*.integer' => PesanRkas::VOLUME_MAKS,
             'volume_bulan.*.min' => PesanRkas::VOLUME_MAKS,

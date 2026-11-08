@@ -14,6 +14,8 @@ final class PesanRkas
 
     public const URAIAN_MAKS = 'Maksimal 500 karakter';
 
+    public const HARGA_MAKS = 'Maksimal Rp 700.000.000.000';
+
     public const VOLUME_MAKS = 'Maksimal 6 digit';
 
     public const VOLUME_KOSONG = 'Isi volume minimal pada satu bulan';

@@ -19,37 +19,68 @@
 
     let tampilan = $state<'bulan' | 'tahap'>('bulan');
 
-    type Kelompok = {
-        kunci: string;
-        program: string;
-        komponen: string;
-        kegiatan: string;
-        baris: BarisRkas[];
-    };
+    type Kegiatan = { kunci: string; judul: string; baris: BarisRkas[] };
+    type Komponen = { kunci: string; judul: string; kegiatan: Kegiatan[] };
+    type Program = { kunci: string; judul: string; komponen: Komponen[] };
 
-    const kelompok = $derived.by(() => {
-        const peta = new Map<string, Kelompok>();
+    function judul(ref: { kode: string; uraian: string } | null): string {
+        return ref ? `${ref.kode} ${ref.uraian}` : 'Tanpa induk';
+    }
+
+    // Program > Komponen > Kegiatan, urut kode; baris di dalam kegiatan urut rekening lalu urutan.
+    const pohon = $derived.by(() => {
+        const programs = new Map<string, Program>();
         for (const b of baris) {
-            const kunci = b.kegiatan.kode;
-            let k = peta.get(kunci);
+            const kodeProgram = b.kegiatan.program?.kode ?? '';
+            const kodeKomponen = b.kegiatan.induk?.kode ?? '';
+            let p = programs.get(kodeProgram);
+            if (!p) {
+                p = {
+                    kunci: kodeProgram,
+                    judul: judul(b.kegiatan.program),
+                    komponen: [],
+                };
+                programs.set(kodeProgram, p);
+            }
+            let k = p.komponen.find((x) => x.kunci === kodeKomponen);
             if (!k) {
                 k = {
-                    kunci,
-                    program: b.kegiatan.program
-                        ? `${b.kegiatan.program.kode} ${b.kegiatan.program.uraian}`
-                        : '',
-                    komponen: b.kegiatan.induk
-                        ? `${b.kegiatan.induk.kode} ${b.kegiatan.induk.uraian}`
-                        : '',
-                    kegiatan: `${b.kegiatan.kode} ${b.kegiatan.uraian}`,
+                    kunci: kodeKomponen,
+                    judul: judul(b.kegiatan.induk),
+                    kegiatan: [],
+                };
+                p.komponen.push(k);
+            }
+            let g = k.kegiatan.find((x) => x.kunci === b.kegiatan.kode);
+            if (!g) {
+                g = {
+                    kunci: b.kegiatan.kode,
+                    judul: `${b.kegiatan.kode} ${b.kegiatan.uraian}`,
                     baris: [],
                 };
-                peta.set(kunci, k);
+                k.kegiatan.push(g);
             }
-            k.baris.push(b);
+            g.baris.push(b);
         }
 
-        return [...peta.values()].sort((a, b) => a.kunci.localeCompare(b.kunci));
+        const urut = (x: { kunci: string }, y: { kunci: string }): number =>
+            x.kunci.localeCompare(y.kunci);
+        for (const p of programs.values()) {
+            p.komponen.sort(urut);
+            for (const k of p.komponen) {
+                k.kegiatan.sort(urut);
+                for (const g of k.kegiatan) {
+                    g.baris.sort(
+                        (x, y) =>
+                            x.rekening.kode.localeCompare(y.rekening.kode) ||
+                            x.urutan - y.urutan ||
+                            x.id - y.id,
+                    );
+                }
+            }
+        }
+
+        return [...programs.values()].sort(urut);
     });
 
     const kolom = $derived(
@@ -60,6 +91,8 @@
                   { nama: 'Tahap 2', bulan: [7, 8, 9, 10, 11, 12] },
               ],
     );
+
+    const jumlahKolom = $derived(7 + kolom.length + (bisaDiubah ? 1 : 0));
 
     function volumeKolom(b: BarisRkas, bulan: number[]): number {
         return bulan.reduce((n, m) => n + (b.volume_bulan[String(m)] ?? 0), 0);
@@ -132,60 +165,69 @@
                         {/if}
                     </tr>
                 </thead>
-                {#each kelompok as k (k.kunci)}
+                {#each pohon as p (p.kunci)}
                     <tbody>
-                        <tr class="bg-muted/30">
-                            <td
-                                class="px-3 py-1.5 text-xs"
-                                colspan={8 + kolom.length - 1 + (bisaDiubah ? 1 : 0)}
-                            >
-                                {#if k.program}<span class="text-muted-foreground">{k.program} ›</span>{/if}
-                                {#if k.komponen}<span class="text-muted-foreground">{k.komponen} ›</span>{/if}
-                                <span class="font-medium">{k.kegiatan}</span>
+                        <tr class="bg-muted/60">
+                            <td class="px-3 py-1.5 text-xs font-semibold" colspan={jumlahKolom}>
+                                {p.judul}
                             </td>
                         </tr>
-                        {#each k.baris as b (b.id)}
-                            <tr class="border-t align-top">
-                                <td class="px-3 py-2 whitespace-nowrap tabular-nums">{kode(b)}</td>
-                                <td class="px-3 py-2">{b.rekening.kode}</td>
-                                <td class="px-3 py-2">
-                                    {b.uraian}
-                                    {#each b.masalah as pesan (pesan)}
-                                        <p class="text-xs text-red-600 dark:text-red-500">{pesan}</p>
-                                    {/each}
+                        {#each p.komponen as k (k.kunci)}
+                            <tr class="bg-muted/40">
+                                <td class="py-1.5 pr-3 pl-6 text-xs font-medium" colspan={jumlahKolom}>
+                                    {k.judul}
                                 </td>
-                                <td class="px-3 py-2">{b.satuan}</td>
-                                <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.harga)}</td>
-                                {#each kolom as c (c.nama)}
-                                    <td class="px-2 py-2 text-right tabular-nums">
-                                        {volumeKolom(b, c.bulan) || ''}
-                                    </td>
-                                {/each}
-                                <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.volume)}</td>
-                                <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.jumlah)}</td>
-                                {#if bisaDiubah}
-                                    <td class="px-3 py-2 whitespace-nowrap">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label="Ubah baris"
-                                            onclick={() => onUbah(b)}
-                                        >
-                                            <Pencil class="size-4" />
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            aria-label="Hapus baris"
-                                            onclick={() => hapus(b)}
-                                        >
-                                            <Trash2 class="size-4" />
-                                        </Button>
-                                    </td>
-                                {/if}
                             </tr>
+                            {#each k.kegiatan as g (g.kunci)}
+                                <tr class="bg-muted/20">
+                                    <td class="py-1.5 pr-3 pl-10 text-xs font-medium" colspan={jumlahKolom}>
+                                        {g.judul}
+                                    </td>
+                                </tr>
+                                {#each g.baris as b (b.id)}
+                                    <tr class="border-t align-top">
+                                        <td class="px-3 py-2 whitespace-nowrap tabular-nums">{kode(b)}</td>
+                                        <td class="px-3 py-2">{b.rekening.kode}</td>
+                                        <td class="px-3 py-2">
+                                            {b.uraian}
+                                            {#each b.masalah as pesan (pesan)}
+                                                <p class="text-xs text-red-600 dark:text-red-500">{pesan}</p>
+                                            {/each}
+                                        </td>
+                                        <td class="px-3 py-2">{b.satuan}</td>
+                                        <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.harga)}</td>
+                                        {#each kolom as c (c.nama)}
+                                            <td class="px-2 py-2 text-right tabular-nums">
+                                                {volumeKolom(b, c.bulan) || ''}
+                                            </td>
+                                        {/each}
+                                        <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.volume)}</td>
+                                        <td class="px-3 py-2 text-right tabular-nums">{rupiah(b.jumlah)}</td>
+                                        {#if bisaDiubah}
+                                            <td class="px-3 py-2 whitespace-nowrap">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label="Ubah baris"
+                                                    onclick={() => onUbah(b)}
+                                                >
+                                                    <Pencil class="size-4" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    aria-label="Hapus baris"
+                                                    onclick={() => hapus(b)}
+                                                >
+                                                    <Trash2 class="size-4" />
+                                                </Button>
+                                            </td>
+                                        {/if}
+                                    </tr>
+                                {/each}
+                            {/each}
                         {/each}
                     </tbody>
                 {/each}

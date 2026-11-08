@@ -78,19 +78,28 @@ class SimpanBarisRkas
                 'keterangan' => $data['keterangan'] ?? null,
             ];
 
+            $pindah = $baris === null
+                || $baris->ref_kegiatan_id !== $kegiatan->id
+                || $baris->ref_rekening_id !== $rekening->id;
+
+            // Urutan berlaku per (kertas kerja, kegiatan, rekening): baris baru atau yang pindah kelompok
+            // mendapat nomor berikutnya di kelompok tujuan; selain itu urutan tetap.
+            if ($pindah) {
+                $isi['urutan'] = 1 + (int) RkasBaris::query()
+                    ->where('kertas_kerja_id', $kertasKerja->id)
+                    ->where('ref_kegiatan_id', $kegiatan->id)
+                    ->where('ref_rekening_id', $rekening->id)
+                    ->when($baris !== null, fn ($q) => $q->whereKeyNot($baris?->id))
+                    ->max('urutan');
+            }
+
             if ($baris !== null) {
                 $baris->update($isi);
 
                 return $baris;
             }
 
-            $urutan = (int) RkasBaris::query()
-                ->where('kertas_kerja_id', $kertasKerja->id)
-                ->where('ref_kegiatan_id', $kegiatan->id)
-                ->where('ref_rekening_id', $rekening->id)
-                ->max('urutan');
-
-            return RkasBaris::create($isi + ['kertas_kerja_id' => $kertasKerja->id, 'urutan' => $urutan + 1]);
+            return RkasBaris::create($isi + ['kertas_kerja_id' => $kertasKerja->id]);
         });
     }
 

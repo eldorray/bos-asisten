@@ -25,12 +25,20 @@ class PropsBarisRkas
     public function baris(RkasKertasKerja $kertasKerja): array
     {
         $daftar = $kertasKerja->baris()
-            ->with(['refKegiatan', 'refRekening'])
-            ->orderBy('ref_kegiatan_id')
-            ->orderBy('ref_rekening_id')
-            ->orderBy('urutan')
-            ->orderBy('id')
-            ->get();
+            ->with(['refKegiatan', 'refRekening', 'refBarang'])
+            ->get()
+            ->sortBy([
+                fn (RkasBaris $a, RkasBaris $b): int => strcmp($a->refKegiatan->kode, $b->refKegiatan->kode),
+                fn (RkasBaris $a, RkasBaris $b): int => strcmp($a->refRekening->kode, $b->refRekening->kode),
+                ['urutan', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values();
+
+        $kodeHonor = RkasPengaturan::untuk($kertasKerja->sekolah, $kertasKerja->tahun)->kode_honor;
+        $barangAktif = RkasRefBarang::query()->where('tahun', $kertasKerja->tahun)->belumKedaluwarsa()->get(['kode_rekening']);
+        $kodeBerdaftar = $barangAktif->pluck('kode_rekening')->filter()->unique()->flip();
+        $adaTanpaKode = $barangAktif->contains(fn (RkasRefBarang $b): bool => $b->kode_rekening === null);
 
         $induk = $this->induk($kertasKerja->tahun, $daftar->map(fn (RkasBaris $b): RkasRefKegiatan => $b->refKegiatan));
 
@@ -43,6 +51,19 @@ class PropsBarisRkas
             'ptk_id' => $b->ptk_id,
             'kegiatan' => $this->kegiatan($b->refKegiatan, $induk),
             'rekening' => ['kode' => $b->refRekening->kode, 'nama' => $b->refRekening->nama],
+            // Referensi milik baris sendiri, agar form ubah tetap utuh walau referensinya sudah kedaluwarsa.
+            'kegiatan_honor' => in_array($b->refKegiatan->kode, $kodeHonor, true),
+            'rekening_punya_barang' => $kodeBerdaftar->has($b->refRekening->kode)
+                || ($adaTanpaKode && str_starts_with($b->refRekening->kode, '5.2')),
+            'barang' => $b->refBarang === null ? null : [
+                'id' => $b->refBarang->id,
+                'nama' => $b->refBarang->nama,
+                'satuan' => $b->refBarang->satuan,
+                'harga' => $b->refBarang->harga,
+                'batas_bawah' => $b->refBarang->batas_bawah,
+                'batas_atas' => $b->refBarang->batas_atas,
+                'kode_rekening' => $b->refBarang->kode_rekening,
+            ],
             'uraian' => $b->uraian,
             'satuan' => $b->satuan,
             'harga' => $b->harga,

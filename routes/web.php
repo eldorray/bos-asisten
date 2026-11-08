@@ -14,6 +14,7 @@ use App\Http\Controllers\Rkas\BarisRkasController;
 use App\Http\Controllers\Rkas\KertasKerjaController;
 use App\Http\Controllers\Rkas\PdfKertasKerjaController;
 use App\Http\Controllers\Rkas\PengaturanRkasController;
+use App\Http\Controllers\Rkas\PerbandinganController;
 use App\Http\Controllers\Rkas\ReferensiRkasController;
 use App\Http\Controllers\Rkas\RevisiController;
 use App\Http\Controllers\Rkas\StatusKertasKerjaController;
@@ -65,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->parameters(['rkas' => 'kertasKerja'])
         ->except(['create', 'edit']);
     Route::get('rkas/{kertasKerja}/pdf', PdfKertasKerjaController::class)->name('rkas.pdf');
+    Route::get('rkas/{kertasKerja}/perbandingan', PerbandinganController::class)->name('rkas.perbandingan');
     Route::post('rkas/{kertasKerja}/siap', [StatusKertasKerjaController::class, 'siap'])->name('rkas.status.siap');
     Route::post('rkas/{kertasKerja}/draf', [StatusKertasKerjaController::class, 'draf'])->name('rkas.status.draf');
     Route::post('rkas/{kertasKerja}/disahkan', [StatusKertasKerjaController::class, 'disahkan'])->name('rkas.status.disahkan');

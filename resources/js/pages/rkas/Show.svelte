@@ -14,6 +14,7 @@
 <script lang="ts">
     import { Link, router } from '@inertiajs/svelte';
     import { toast } from 'svelte-sonner';
+    import PerbandinganController from '@/actions/App/Http/Controllers/Rkas/PerbandinganController';
     import PdfKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/PdfKertasKerjaController';
     import StatusKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/StatusKertasKerjaController';
     import AppHead from '@/components/AppHead.svelte';
@@ -230,6 +231,14 @@
             >
                 Cetak rincian (PDF)
             </a>
+            {#if kertasKerja.sumber_dana === 'bosp_reguler'}
+                <Link
+                    href={PerbandinganController.url(kertasKerja.id)}
+                    class="text-sm underline-offset-4 hover:underline"
+                >
+                    Bandingkan dengan impor ARKAS
+                </Link>
+            {/if}
             <Link
                 href={KertasKerjaController.index({
                     query: {

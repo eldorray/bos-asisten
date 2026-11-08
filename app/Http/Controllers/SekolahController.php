@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\HapusSekolah;
 use App\Actions\UrutkanNomorKuitansi;
 use App\Http\Requests\UpdateSekolahRequest;
 use App\Models\Sekolah;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,6 +50,21 @@ class SekolahController extends Controller
         $sekolah->update($data);
 
         return back();
+    }
+
+    public function destroy(Request $request, Sekolah $sekolah, HapusSekolah $hapus): RedirectResponse
+    {
+        $request->validate([
+            'konfirmasi' => ['required', 'string', Rule::in([$sekolah->nama])],
+        ], [
+            'konfirmasi.in' => 'Nama yang diketik tidak sama dengan nama sekolah.',
+        ]);
+
+        $hapus->jalankan($sekolah);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => "{$sekolah->nama} dihapus"]);
+
+        return to_route('sekolah.index');
     }
 
     public function urutkanNomor(Request $request, Sekolah $sekolah, UrutkanNomorKuitansi $urutkan): RedirectResponse

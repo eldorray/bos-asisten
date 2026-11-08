@@ -288,10 +288,52 @@
 
     <RingkasanRkas {ringkasan} />
 
+    {#if kertasKerja.bisa_diubah}
+        <details
+            class="rounded-xl border bg-card px-5 py-4 text-sm"
+            open={baris.length === 0}
+        >
+            <summary class="cursor-pointer text-base font-semibold">
+                Cara mengisi
+            </summary>
+            <ol class="mt-3 grid list-decimal gap-2 pl-5">
+                <li>
+                    <strong>Atur pagu</strong> di kartu Pagu di bawah, lalu simpan.
+                    Total semua baris belanja nanti harus sama dengan pagu ini.
+                </li>
+                <li>
+                    <strong>Tambah baris belanja</strong>, satu baris untuk satu
+                    belanja. Pilih <em>Kegiatan</em> dan
+                    <em>Rekening belanja</em>. Lalu pilih
+                    <em>Barang/jasa</em> (harga terisi sendiri, boleh diubah),
+                    atau ketik <em>Uraian</em> dan <em>Satuan</em> bila tidak ada
+                    pilihan barang. Untuk kegiatan honor, pilih <em>PTK</em>.
+                </li>
+                <li>
+                    <strong>Isi volume per bulan</strong> pada bulan belanja itu
+                    dilakukan. Jumlah uang dihitung otomatis: total volume × harga
+                    satuan.
+                </li>
+                <li>
+                    Ulangi sampai <strong>Sisa</strong> di ringkasan atas
+                    menjadi Rp 0. Baris yang sudah tersimpan muncul di tabel dan
+                    bisa diubah atau dihapus.
+                </li>
+                <li>
+                    Klik <strong>Nyatakan Siap</strong>. Bila ada yang kurang,
+                    daftarnya muncul. Setelah siap dan benar, klik
+                    <strong>Tandai Disahkan</strong>.
+                </li>
+            </ol>
+        </details>
+    {/if}
+
     <Card>
         <CardContent class="grid gap-4">
             <div class="flex items-baseline justify-between">
-                <span class="text-sm text-muted-foreground">Pagu</span>
+                <span class="text-sm text-muted-foreground">
+                    {kertasKerja.bisa_diubah ? 'Langkah 1 · Pagu' : 'Pagu'}
+                </span>
                 <span class="text-xl font-semibold tabular-nums">
                     {rupiah(kertasKerja.pagu)}
                 </span>
@@ -331,7 +373,9 @@
         <Card>
             <CardContent class="grid gap-3">
                 <h2 class="text-base font-semibold">
-                    {sedangDiubah ? 'Ubah baris belanja' : 'Tambah baris belanja'}
+                    {sedangDiubah
+                        ? 'Ubah baris belanja'
+                        : 'Langkah 2 · Tambah baris belanja'}
                 </h2>
                 {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
                     <FormBarisRkas

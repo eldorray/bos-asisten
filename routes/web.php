@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('pengaturan/sekolah', [SekolahController::class, 'index'])->name('sekolah.index');
     Route::patch('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'update'])->name('sekolah.update');
+    Route::delete('pengaturan/sekolah/{sekolah}', [SekolahController::class, 'destroy'])->name('sekolah.destroy');
     Route::post('pengaturan/sekolah/{sekolah}/urutkan-nomor', [SekolahController::class, 'urutkanNomor'])->name('sekolah.urutkan-nomor');
     Route::get('pengaturan/rkas', [PengaturanRkasController::class, 'edit'])->name('rkas.pengaturan.edit');
     Route::patch('pengaturan/rkas/{pengaturan}', [PengaturanRkasController::class, 'update'])->name('rkas.pengaturan.update');

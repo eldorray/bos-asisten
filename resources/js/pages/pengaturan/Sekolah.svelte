@@ -17,6 +17,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import HapusSekolah from '@/components/spj/HapusSekolah.svelte';
     import { Button } from '@/components/ui/button';
     import {
         Card,
@@ -59,8 +60,11 @@
     }
 
     /* svelte-ignore state_referenced_locally */
-    const forms = sekolahs.map((sekolah) =>
-        useForm({
+    // Per id, bukan per urutan: daftar bisa berkurang saat sekolah dihapus.
+    const forms = new Map(
+        sekolahs.map((sekolah) => [
+            sekolah.id,
+            useForm({
             nama: sekolah.nama,
             sebutan: sekolah.sebutan,
             desa_kecamatan: sekolah.desa_kecamatan,
@@ -70,22 +74,27 @@
             nama_kepala: sekolah.nama_kepala,
             nama_bendahara: sekolah.nama_bendahara,
             nomor_awal: nomorUntuk(sekolah, tahunAwal),
-        }),
+            }),
+        ]),
     );
 
     function gantiTahun(event: Event): void {
         const nilai = Number((event.target as HTMLInputElement).value);
         tahun = nilai;
-        sekolahs.forEach((sekolah, i) => {
-            forms[i].nomor_awal = nomorUntuk(sekolah, nilai);
+        sekolahs.forEach((sekolah) => {
+            const form = forms.get(sekolah.id);
+            if (form) {
+                form.nomor_awal = nomorUntuk(sekolah, nilai);
+            }
         });
     }
 
-    function simpan(event: SubmitEvent, i: number): void {
+    function simpan(event: SubmitEvent, sekolah: SekolahData): void {
         event.preventDefault();
-        forms[i]
-            .transform((data) => ({ ...data, tahun }))
-            .submit(SekolahController.update(sekolahs[i].id), {
+        forms
+            .get(sekolah.id)
+            ?.transform((data) => ({ ...data, tahun }))
+            .submit(SekolahController.update(sekolah.id), {
                 preserveScroll: true,
             });
     }
@@ -150,8 +159,8 @@
     </div>
 
     <div class="grid items-start gap-3.5 xl:grid-cols-2">
-        {#each sekolahs as sekolah, i (sekolah.id)}
-            {@const form = forms[i]}
+        {#each sekolahs as sekolah (sekolah.id)}
+            {@const form = forms.get(sekolah.id)!}
             <Card>
                 <CardHeader class="border-b">
                     <div class="flex items-center gap-3">
@@ -173,7 +182,7 @@
                 <CardContent>
                     <form
                         class="grid gap-3 sm:grid-cols-2"
-                        onsubmit={(e) => simpan(e, i)}
+                        onsubmit={(e) => simpan(e, sekolah)}
                     >
                         {#each kolom as { kunci, label } (kunci)}
                             <div class="grid content-start gap-1">
@@ -220,6 +229,9 @@
                             >
                                 Urutkan nomor per bulan
                             </Button>
+                            <span class="ml-auto">
+                                <HapusSekolah {sekolah} />
+                            </span>
                         </div>
                     </form>
                 </CardContent>

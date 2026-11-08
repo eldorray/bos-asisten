@@ -58,22 +58,39 @@
         tahun: number;
     } = $props();
 
+    function nilaiForm(p: Pengaturan) {
+        return {
+            swasta: p.swasta,
+            persen_tahap_1: String(p.persen_tahap_1),
+            ambang_tahap_1: String(p.ambang_tahap_1),
+            honor_maks_negeri: String(p.honor_maks_negeri),
+            honor_maks_swasta: String(p.honor_maks_swasta),
+            buku_min: String(p.buku_min),
+            sarpras_maks: String(p.sarpras_maks),
+            kode_honor: p.kode_honor.join(', '),
+            rekening_honor: p.rekening_honor,
+            kode_buku: p.kode_buku.join(', '),
+            kode_sarpras: p.kode_sarpras.join(', '),
+            rekening_sarpras_lain: p.rekening_sarpras_lain.join(', '),
+            kuota_pergeseran: String(p.kuota_pergeseran ?? ''),
+            kuota_perubahan: String(p.kuota_perubahan ?? ''),
+        };
+    }
+
     /* svelte-ignore state_referenced_locally */
-    const form = useForm({
-        swasta: pengaturan.swasta,
-        persen_tahap_1: String(pengaturan.persen_tahap_1),
-        ambang_tahap_1: String(pengaturan.ambang_tahap_1),
-        honor_maks_negeri: String(pengaturan.honor_maks_negeri),
-        honor_maks_swasta: String(pengaturan.honor_maks_swasta),
-        buku_min: String(pengaturan.buku_min),
-        sarpras_maks: String(pengaturan.sarpras_maks),
-        kode_honor: pengaturan.kode_honor.join(', '),
-        rekening_honor: pengaturan.rekening_honor,
-        kode_buku: pengaturan.kode_buku.join(', '),
-        kode_sarpras: pengaturan.kode_sarpras.join(', '),
-        rekening_sarpras_lain: pengaturan.rekening_sarpras_lain.join(', '),
-        kuota_pergeseran: String(pengaturan.kuota_pergeseran ?? ''),
-        kuota_perubahan: String(pengaturan.kuota_perubahan ?? ''),
+    const form = useForm(nilaiForm(pengaturan));
+
+    // Inertia memakai ulang komponen ini saat tahun atau sekolah diganti,
+    // jadi isi formulir diisi ulang setiap kali pengaturan yang dimuat berubah.
+    /* svelte-ignore state_referenced_locally */
+    let idDimuat = pengaturan.id;
+    $effect.pre(() => {
+        if (pengaturan.id !== idDimuat) {
+            idDimuat = pengaturan.id;
+            form.defaults(nilaiForm(pengaturan));
+            form.reset();
+            form.clearErrors();
+        }
     });
 
     type Kunci =

@@ -10,6 +10,7 @@ use App\Http\Controllers\KegiatanController;
 use App\Http\Controllers\KuitansiController;
 use App\Http\Controllers\PdfBulananController;
 use App\Http\Controllers\PdfKegiatanController;
+use App\Http\Controllers\Rkas\BarisRkasController;
 use App\Http\Controllers\Rkas\KertasKerjaController;
 use App\Http\Controllers\Rkas\PengaturanRkasController;
 use App\Http\Controllers\Rkas\ReferensiRkasController;
@@ -60,6 +61,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('rkas', KertasKerjaController::class)
         ->parameters(['rkas' => 'kertasKerja'])
         ->except(['create', 'edit']);
+    Route::post('rkas/{kertasKerja}/baris', [BarisRkasController::class, 'store'])->name('rkas.baris.store');
+    Route::patch('rkas-baris/{baris}', [BarisRkasController::class, 'update'])->name('rkas.baris.update');
+    Route::delete('rkas-baris/{baris}', [BarisRkasController::class, 'destroy'])->name('rkas.baris.destroy');
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');
     Route::inertia('lainnya', 'Lainnya')->name('lainnya');
 

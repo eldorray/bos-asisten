@@ -15,6 +15,12 @@
     import { Link } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
+    import FormBarisRkas from '@/components/rkas/FormBarisRkas.svelte';
+    import type {
+        BarisRkas,
+        Pilihan,
+    } from '@/components/rkas/FormBarisRkas.svelte';
+    import TabelBarisRkas from '@/components/rkas/TabelBarisRkas.svelte';
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import type { SumberDana } from '@/components/rkas/FormKertasKerja.svelte';
     import { Badge } from '@/components/ui/badge';
@@ -41,10 +47,16 @@
     let {
         kertasKerja,
         pemberiDana,
+        baris,
+        pilihan,
     }: {
         kertasKerja: KertasKerja;
         pemberiDana: PemberiDana[];
+        baris: BarisRkas[];
+        pilihan: Pilihan;
     } = $props();
+
+    let sedangDiubah = $state<BarisRkas | null>(null);
 
     const namaSumber = $derived(
         kertasKerja.sumber_dana === 'lainnya' ? 'Lainnya' : 'BOSP Reguler',
@@ -124,6 +136,29 @@
         </CardContent>
     </Card>
 
-    <!-- Task 5: tabel baris anggaran. -->
+    {#if kertasKerja.bisa_diubah}
+        <Card>
+            <CardContent class="grid gap-3">
+                <h2 class="text-base font-semibold">
+                    {sedangDiubah ? 'Ubah baris belanja' : 'Tambah baris belanja'}
+                </h2>
+                {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
+                    <FormBarisRkas
+                        kertasKerjaId={kertasKerja.id}
+                        {pilihan}
+                        baris={sedangDiubah}
+                        onSelesai={() => (sedangDiubah = null)}
+                    />
+                {/key}
+            </CardContent>
+        </Card>
+    {/if}
+
+    <TabelBarisRkas
+        {baris}
+        bisaDiubah={kertasKerja.bisa_diubah}
+        onUbah={(b) => (sedangDiubah = b)}
+    />
+
     <!-- Task 6: ringkasan dan pemeriksaan juknis. -->
 </div>

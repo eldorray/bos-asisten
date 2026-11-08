@@ -1,0 +1,435 @@
+<script module lang="ts">
+    export type RefKode = { kode: string; uraian: string };
+    export type PilihanKegiatan = {
+        id: number;
+        kode: string;
+        uraian: string;
+        induk: RefKode | null;
+        program: RefKode | null;
+        honor: boolean;
+    };
+    export type PilihanRekening = {
+        id: number;
+        kode: string;
+        nama: string;
+        punya_barang: boolean;
+    };
+    export type PilihanBarang = {
+        id: number;
+        nama: string;
+        satuan: string;
+        harga: number;
+        batas_bawah: number;
+        batas_atas: number;
+        kode_rekening: string | null;
+    };
+    export type PilihanPtk = {
+        id: number;
+        nama: string;
+        nuptk: string | null;
+        jenis: number;
+    };
+    export type Pilihan = {
+        kegiatan: PilihanKegiatan[];
+        rekening: PilihanRekening[];
+        barang: PilihanBarang[];
+        satuan: { id: number; nama: string }[];
+        ptk: PilihanPtk[];
+    };
+    export type BarisRkas = {
+        id: number;
+        urutan: number;
+        ref_kegiatan_id: number;
+        ref_rekening_id: number;
+        ref_barang_id: number | null;
+        ptk_id: number | null;
+        kegiatan: {
+            kode: string;
+            uraian: string;
+            induk: RefKode | null;
+            program: RefKode | null;
+        };
+        rekening: { kode: string; nama: string };
+        uraian: string;
+        satuan: string;
+        harga: number;
+        volume_bulan: Record<string, number>;
+        volume: number;
+        jumlah: number;
+        keterangan: string | null;
+        masalah: string[];
+    };
+
+    export const BULAN = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des',
+    ];
+</script>
+
+<script lang="ts">
+    import { useForm } from '@inertiajs/svelte';
+    import BarisRkasController from '@/actions/App/Http/Controllers/Rkas/BarisRkasController';
+    import InputError from '@/components/InputError.svelte';
+    import { Button } from '@/components/ui/button';
+    import { Input } from '@/components/ui/input';
+    import { Label } from '@/components/ui/label';
+
+    let {
+        kertasKerjaId,
+        pilihan,
+        baris = null,
+        onSelesai,
+    }: {
+        kertasKerjaId: number;
+        pilihan: Pilihan;
+        baris?: BarisRkas | null;
+        onSelesai?: () => void;
+    } = $props();
+
+    function volumeAwal(): Record<string, string> {
+        const isi: Record<string, string> = {};
+        for (let bulan = 1; bulan <= 12; bulan++) {
+            const nilai = baris?.volume_bulan[String(bulan)] ?? 0;
+            isi[String(bulan)] = nilai === 0 ? '' : String(nilai);
+        }
+
+        return isi;
+    }
+
+    // Komponen ini dibuat ulang lewat {#key} oleh pemakainya, jadi nilai awal memang diambil sekali.
+    /* svelte-ignore state_referenced_locally */
+    const form = useForm({
+        ref_kegiatan_id: baris?.ref_kegiatan_id ?? ('' as number | ''),
+        ref_rekening_id: baris?.ref_rekening_id ?? ('' as number | ''),
+        ref_barang_id: baris?.ref_barang_id ?? ('' as number | ''),
+        ptk_id: baris?.ptk_id ?? ('' as number | ''),
+        uraian: baris?.uraian ?? '',
+        satuan: baris?.satuan ?? '',
+        harga: baris ? String(baris.harga) : '',
+        volume_bulan: volumeAwal(),
+        keterangan: baris?.keterangan ?? '',
+    });
+
+    // Baris lama boleh tetap memakai kegiatan atau rekening yang sudah kedaluwarsa.
+    const kegiatanOpsi = $derived(
+        baris && !pilihan.kegiatan.some((k) => k.id === baris.ref_kegiatan_id)
+            ? [
+                  ...pilihan.kegiatan,
+                  {
+                      id: baris.ref_kegiatan_id,
+                      kode: baris.kegiatan.kode,
+                      uraian: `${baris.kegiatan.uraian} (kedaluwarsa)`,
+                  },
+              ]
+            : pilihan.kegiatan,
+    );
+    const rekeningOpsi = $derived(
+        baris && !pilihan.rekening.some((r) => r.id === baris.ref_rekening_id)
+            ? [
+                  ...pilihan.rekening,
+                  {
+                      id: baris.ref_rekening_id,
+                      kode: baris.rekening.kode,
+                      nama: `${baris.rekening.nama} (kedaluwarsa)`,
+                      punya_barang: false,
+                  },
+              ]
+            : pilihan.rekening,
+    );
+
+    const kegiatan = $derived(
+        pilihan.kegiatan.find((k) => k.id === form.ref_kegiatan_id),
+    );
+    const rekening = $derived(
+        pilihan.rekening.find((r) => r.id === form.ref_rekening_id),
+    );
+    const honor = $derived(kegiatan?.honor ?? false);
+    const pakaiBarang = $derived(
+        !honor && rekening !== undefined && rekening.punya_barang,
+    );
+    const barangOpsi = $derived.by(() => {
+        if (!rekening) {
+            return [];
+        }
+        const sendiri = pilihan.barang.filter(
+            (b) => b.kode_rekening === rekening.kode,
+        );
+
+        return sendiri.length > 0 || !rekening.kode.startsWith('5.2')
+            ? sendiri
+            : pilihan.barang.filter((b) => b.kode_rekening === null);
+    });
+    const barang = $derived(
+        pilihan.barang.find((b) => b.id === form.ref_barang_id),
+    );
+
+    // Total dan jumlah hanya untuk tampilan; angka resmi dihitung server.
+    const totalVolume = $derived(
+        Object.values(form.volume_bulan).reduce(
+            (jumlah, v) => jumlah + (Number(v) || 0),
+            0,
+        ),
+    );
+    const jumlah = $derived(totalVolume * (Number(form.harga) || 0));
+
+    function rupiah(n: number): string {
+        return `Rp ${n.toLocaleString('id-ID')}`;
+    }
+
+    function pilihBarang(id: number | ''): void {
+        form.ref_barang_id = id;
+        const dipilih = pilihan.barang.find((b) => b.id === id);
+        if (dipilih) {
+            form.harga = String(dipilih.harga);
+        }
+    }
+
+    function angka(nilai: string): string {
+        return nilai.replace(/\D/g, '');
+    }
+
+    const galat = $derived(form.errors as Record<string, string>);
+    const galatVolume = $derived(
+        Object.entries(galat)
+            .filter(([kunci]) => kunci.startsWith('volume_bulan'))
+            .map(([, pesan]) => pesan),
+    );
+
+    function simpan(event: SubmitEvent): void {
+        event.preventDefault();
+        form
+            .transform((data) => ({
+                ref_kegiatan_id: data.ref_kegiatan_id || null,
+                ref_rekening_id: data.ref_rekening_id || null,
+                ref_barang_id: pakaiBarang ? data.ref_barang_id || null : null,
+                ptk_id: honor ? data.ptk_id || null : null,
+                uraian: pakaiBarang || honor ? null : data.uraian,
+                satuan: pakaiBarang ? null : data.satuan,
+                harga: Number(data.harga) || 0,
+                volume_bulan: Object.fromEntries(
+                    Object.entries(data.volume_bulan).map(([bulan, v]) => [
+                        bulan,
+                        Number(v) || 0,
+                    ]),
+                ),
+                keterangan: data.keterangan || null,
+            }))
+            .submit(
+                baris === null
+                    ? BarisRkasController.store(kertasKerjaId)
+                    : BarisRkasController.update(baris.id),
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        form.reset();
+                        onSelesai?.();
+                    },
+                },
+            );
+    }
+</script>
+
+<form class="grid gap-4" onsubmit={simpan}>
+    <InputError message={galat.kertas_kerja} />
+
+    <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid content-start gap-1.5">
+            <Label for="baris-kegiatan">Kegiatan</Label>
+            <select
+                id="baris-kegiatan"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                bind:value={form.ref_kegiatan_id}
+            >
+                <option value="">Pilih kegiatan</option>
+                {#each kegiatanOpsi as k (k.id)}
+                    <option value={k.id}>{k.kode} {k.uraian}</option>
+                {/each}
+            </select>
+            <InputError message={form.errors.ref_kegiatan_id} />
+        </div>
+
+        <div class="grid content-start gap-1.5">
+            <Label for="baris-rekening">Rekening belanja</Label>
+            <select
+                id="baris-rekening"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                bind:value={form.ref_rekening_id}
+                onchange={() => (form.ref_barang_id = '')}
+            >
+                <option value="">Pilih rekening</option>
+                {#each rekeningOpsi as r (r.id)}
+                    <option value={r.id}>{r.kode} {r.nama}</option>
+                {/each}
+            </select>
+            <InputError message={form.errors.ref_rekening_id} />
+        </div>
+    </div>
+
+    {#if honor}
+        <div class="grid content-start gap-1.5">
+            <Label for="baris-ptk">PTK</Label>
+            <select
+                id="baris-ptk"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                bind:value={form.ptk_id}
+            >
+                <option value="">Pilih PTK</option>
+                {#each pilihan.ptk as p (p.id)}
+                    <option value={p.id}>
+                        {p.nuptk ? `${p.nama} (${p.nuptk})` : p.nama}
+                    </option>
+                {/each}
+            </select>
+            <InputError message={form.errors.ptk_id} />
+        </div>
+    {:else if pakaiBarang}
+        <div class="grid content-start gap-1.5">
+            <Label for="baris-barang">Barang/jasa</Label>
+            <select
+                id="baris-barang"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                value={form.ref_barang_id}
+                onchange={(e) =>
+                    pilihBarang(
+                        (e.target as HTMLSelectElement).value === ''
+                            ? ''
+                            : Number((e.target as HTMLSelectElement).value),
+                    )}
+            >
+                <option value="">Pilih barang/jasa</option>
+                {#each barangOpsi as b (b.id)}
+                    <option value={b.id}>{b.nama} ({b.satuan})</option>
+                {/each}
+            </select>
+            {#if barang}
+                <p class="text-xs text-muted-foreground">
+                    Satuan {barang.satuan} · batas harga {rupiah(barang.batas_bawah)}
+                    {barang.batas_atas > 0
+                        ? `sampai ${rupiah(barang.batas_atas)}`
+                        : 'tanpa batas atas'}
+                </p>
+            {/if}
+            <InputError message={form.errors.ref_barang_id} />
+        </div>
+    {:else}
+        <div class="grid gap-4 md:grid-cols-[1fr_12rem]">
+            <div class="grid content-start gap-1.5">
+                <Label for="baris-uraian">Uraian</Label>
+                <Input
+                    id="baris-uraian"
+                    maxlength={500}
+                    bind:value={form.uraian}
+                />
+                <InputError message={form.errors.uraian} />
+            </div>
+            <div class="grid content-start gap-1.5">
+                <Label for="baris-satuan">Satuan</Label>
+                <select
+                    id="baris-satuan"
+                    class="h-9 rounded-md border bg-background px-2 text-sm"
+                    bind:value={form.satuan}
+                >
+                    <option value="">Pilih satuan</option>
+                    {#each pilihan.satuan as s (s.id)}
+                        <option value={s.nama}>{s.nama}</option>
+                    {/each}
+                </select>
+                <InputError message={form.errors.satuan} />
+            </div>
+        </div>
+    {/if}
+
+    {#if honor}
+        <div class="grid content-start gap-1.5 md:max-w-48">
+            <Label for="baris-satuan-honor">Satuan</Label>
+            <select
+                id="baris-satuan-honor"
+                class="h-9 rounded-md border bg-background px-2 text-sm"
+                bind:value={form.satuan}
+            >
+                <option value="">Pilih satuan</option>
+                {#each pilihan.satuan as s (s.id)}
+                    <option value={s.nama}>{s.nama}</option>
+                {/each}
+            </select>
+            <InputError message={form.errors.satuan} />
+        </div>
+    {/if}
+
+    <div class="grid content-start gap-1.5 md:max-w-64">
+        <Label for="baris-harga">Harga satuan</Label>
+        <Input
+            id="baris-harga"
+            inputmode="numeric"
+            value={form.harga}
+            oninput={(e) =>
+                (form.harga = angka((e.target as HTMLInputElement).value))}
+        />
+        <InputError message={form.errors.harga} />
+    </div>
+
+    <div class="grid gap-1.5">
+        <Label>Volume per bulan</Label>
+        <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-12">
+            {#each BULAN as nama, i (nama)}
+                <div class="grid gap-0.5">
+                    <span class="text-xs text-muted-foreground">{nama}</span>
+                    <Input
+                        aria-label={`Volume ${nama}`}
+                        inputmode="numeric"
+                        maxlength={6}
+                        value={form.volume_bulan[String(i + 1)]}
+                        oninput={(e) =>
+                            (form.volume_bulan[String(i + 1)] = angka(
+                                (e.target as HTMLInputElement).value,
+                            ))}
+                    />
+                </div>
+            {/each}
+        </div>
+        {#each galatVolume as pesan (pesan)}
+            <InputError message={pesan} />
+        {/each}
+        <p class="text-sm text-muted-foreground">
+            Total volume
+            <span class="font-medium text-foreground tabular-nums">
+                {totalVolume.toLocaleString('id-ID')}
+            </span>
+            · Jumlah
+            <span class="font-medium text-foreground tabular-nums">
+                {rupiah(jumlah)}
+            </span>
+        </p>
+    </div>
+
+    <div class="grid content-start gap-1.5">
+        <Label for="baris-keterangan">Keterangan (opsional)</Label>
+        <Input
+            id="baris-keterangan"
+            maxlength={500}
+            bind:value={form.keterangan}
+        />
+        <InputError message={form.errors.keterangan} />
+    </div>
+
+    <div class="flex gap-2">
+        <Button type="submit" disabled={form.processing}>
+            {baris === null ? 'Tambah baris' : 'Simpan perubahan'}
+        </Button>
+        {#if baris !== null}
+            <Button type="button" variant="ghost" onclick={() => onSelesai?.()}>
+                Batal
+            </Button>
+        {/if}
+    </div>
+</form>

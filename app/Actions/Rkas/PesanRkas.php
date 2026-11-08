@@ -62,6 +62,10 @@ final class PesanRkas
 
     public const REFERENSI_DIPAKAI = 'Referensi ini dipakai %d baris dan tidak bisa dihapus.';
 
+    public const BARANG_BUKAN_REKENING = 'Barang/jasa ini bukan untuk rekening belanja yang dipilih.';
+
+    public const PTK_TIDAK_SESUAI = 'Jenis PTK tidak sesuai dengan kegiatan honor ini.';
+
     public static function rupiah(int $n): string
     {
         return 'Rp '.number_format($n, 0, ',', '.');

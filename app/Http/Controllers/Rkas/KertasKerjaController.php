@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Rkas;
 
+use App\Actions\Rkas\PropsBarisRkas;
 use App\Actions\Rkas\SimpanKertasKerja;
 use App\Enums\SistemAnggaran;
 use App\Enums\SumberDanaRkas;
@@ -75,7 +76,7 @@ class KertasKerjaController extends Controller
         return to_route('rkas.show', $kertasKerja);
     }
 
-    public function show(RkasKertasKerja $kertasKerja): Response
+    public function show(RkasKertasKerja $kertasKerja, PropsBarisRkas $props): Response
     {
         $sekolah = $kertasKerja->sekolah;
         abort_unless($sekolah->sistem === SistemAnggaran::Arkas, 404);
@@ -100,6 +101,8 @@ class KertasKerjaController extends Controller
             'pemberiDana' => $kertasKerja->pemberiDanas()->orderBy('id')->get()
                 ->map(fn (RkasPemberiDana $p): array => ['id' => $p->id, 'nama' => $p->nama, 'jumlah' => $p->jumlah])
                 ->values(),
+            'baris' => $props->baris($kertasKerja),
+            'pilihan' => $props->pilihan($kertasKerja),
         ]);
     }
 

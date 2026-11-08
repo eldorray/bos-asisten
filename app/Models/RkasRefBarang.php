@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Database\Factories\RkasRefBarangFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -35,5 +36,42 @@ class RkasRefBarang extends Model
         return [
             'kedaluwarsa' => 'date',
         ];
+    }
+
+    /**
+     * Barang yang belum kedaluwarsa (kedaluwarsa kosong atau setelah hari ini).
+     *
+     * @param  Builder<RkasRefBarang>  $query
+     * @return Builder<RkasRefBarang>
+     */
+    public function scopeBelumKedaluwarsa(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNull('kedaluwarsa')->orWhereDate('kedaluwarsa', '>', now()->toDateString()));
+    }
+
+    /**
+     * Daftar barang yang berlaku untuk sebuah rekening pada tahunnya: barang dengan kode rekening yang sama,
+     * dan untuk rekening 5.2 tanpa daftar sendiri, barang tanpa kode rekening.
+     *
+     * @param  Builder<RkasRefBarang>  $query
+     * @return Builder<RkasRefBarang>
+     */
+    public function scopeUntukRekening(Builder $query, RkasRefRekening $rekening): Builder
+    {
+        $punyaSendiri = static::query()
+            ->where('tahun', $rekening->tahun)
+            ->where('kode_rekening', $rekening->kode)
+            ->belumKedaluwarsa()
+            ->exists();
+
+        return $query
+            ->where('tahun', $rekening->tahun)
+            ->where(function (Builder $q) use ($rekening, $punyaSendiri): void {
+                $q->where('kode_rekening', $rekening->kode);
+
+                if (! $punyaSendiri && str_starts_with($rekening->kode, '5.2')) {
+                    $q->orWhereNull('kode_rekening');
+                }
+            });
     }
 }

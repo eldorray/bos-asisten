@@ -14,7 +14,11 @@ class CadanganController extends Controller
         $path = BuatCadangan::jalankan();
 
         return response()
-            ->download($path, 'cadangan-spj-'.now()->format('Y-m-d').'.zip', ['Content-Type' => 'application/zip'])
+            // Berisi database dan hash password: tidak boleh tersimpan di cache peramban atau proxy.
+            ->download($path, 'cadangan-spj-'.now()->format('Y-m-d').'.zip', [
+                'Content-Type' => 'application/zip',
+                'Cache-Control' => 'no-store, private',
+            ])
             ->deleteFileAfterSend();
     }
 }

@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 
 test('pendaftaran tertutup', fn () => $this->get('/register')->assertNotFound());
@@ -56,4 +58,25 @@ test('login dibatasi percobaannya', function () {
 
     $this->post('/login', ['email' => 'a@b.test', 'password' => 'salah'])
         ->assertStatus(429);
+});
+
+test('respons membawa header keamanan', function () {
+    $this->get(route('login'))
+        ->assertHeader('X-Frame-Options', 'DENY')
+        ->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+});
+
+test('tautan reset password memakai APP_URL walau header Host dipalsukan', function () {
+    Notification::fake();
+    config(['app.url' => 'https://spj.contoh.test']);
+    $user = User::factory()->create();
+
+    $this->withHeader('Host', 'jahat.example')->post('/forgot-password', ['email' => $user->email]);
+
+    Notification::assertSentTo($user, ResetPassword::class, function ($n) use ($user) {
+        $url = $n->toMail($user)->actionUrl;
+
+        return str_starts_with($url, 'https://spj.contoh.test/reset-password/') && ! str_contains($url, 'jahat');
+    });
 });

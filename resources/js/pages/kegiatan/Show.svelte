@@ -517,9 +517,7 @@
                                             rel="noopener"
                                         >
                                             <img
-                                                src={FotoController.show.url(
-                                                    foto.id,
-                                                )}
+                                                src={FotoController.show.url(foto.uuid)}
                                                 alt={`Foto ${berkas.nama}`}
                                                 loading="lazy"
                                                 class="size-28 rounded-[10px] border object-cover"

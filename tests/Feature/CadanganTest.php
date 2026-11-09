@@ -78,6 +78,7 @@ it('mengirim zip ke pengguna lalu menghapus file sementara', function () {
 
     $respons->assertOk()->assertDownload();
     expect($respons->headers->get('content-disposition'))->toContain('cadangan-spj-')->toContain('.zip');
+    expect($respons->headers->get('Cache-Control'))->toContain('no-store');
 
     $file = $respons->baseResponse->getFile()->getPathname();
     expect(file_exists($file))->toBeTrue();

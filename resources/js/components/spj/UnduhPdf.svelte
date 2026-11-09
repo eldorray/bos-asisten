@@ -28,6 +28,7 @@
             .filter((k) => k.status === 'kurang' || k.status === 'belum')
             .map((k) => ({
                 id: k.id,
+                uuid: k.uuid,
                 nama: k.nama,
                 kurang: k.berkas.filter((b) => !b.ada).map((b) => b.nama),
             })),
@@ -40,7 +41,7 @@
 
         // Bukan kunjungan Inertia: hasilnya file, atau redirect biasa kalau bulan ini kosong.
         const url = PdfBulananController.url({
-            sekolah: sekolah.id,
+            sekolah: sekolah.uuid,
             tahun: Number(bulan.slice(0, 4)),
             bulan: Number(bulan.slice(5, 7)),
         });
@@ -86,7 +87,7 @@
         {#each diperiksa as k (k.id)}
             <li>
                 <Link
-                    href={KegiatanController.show(k.id)}
+                    href={KegiatanController.show(k.uuid)}
                     class="flex min-h-14 items-center gap-2 py-2 pr-3 pl-4 text-sm"
                 >
                     <span class="min-w-0 flex-1">
@@ -102,7 +103,7 @@
         {#each menunggak as k (k.id)}
             <li>
                 <Link
-                    href={KegiatanController.show(k.id)}
+                    href={KegiatanController.show(k.uuid)}
                     class="flex min-h-14 items-center gap-2 py-2 pr-3 pl-4 text-sm"
                 >
                     <span class="min-w-0 flex-1">

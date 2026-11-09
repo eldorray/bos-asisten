@@ -526,6 +526,8 @@ test('nilai terpanjang yang sah tercetak utuh tanpa dipotong dan tanda tangan te
         'tanggal_lunas' => '2026-01-31',
         'jumlah' => 999_999_999_999,
     ])->assertSessionHasNoErrors();
+    // Angka urut diatur ulang saat simpan; paksa nomor terlebar untuk menguji tata letak.
+    Kuitansi::query()->update(['nomor' => $nilaiKuitansi['nomor']]);
 
     $respons = unduhPdf($sekolah, 1);
     $teks = teksPdf($respons);

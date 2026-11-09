@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\JenisPtk;
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\RkasPtkFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $sekolah_id
  * @property string $nama
  * @property string|null $nuptk
@@ -22,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RkasPtk extends Model
 {
     /** @use HasFactory<RkasPtkFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

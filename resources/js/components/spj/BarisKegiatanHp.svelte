@@ -53,7 +53,7 @@
             />
         {/if}
         <Link
-            href={KegiatanController.show(kegiatan.id)}
+            href={KegiatanController.show(kegiatan.uuid)}
             prefetch={simpanUntukOffline ? 'mount' : false}
             cacheFor="5m"
             class="flex min-w-0 flex-1 items-center gap-2 transition-opacity duration-150 ease-tenang active:opacity-60"

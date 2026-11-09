@@ -10,7 +10,7 @@ import {
 
 export type ItemAntrean = {
     kunci: number;
-    kegiatanId: number;
+    kegiatanUuid: string;
     jenisBerkasId: number;
     namaFile: string;
     status: 'menunggu' | 'mengunggah' | 'gagal';
@@ -78,7 +78,7 @@ async function kirim(rekaman: Rekaman): Promise<HasilKirim> {
 
     try {
         // Bukan kunjungan Inertia: antrean jalan terus saat pengguna pindah halaman.
-        respons = await fetch(FotoController.store(rekaman.kegiatanId).url, {
+        respons = await fetch(FotoController.store(rekaman.kegiatanUuid).url, {
             method: 'POST',
             body: data,
             headers: {
@@ -229,16 +229,16 @@ export const antreanFoto = {
         return sesiHabis;
     },
 
-    untuk(kegiatanId: number, jenisBerkasId: number): ItemAntrean[] {
+    untuk(kegiatanUuid: string, jenisBerkasId: number): ItemAntrean[] {
         return daftar.filter(
             (a) =>
-                a.kegiatanId === kegiatanId &&
+                a.kegiatanUuid === kegiatanUuid &&
                 a.jenisBerkasId === jenisBerkasId,
         );
     },
 
     async tambah(
-        kegiatanId: number,
+        kegiatanUuid: string,
         jenisBerkasId: number,
         berkas: File[],
     ): Promise<void> {
@@ -249,7 +249,7 @@ export const antreanFoto = {
                 try {
                     const foto = await compressImage(file);
                     const rekaman: Rekaman = {
-                        kegiatanId,
+                        kegiatanUuid,
                         jenisBerkasId,
                         namaFile: file.name,
                         pesan: null,
@@ -261,7 +261,7 @@ export const antreanFoto = {
 
                     daftar.push({
                         kunci: kunci as number,
-                        kegiatanId,
+                        kegiatanUuid,
                         jenisBerkasId,
                         namaFile: file.name,
                         status: 'menunggu',
@@ -313,11 +313,16 @@ export const antreanFoto = {
 
             daftar = tersimpan.map((r) => ({
                 kunci: r.kunci as number,
-                kegiatanId: r.kegiatanId,
+                kegiatanUuid: r.kegiatanUuid,
                 jenisBerkasId: r.jenisBerkasId,
                 namaFile: r.namaFile,
-                status: r.pesan ? 'gagal' : 'menunggu',
-                pesan: r.pesan,
+                // Antrean dari versi lama menyimpan id angka, yang tidak lagi dikenali alamatnya.
+                status: r.pesan || !r.kegiatanUuid ? 'gagal' : 'menunggu',
+                pesan:
+                    r.pesan ??
+                    (r.kegiatanUuid
+                        ? null
+                        : 'Foto ini disimpan oleh versi lama. Hapus lalu unggah ulang.'),
             }));
         } catch {
             return;

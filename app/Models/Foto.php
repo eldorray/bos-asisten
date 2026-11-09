@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\FotoFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property string $pemilik_type
  * @property int $pemilik_id
  * @property int $jenis_berkas_id
@@ -26,7 +28,7 @@ use Illuminate\Support\Facades\Storage;
 class Foto extends Model
 {
     /** @use HasFactory<FotoFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     protected static function booted(): void
     {

@@ -67,3 +67,16 @@ test('tamu ditolak', function () {
 
     $this->post(route('sekolah.urutkan-nomor', Sekolah::factory()->create()), ['tahun' => 2026])->assertRedirect(route('login'));
 });
+
+test('urutkan nomor mulai lagi dari 1 di tiap tahap', function () {
+    $sekolah = Sekolah::factory()->create(['nomor_awal' => ['2026' => 5]]);
+    $t1 = Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'tahap' => 1, 'bulan' => 6, 'nomor' => '009/T1/X/2026', 'nomor_urut' => 9, 'tanggal_lunas' => '2026-06-01']);
+    $juli9 = Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'tahap' => 2, 'bulan' => 7, 'nomor' => '010/T2/X/2026', 'nomor_urut' => 10, 'tanggal_lunas' => '2026-07-09']);
+    $juli4 = Kuitansi::factory()->create(['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'tahap' => 2, 'bulan' => 7, 'nomor' => '011/T2/X/2026', 'nomor_urut' => 11, 'tanggal_lunas' => '2026-07-04']);
+
+    $this->post(route('sekolah.urutkan-nomor', $sekolah), ['tahun' => 2026]);
+
+    expect($t1->fresh()->nomor)->toBe('005/T1/X/2026')
+        ->and($juli4->fresh()->nomor)->toBe('001/T2/X/2026')
+        ->and($juli9->fresh()->nomor)->toBe('002/T2/X/2026');
+});

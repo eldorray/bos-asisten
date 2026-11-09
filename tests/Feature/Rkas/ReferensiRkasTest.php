@@ -165,9 +165,9 @@ it('menolak menghapus rekening yang dipakai baris', function () {
     $bebas = RkasRefRekening::factory()->create(['tahun' => 2027]);
     RkasBaris::factory()->create(['ref_rekening_id' => $dipakai->id]);
 
-    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'rekening', 'id' => $dipakai->id]))
+    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'rekening', 'uuid' => $dipakai->uuid]))
         ->assertSessionHasErrors(['hapus' => sprintf(PesanRkas::REFERENSI_DIPAKAI, 1)]);
-    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'rekening', 'id' => $bebas->id]))
+    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'rekening', 'uuid' => $bebas->uuid]))
         ->assertSessionHasNoErrors();
 
     expect(RkasRefRekening::whereKey($dipakai->id)->exists())->toBeTrue()
@@ -181,7 +181,7 @@ it('menolak menghapus kegiatan, barang, dan ptk yang dipakai baris', function ()
     RkasBaris::factory()->create(['ref_kegiatan_id' => $kegiatan->id, 'ref_barang_id' => $barang->id, 'ptk_id' => $ptk->id]);
 
     foreach ([['kegiatan', $kegiatan], ['barang', $barang], ['ptk', $ptk]] as [$jenis, $ref]) {
-        $this->delete(route('rkas.referensi.destroy', ['jenis' => $jenis, 'id' => $ref->id]))
+        $this->delete(route('rkas.referensi.destroy', ['jenis' => $jenis, 'uuid' => $ref->uuid]))
             ->assertSessionHasErrors(['hapus' => sprintf(PesanRkas::REFERENSI_DIPAKAI, 1)]);
     }
 });
@@ -189,7 +189,7 @@ it('menolak menghapus kegiatan, barang, dan ptk yang dipakai baris', function ()
 it('menghapus satuan yang tidak dipakai', function () {
     $satuan = RkasRefSatuan::factory()->create();
 
-    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'satuan', 'id' => $satuan->id]))
+    $this->delete(route('rkas.referensi.destroy', ['jenis' => 'satuan', 'uuid' => $satuan->uuid]))
         ->assertSessionHasNoErrors();
 
     expect(RkasRefSatuan::count())->toBe(0);
@@ -212,4 +212,30 @@ it('menolak rekening di luar kelompok 5.1 dan 5.2', function () {
         ->assertSessionHasNoErrors();
 
     expect(RkasRefRekening::count())->toBe(1);
+});
+
+it('memuat kode kegiatan resmi ARKAS lengkap dengan induknya dan aman diulang', function () {
+    $this->post(route('rkas.referensi.muat-kegiatan'), ['tahun' => 2027])->assertSessionHasNoErrors();
+
+    $level = fn (int $n) => RkasRefKegiatan::where('tahun', 2027)->where('level', $n)->count();
+    expect($level(1))->toBe(7)
+        ->and($level(2))->toBe(25)
+        ->and($level(3))->toBe(151);
+
+    $honor = RkasRefKegiatan::where('tahun', 2027)->where('kode', '07.12.01.')->firstOrFail();
+    expect($honor->kode_induk)->toBe('07.12.')
+        ->and($honor->uraian)->toBe('Pembayaran honor Guru/Pendidik')
+        ->and(RkasRefKegiatan::where('tahun', 2027)->where('kode', '07.12.')->value('kode_induk'))->toBe('07.');
+
+    // Hasil edit manual tidak tertimpa dan pemuatan kedua tidak menggandakan.
+    $honor->update(['uraian' => 'Honor saya']);
+    $this->post(route('rkas.referensi.muat-kegiatan'), ['tahun' => 2027]);
+
+    expect(RkasRefKegiatan::where('tahun', 2027)->count())->toBe(183)
+        ->and($honor->fresh()->uraian)->toBe('Honor saya')
+        ->and(RkasRefKegiatan::where('tahun', 2026)->count())->toBe(0);
+});
+
+it('menolak memuat kode kegiatan tanpa tahun yang sah', function () {
+    $this->post(route('rkas.referensi.muat-kegiatan'), ['tahun' => 1999])->assertSessionHasErrors('tahun');
 });

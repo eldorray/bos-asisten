@@ -18,6 +18,7 @@
 
     export type JenisData = {
         id: number;
+        uuid: string;
         nama: string;
         kata_kunci: string;
         cadangan: boolean;
@@ -76,7 +77,7 @@
                 onSuccess: () => form.reset(),
             });
         } else {
-            form.submit(JenisKegiatanController.update(jenis.id), {
+            form.submit(JenisKegiatanController.update(jenis.uuid), {
                 preserveScroll: true,
                 onSuccess: () => {
                     // Ambil id berkas baru dari data segar agar simpan berikutnya tidak menghapus dan membuat ulang.
@@ -88,7 +89,7 @@
 
     function hapusJenis(): void {
         if (jenis !== null && confirm(`Hapus jenis kegiatan "${jenis.nama}"?`)) {
-            hapus.submit(JenisKegiatanController.destroy(jenis.id), {
+            hapus.submit(JenisKegiatanController.destroy(jenis.uuid), {
                 preserveScroll: true,
             });
         }

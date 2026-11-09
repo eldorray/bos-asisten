@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\SumberDanaRkas;
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\RkasRefKegiatanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +15,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $tahun
  * @property string $kode
  * @property string|null $kode_induk
@@ -26,7 +28,7 @@ use Illuminate\Support\Carbon;
 class RkasRefKegiatan extends Model
 {
     /** @use HasFactory<RkasRefKegiatanFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

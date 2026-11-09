@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\RkasBarisFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $kertas_kerja_id
  * @property int $ref_kegiatan_id
  * @property int $ref_rekening_id
@@ -32,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RkasBaris extends Model
 {
     /** @use HasFactory<RkasBarisFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     protected $table = 'rkas_baris';
 

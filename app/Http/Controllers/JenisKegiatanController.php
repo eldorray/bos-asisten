@@ -20,6 +20,7 @@ class JenisKegiatanController extends Controller
         $jenisKegiatans = JenisKegiatan::query()->with('jenisBerkas')->orderBy('urutan')->orderBy('id')->get()
             ->map(fn (JenisKegiatan $jenis): array => [
                 'id' => $jenis->id,
+                'uuid' => $jenis->uuid,
                 'nama' => $jenis->nama,
                 'kata_kunci' => implode(', ', $jenis->kata_kunci),
                 'cadangan' => $jenis->cadangan,

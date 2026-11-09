@@ -15,6 +15,7 @@
     import { router, useForm } from '@inertiajs/svelte';
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
+    import PilihCari from '@/components/PilihCari.svelte';
     import InputError from '@/components/InputError.svelte';
     import { Button } from '@/components/ui/button';
     import {
@@ -28,6 +29,7 @@
 
     type Pengaturan = {
         id: number;
+        uuid: string;
         swasta: boolean;
         persen_tahap_1: number;
         ambang_tahap_1: number;
@@ -44,7 +46,7 @@
         kuota_perubahan: number | null;
     };
 
-    type Sekolah = { id: number; nama: string };
+    type Sekolah = { id: number; uuid: string; nama: string };
 
     let {
         pengaturan,
@@ -150,17 +152,17 @@
         { kunci: 'kuota_perubahan', label: 'Kuota perubahan (kosong = tanpa batas)' },
     ];
 
-    function bukaHalaman(sekolahId: number, tahunDipilih: number): void {
+    function bukaHalaman(sekolahUuid: string, tahunDipilih: number): void {
         router.get(
             PengaturanRkasController.edit({
-                query: { sekolah_id: sekolahId, tahun: tahunDipilih },
+                query: { sekolah: sekolahUuid, tahun: tahunDipilih },
             }).url,
         );
     }
 
     function simpan(event: SubmitEvent): void {
         event.preventDefault();
-        form.submit(PengaturanRkasController.update(pengaturan.id), {
+        form.submit(PengaturanRkasController.update(pengaturan.uuid), {
             preserveScroll: true,
         });
     }
@@ -178,20 +180,13 @@
         <div class="flex flex-wrap items-center gap-2.5">
             {#if pilihanSekolah.length > 1}
                 <Label for="sekolah" class="shrink-0">Sekolah</Label>
-                <select
+                <PilihCari
                     id="sekolah"
-                    class="h-9 rounded-md border bg-background px-2 text-sm"
-                    value={sekolah.id}
-                    onchange={(e) =>
-                        bukaHalaman(
-                            Number((e.target as HTMLSelectElement).value),
-                            tahun,
-                        )}
-                >
-                    {#each pilihanSekolah as pilihan (pilihan.id)}
-                        <option value={pilihan.id}>{pilihan.nama}</option>
-                    {/each}
-                </select>
+                    class="w-56"
+                    opsi={pilihanSekolah.map((p) => ({ value: p.uuid, label: p.nama }))}
+                    value={sekolah.uuid}
+                    onchange={(v) => bukaHalaman(String(v), tahun)}
+                />
             {/if}
             <Label for="tahun" class="shrink-0">Tahun anggaran</Label>
             <Input
@@ -203,7 +198,7 @@
                 value={tahun}
                 onchange={(e) =>
                     bukaHalaman(
-                        sekolah.id,
+                        sekolah.uuid,
                         Number((e.target as HTMLInputElement).value),
                     )}
             />

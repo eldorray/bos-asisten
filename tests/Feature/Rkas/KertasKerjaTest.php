@@ -124,7 +124,7 @@ it('menolak mengubah pagu kertas kerja yang bukan draf', function () {
 it('menghapus kertas kerja berstatus draf', function () {
     $kk = RkasKertasKerja::factory()->create(['sekolah_id' => $this->smp->id]);
 
-    $this->delete(route('rkas.destroy', $kk))->assertRedirect(route('rkas.index', ['tahun' => 2027, 'sekolah_id' => $this->smp->id]));
+    $this->delete(route('rkas.destroy', $kk))->assertRedirect(route('rkas.index', ['tahun' => 2027, 'sekolah' => $this->smp->uuid]));
 
     expect(RkasKertasKerja::count())->toBe(0);
 });

@@ -9,7 +9,7 @@
 
     function hapus(): void {
         if (confirm(`Hapus "${kegiatan.nama}" dari aplikasi?`)) {
-            router.delete(KegiatanController.destroy(kegiatan.id).url, {
+            router.delete(KegiatanController.destroy(kegiatan.uuid).url, {
                 preserveScroll: true,
             });
         }
@@ -26,7 +26,7 @@
 
 {#if kegiatan.bisaUnduhPdf}
     <UnduhPdfKegiatan
-        kegiatanId={kegiatan.id}
+        kegiatanUuid={kegiatan.uuid}
         draf={kegiatan.status === 'kurang'}
     />
 {/if}

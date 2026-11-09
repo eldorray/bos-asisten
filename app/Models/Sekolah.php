@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\SistemAnggaran;
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\SekolahFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property string $nama
  * @property string $sebutan
  * @property SistemAnggaran $sistem
@@ -32,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Sekolah extends Model
 {
     /** @use HasFactory<SekolahFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

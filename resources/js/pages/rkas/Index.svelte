@@ -18,6 +18,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import PilihCari from '@/components/PilihCari.svelte';
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
@@ -31,9 +32,10 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
 
-    type Sekolah = { id: number; nama: string };
+    type Sekolah = { id: number; uuid: string; nama: string };
     type Baris = {
         id: number;
+        uuid: string;
         label: string;
         sumber_dana: string;
         versi: string;
@@ -71,20 +73,20 @@
     }
 
     function bukaHalaman(
-        ubah: Partial<{ tahun: number; sekolah_id: number }>,
+        ubah: Partial<{ tahun: number; sekolah: string }>,
     ): void {
         router.get(
             KertasKerjaController.index({
-                query: { tahun, sekolah_id: sekolah.id, ...ubah },
+                query: { tahun, sekolah: sekolah.uuid, ...ubah },
             }).url,
         );
     }
 
-    function hapus(id: number): void {
+    function hapus(uuid: string): void {
         if (!confirm('Hapus kertas kerja ini beserta seluruh barisnya?')) {
             return;
         }
-        router.delete(KertasKerjaController.destroy(id).url, {
+        router.delete(KertasKerjaController.destroy(uuid).url, {
             preserveScroll: true,
         });
     }
@@ -102,21 +104,13 @@
         <div class="flex flex-wrap items-center gap-2.5">
             {#if pilihanSekolah.length > 1}
                 <Label for="sekolah" class="shrink-0">Sekolah</Label>
-                <select
+                <PilihCari
                     id="sekolah"
-                    class="h-9 rounded-md border bg-background px-2 text-sm"
-                    value={sekolah.id}
-                    onchange={(e) =>
-                        bukaHalaman({
-                            sekolah_id: Number(
-                                (e.target as HTMLSelectElement).value,
-                            ),
-                        })}
-                >
-                    {#each pilihanSekolah as pilihan (pilihan.id)}
-                        <option value={pilihan.id}>{pilihan.nama}</option>
-                    {/each}
-                </select>
+                    class="w-56"
+                    opsi={pilihanSekolah.map((p) => ({ value: p.uuid, label: p.nama }))}
+                    value={sekolah.uuid}
+                    onchange={(v) => bukaHalaman({ sekolah: String(v) })}
+                />
             {/if}
             <Label for="tahun" class="shrink-0">Tahun anggaran</Label>
             <Input
@@ -161,7 +155,7 @@
                             <tr class="border-b last:border-0">
                                 <td class="px-2 py-2">
                                     <Link
-                                        href={KertasKerjaController.show(baris.id)}
+                                        href={KertasKerjaController.show(baris.uuid)}
                                         class="font-medium underline-offset-4 hover:underline"
                                     >
                                         {namaSumber[baris.sumber_dana] ??
@@ -196,7 +190,7 @@
                                             variant="ghost"
                                             size="icon"
                                             aria-label="Hapus"
-                                            onclick={() => hapus(baris.id)}
+                                            onclick={() => hapus(baris.uuid)}
                                         >
                                             <Trash2 class="size-4" />
                                         </Button>

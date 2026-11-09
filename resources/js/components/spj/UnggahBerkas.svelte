@@ -5,16 +5,16 @@
     import { antreanFoto } from '@/lib/antreanFoto.svelte';
 
     let {
-        kegiatanId,
+        kegiatanUuid,
         jenisBerkasId,
         onpilih,
     }: {
-        kegiatanId: number;
+        kegiatanUuid: string;
         jenisBerkasId: number;
         onpilih?: () => void;
     } = $props();
 
-    const antrean = $derived(antreanFoto.untuk(kegiatanId, jenisBerkasId));
+    const antrean = $derived(antreanFoto.untuk(kegiatanUuid, jenisBerkasId));
 
     let inputKamera: HTMLInputElement;
     let inputBerkas: HTMLInputElement;
@@ -26,7 +26,7 @@
         input.value = '';
 
         if (berkas.length > 0) {
-            void antreanFoto.tambah(kegiatanId, jenisBerkasId, berkas);
+            void antreanFoto.tambah(kegiatanUuid, jenisBerkasId, berkas);
             onpilih?.();
         }
     }

@@ -47,6 +47,7 @@
 
     type KertasKerja = {
         id: number;
+        uuid: string;
         label: string;
         tahun: number;
         sumber_dana: SumberDana;
@@ -60,11 +61,12 @@
         tanggal_revisi: string | null;
         bisa_diubah: boolean;
         bisa_direvisi: boolean;
-        sekolah: { id: number; nama: string; identitas: string };
+        sekolah: { id: number; uuid: string; nama: string; identitas: string };
     };
     type PemberiDana = { id: number; nama: string; jumlah: number };
     type VersiRantai = {
         id: number;
+        uuid: string;
         versi: string;
         status_label: string;
         tanggal_revisi: string | null;
@@ -140,7 +142,7 @@
                     onclick={() =>
                         ubahStatus({
                             url: StatusKertasKerjaController.siap.url(
-                                kertasKerja.id,
+                                kertasKerja.uuid,
                             ),
                         })}
                 >
@@ -153,7 +155,7 @@
                     onclick={() =>
                         ubahStatus({
                             url: StatusKertasKerjaController.draf.url(
-                                kertasKerja.id,
+                                kertasKerja.uuid,
                             ),
                         })}
                 >
@@ -192,7 +194,7 @@
                                     dialogDisahkan = false;
                                     ubahStatus({
                                         url: StatusKertasKerjaController.disahkan.url(
-                                            kertasKerja.id,
+                                            kertasKerja.uuid,
                                         ),
                                     });
                                 }}
@@ -205,13 +207,13 @@
             {:else if kertasKerja.bisa_direvisi}
                 {#key kertasKerja.id}
                     <DialogRevisi
-                        kertasKerjaId={kertasKerja.id}
+                        kertasKerjaUuid={kertasKerja.uuid}
                         jenis="pergeseran"
                         paguAwal={kertasKerja.pagu}
                         tampilkanPagu={false}
                     />
                     <DialogRevisi
-                        kertasKerjaId={kertasKerja.id}
+                        kertasKerjaUuid={kertasKerja.uuid}
                         jenis="perubahan"
                         paguAwal={kertasKerja.pagu}
                         tampilkanPagu={kertasKerja.sumber_dana === 'bosp_reguler'}
@@ -226,14 +228,14 @@
                 {kertasKerja.status_label}
             </Badge>
             <a
-                href={PdfKertasKerjaController.url(kertasKerja.id)}
+                href={PdfKertasKerjaController.url(kertasKerja.uuid)}
                 class="text-sm underline-offset-4 hover:underline"
             >
                 Cetak rincian (PDF)
             </a>
             {#if kertasKerja.sumber_dana === 'bosp_reguler'}
                 <Link
-                    href={PerbandinganController.url(kertasKerja.id)}
+                    href={PerbandinganController.url(kertasKerja.uuid)}
                     class="text-sm underline-offset-4 hover:underline"
                 >
                     Bandingkan dengan impor ARKAS
@@ -243,7 +245,7 @@
                 href={KertasKerjaController.index({
                     query: {
                         tahun: kertasKerja.tahun,
-                        sekolah_id: kertasKerja.sekolah.id,
+                        sekolah: kertasKerja.sekolah.uuid,
                     },
                 })}
                 class="text-sm underline-offset-4 hover:underline"
@@ -264,7 +266,7 @@
                                 <span class="font-medium">{versi.versi} (dibuka)</span>
                             {:else}
                                 <Link
-                                    href={KertasKerjaController.show(versi.id)}
+                                    href={KertasKerjaController.show(versi.uuid)}
                                     class="underline-offset-4 hover:underline"
                                 >
                                     {versi.versi}
@@ -356,7 +358,7 @@
                         sekolahId={kertasKerja.sekolah.id}
                         tahun={kertasKerja.tahun}
                         pilihanSumberDana={[]}
-                        kertasKerjaId={kertasKerja.id}
+                        kertasKerjaUuid={kertasKerja.uuid}
                         sumberDana={kertasKerja.sumber_dana}
                         pagu={kertasKerja.pagu}
                         pemberiDana={pemberiDana.map((p) => ({
@@ -379,7 +381,7 @@
                 </h2>
                 {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
                     <FormBarisRkas
-                        kertasKerjaId={kertasKerja.id}
+                        kertasKerjaUuid={kertasKerja.uuid}
                         {pilihan}
                         baris={sedangDiubah}
                         onSelesai={() => (sedangDiubah = null)}

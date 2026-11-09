@@ -14,6 +14,7 @@ export type BerkasStatus = {
 
 export type BarisKegiatanData = {
     id: number;
+    uuid: string;
     nama: string;
     koefisien: string;
     jumlah: number;
@@ -29,7 +30,7 @@ export type BarisKegiatanData = {
     bisaUnduhPdf: boolean;
     catatanStatus: string | null;
     rapel: { bulan: number; nomor: string } | null;
-    acara: { id: number; nama: string } | null;
+    acara: { id: number; uuid: string; nama: string } | null;
     hilangDariAnggaran: boolean;
     perluDitinjau: boolean;
 };
@@ -37,11 +38,12 @@ export type BarisKegiatanData = {
 export type SaranAcaraData = {
     ids: number[];
     nama: string;
-    baris: { id: number; nama: string; jumlah: number }[];
+    baris: { id: number; uuid: string; nama: string; jumlah: number }[];
 };
 
 export type SekolahBulan = {
     id: number;
+    uuid: string;
     nama: string;
     sistem: 'arkas' | 'erkam';
     total: number;

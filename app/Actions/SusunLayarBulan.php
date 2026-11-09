@@ -72,6 +72,7 @@ class SusunLayarBulan
 
         return [
             'id' => $sekolah->id,
+            'uuid' => $sekolah->uuid,
             'nama' => $sekolah->nama,
             'sistem' => $sekolah->sistem->value,
             'total' => (int) $bulanIni->sum(fn (array $b): int => $b['kegiatan']->jumlah),
@@ -80,7 +81,7 @@ class SusunLayarBulan
             'saranAcara' => array_map(fn (array $kelompok): array => [
                 'ids' => array_map(fn (Kegiatan $k): int => $k->id, $kelompok),
                 'nama' => $kelompok[0]->nama,
-                'baris' => array_map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama, 'jumlah' => $k->jumlah], $kelompok),
+                'baris' => array_map(fn (Kegiatan $k): array => ['id' => $k->id, 'uuid' => $k->uuid, 'nama' => $k->nama, 'jumlah' => $k->jumlah], $kelompok),
             ], SaranAcara::untukBulan($sekolah, $tahun, $bulan)),
             'ditunda' => $milik
                 ->filter(fn (array $b): bool => $b['kegiatan']->bulan === $bulan && $b['kegiatan']->bulan_pelaksanaan !== null)
@@ -120,6 +121,7 @@ class SusunLayarBulan
     {
         return [
             'id' => $kegiatan->id,
+            'uuid' => $kegiatan->uuid,
             'nama' => $kegiatan->nama,
             'koefisien' => $kegiatan->koefisien,
             'jumlah' => $kegiatan->jumlah,
@@ -138,7 +140,7 @@ class SusunLayarBulan
                 'bulan' => $status->kuitansiRapel->bulan,
                 'nomor' => $status->kuitansiRapel->nomor,
             ],
-            'acara' => $kegiatan->acara === null ? null : ['id' => $kegiatan->acara->id, 'nama' => $kegiatan->acara->nama],
+            'acara' => $kegiatan->acara === null ? null : ['id' => $kegiatan->acara->id, 'uuid' => $kegiatan->acara->uuid, 'nama' => $kegiatan->acara->nama],
             'hilangDariAnggaran' => $kegiatan->hilang_dari_anggaran,
             'perluDitinjau' => $kegiatan->jenisKegiatan->cadangan && ! $kegiatan->jenis_dikonfirmasi,
         ];

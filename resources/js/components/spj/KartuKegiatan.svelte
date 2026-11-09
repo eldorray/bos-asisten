@@ -60,7 +60,7 @@
         {/if}
         <div class="min-w-0">
             <Link
-                href={KegiatanController.show(kegiatan.id)}
+                href={KegiatanController.show(kegiatan.uuid)}
                 class="block text-nama font-medium [overflow-wrap:anywhere] hover:underline"
             >
                 {kegiatan.nama}

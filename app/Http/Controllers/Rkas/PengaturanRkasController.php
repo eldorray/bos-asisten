@@ -22,8 +22,8 @@ class PengaturanRkasController extends Controller
         abort_unless($tahun >= 2000 && $tahun <= 2100, 404);
 
         $sekolahs = Sekolah::query()->where('sistem', SistemAnggaran::Arkas)->orderBy('nama')->get();
-        $sekolah = $request->filled('sekolah_id')
-            ? $sekolahs->firstWhere('id', $request->integer('sekolah_id'))
+        $sekolah = $request->filled('sekolah')
+            ? $sekolahs->firstWhere('uuid', $request->string('sekolah')->toString())
             : $sekolahs->first();
         abort_if($sekolah === null, 404);
 
@@ -32,6 +32,7 @@ class PengaturanRkasController extends Controller
         return Inertia::render('pengaturan/Rkas', [
             'pengaturan' => [
                 'id' => $pengaturan->id,
+                'uuid' => $pengaturan->uuid,
                 'swasta' => $pengaturan->swasta,
                 'persen_tahap_1' => $pengaturan->persen_tahap_1,
                 'ambang_tahap_1' => $pengaturan->ambang_tahap_1,
@@ -47,8 +48,8 @@ class PengaturanRkasController extends Controller
                 'kuota_pergeseran' => $pengaturan->kuota_pergeseran,
                 'kuota_perubahan' => $pengaturan->kuota_perubahan,
             ],
-            'sekolah' => ['id' => $sekolah->id, 'nama' => $sekolah->nama],
-            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'nama' => $s->nama])->values(),
+            'sekolah' => ['id' => $sekolah->id, 'uuid' => $sekolah->uuid, 'nama' => $sekolah->nama],
+            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'uuid' => $s->uuid, 'nama' => $s->nama])->values(),
             'tahun' => $tahun,
         ]);
     }

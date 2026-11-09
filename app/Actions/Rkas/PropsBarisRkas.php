@@ -45,6 +45,7 @@ class PropsBarisRkas
 
         return $daftar->map(fn (RkasBaris $b): array => [
             'id' => $b->id,
+            'uuid' => $b->uuid,
             'urutan' => $b->urutan,
             'ref_kegiatan_id' => $b->ref_kegiatan_id,
             'ref_rekening_id' => $b->ref_rekening_id,

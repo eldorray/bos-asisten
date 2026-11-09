@@ -39,6 +39,7 @@ class KegiatanController extends Controller
         return Inertia::render('kegiatan/Show', [
             'kegiatan' => [
                 'id' => $kegiatan->id,
+                'uuid' => $kegiatan->uuid,
                 'nama' => $kegiatan->nama,
                 'uraian' => $kegiatan->uraian,
                 'sekolah' => $kegiatan->sekolah->nama,
@@ -66,6 +67,7 @@ class KegiatanController extends Controller
             ],
             'acara' => $kegiatan->acara === null ? null : [
                 'id' => $kegiatan->acara->id,
+                'uuid' => $kegiatan->acara->uuid,
                 'nama' => $kegiatan->acara->nama,
                 'anggota' => $kegiatan->acara->kegiatans()->orderBy('id')->get(['id', 'nama'])
                     ->map(fn (Kegiatan $k): array => ['id' => $k->id, 'nama' => $k->nama])->all(),
@@ -218,6 +220,7 @@ class KegiatanController extends Controller
 
         return [
             'id' => $kuitansi->id,
+            'uuid' => $kuitansi->uuid,
             'nomor' => $kuitansi->nomor,
             'untuk_pembayaran' => $kuitansi->untuk_pembayaran,
             'penerima' => $kuitansi->penerima,
@@ -242,7 +245,7 @@ class KegiatanController extends Controller
             $daftar[] = [
                 'id' => $berkas->id,
                 'nama' => $berkas->nama,
-                'fotos' => array_values($fotos->where('jenis_berkas_id', $berkas->id)->map(fn (Foto $foto): array => ['id' => $foto->id])->all()),
+                'fotos' => array_values($fotos->where('jenis_berkas_id', $berkas->id)->map(fn (Foto $foto): array => ['id' => $foto->id, 'uuid' => $foto->uuid])->all()),
             ];
         }
 

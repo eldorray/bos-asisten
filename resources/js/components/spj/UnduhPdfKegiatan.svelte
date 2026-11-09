@@ -4,17 +4,17 @@
     import { Button } from '@/components/ui/button';
 
     let {
-        kegiatanId,
+        kegiatanUuid,
         draf = false,
         class: className = '',
     }: {
-        kegiatanId: number;
+        kegiatanUuid: string;
         draf?: boolean;
         class?: string;
     } = $props();
 
     function unduh(): void {
-        const url = PdfKegiatanController.url(kegiatanId);
+        const url = PdfKegiatanController.url(kegiatanUuid);
 
         // Aplikasi terpasang di iPhone membuka PDF di dalam jendelanya, tanpa tombol kembali.
         if (window.matchMedia('(display-mode: standalone)').matches) {

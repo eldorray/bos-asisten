@@ -21,6 +21,7 @@ class SekolahController extends Controller
         return Inertia::render('pengaturan/Sekolah', [
             'sekolahs' => Sekolah::query()->orderBy('nama')->get()->map(fn (Sekolah $sekolah): array => [
                 'id' => $sekolah->id,
+                'uuid' => $sekolah->uuid,
                 'nama' => $sekolah->nama,
                 'sebutan' => $sekolah->sebutan,
                 'sistem' => $sekolah->sistem->value,
@@ -74,7 +75,7 @@ class SekolahController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => $berubah === 0 ? 'Nomor bukti sudah urut per bulan' : "{$berubah} nomor bukti diurutkan per bulan",
+            'message' => $berubah === 0 ? 'Nomor bukti sudah urut' : "{$berubah} nomor bukti diurutkan",
         ]);
 
         return back();

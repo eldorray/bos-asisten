@@ -30,6 +30,7 @@
 
     type SekolahData = {
         id: number;
+        uuid: string;
         nama: string;
         sebutan: string;
         sistem: string;
@@ -94,7 +95,7 @@
         forms
             .get(sekolah.id)
             ?.transform((data) => ({ ...data, tahun }))
-            .submit(SekolahController.update(sekolah.id), {
+            .submit(SekolahController.update(sekolah.uuid), {
                 preserveScroll: true,
             });
     }
@@ -102,11 +103,11 @@
     function urutkanNomor(sekolah: SekolahData): void {
         if (
             confirm(
-                `Urutkan nomor bukti ${sekolah.nama} tahun ${tahun} per bulan? Nomor di kuitansi yang sudah dicetak atau ditandatangani bisa berubah, jadi cetak ulang bila perlu.`,
+                `Urutkan nomor bukti ${sekolah.nama} tahun ${tahun} menurut tanggal lunas? Tiap tahap mulai dari 1. Nomor di kuitansi yang sudah dicetak atau ditandatangani bisa berubah, jadi cetak ulang bila perlu.`,
             )
         ) {
             router.post(
-                SekolahController.urutkanNomor(sekolah.id).url,
+                SekolahController.urutkanNomor(sekolah.uuid).url,
                 { tahun },
                 { preserveScroll: true },
             );
@@ -202,7 +203,7 @@
                         {/each}
                         <div class="grid content-start gap-1">
                             <Label for={`nomor_awal-${sekolah.id}`}>
-                                Nomor awal kuitansi tahun {tahun}
+                                Nomor awal kuitansi tahun {tahun} (tahap 1)
                             </Label>
                             <Input
                                 id={`nomor_awal-${sekolah.id}`}
@@ -227,7 +228,7 @@
                                 variant="outline"
                                 onclick={() => urutkanNomor(sekolah)}
                             >
-                                Urutkan nomor per bulan
+                                Urutkan nomor
                             </Button>
                             <span class="ml-auto">
                                 <HapusSekolah {sekolah} />

@@ -38,6 +38,7 @@
     };
     export type BarisRkas = {
         id: number;
+        uuid: string;
         urutan: number;
         ref_kegiatan_id: number;
         ref_rekening_id: number;
@@ -84,17 +85,18 @@
     import { useForm } from '@inertiajs/svelte';
     import BarisRkasController from '@/actions/App/Http/Controllers/Rkas/BarisRkasController';
     import InputError from '@/components/InputError.svelte';
+    import PilihCari from '@/components/PilihCari.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
 
     let {
-        kertasKerjaId,
+        kertasKerjaUuid,
         pilihan,
         baris = null,
         onSelesai,
     }: {
-        kertasKerjaId: number;
+        kertasKerjaUuid: string;
         pilihan: Pilihan;
         baris?: BarisRkas | null;
         onSelesai?: () => void;
@@ -192,6 +194,25 @@
     );
     const jumlah = $derived(totalVolume * (Number(form.harga) || 0));
 
+    const opsiKegiatan = $derived(
+        kegiatanOpsi.map((k) => ({ value: k.id, label: `${k.kode} ${k.uraian}` })),
+    );
+    const opsiRekening = $derived(
+        rekeningOpsi.map((r) => ({ value: r.id, label: `${r.kode} ${r.nama}` })),
+    );
+    const opsiBarang = $derived(
+        barangOpsi.map((b) => ({ value: b.id, label: `${b.nama} (${b.satuan})` })),
+    );
+    const opsiPtk = $derived(
+        pilihan.ptk.map((p) => ({
+            value: p.id,
+            label: p.nuptk ? `${p.nama} (${p.nuptk})` : p.nama,
+        })),
+    );
+    const opsiSatuan = $derived(
+        pilihan.satuan.map((s) => ({ value: s.nama, label: s.nama })),
+    );
+
     function rupiah(n: number): string {
         return `Rp ${n.toLocaleString('id-ID')}`;
     }
@@ -256,8 +277,8 @@
             }))
             .submit(
                 baris === null
-                    ? BarisRkasController.store(kertasKerjaId)
-                    : BarisRkasController.update(baris.id),
+                    ? BarisRkasController.store(kertasKerjaUuid)
+                    : BarisRkasController.update(baris.uuid),
                 {
                     preserveScroll: true,
                     onSuccess: () => {
@@ -278,32 +299,28 @@
     <div class="grid gap-4 md:grid-cols-2">
         <div class="grid content-start gap-1.5">
             <Label for="baris-kegiatan">Kegiatan</Label>
-            <select
+            <PilihCari
                 id="baris-kegiatan"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
-                bind:value={form.ref_kegiatan_id}
-            >
-                <option value="">Pilih kegiatan</option>
-                {#each kegiatanOpsi as k (k.id)}
-                    <option value={k.id}>{k.kode} {k.uraian}</option>
-                {/each}
-            </select>
+                opsi={opsiKegiatan}
+                kosong="Pilih kegiatan"
+                value={form.ref_kegiatan_id}
+                onchange={(v) => (form.ref_kegiatan_id = v as number | '')}
+            />
             <InputError message={form.errors.ref_kegiatan_id} />
         </div>
 
         <div class="grid content-start gap-1.5">
             <Label for="baris-rekening">Rekening belanja</Label>
-            <select
+            <PilihCari
                 id="baris-rekening"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
-                bind:value={form.ref_rekening_id}
-                onchange={() => (form.ref_barang_id = '')}
-            >
-                <option value="">Pilih rekening</option>
-                {#each rekeningOpsi as r (r.id)}
-                    <option value={r.id}>{r.kode} {r.nama}</option>
-                {/each}
-            </select>
+                opsi={opsiRekening}
+                kosong="Pilih rekening"
+                value={form.ref_rekening_id}
+                onchange={(v) => {
+                    form.ref_rekening_id = v as number | '';
+                    form.ref_barang_id = '';
+                }}
+            />
             <InputError message={form.errors.ref_rekening_id} />
         </div>
     </div>
@@ -311,39 +328,25 @@
     {#if honor}
         <div class="grid content-start gap-1.5">
             <Label for="baris-ptk">PTK</Label>
-            <select
+            <PilihCari
                 id="baris-ptk"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
-                bind:value={form.ptk_id}
-            >
-                <option value="">Pilih PTK</option>
-                {#each pilihan.ptk as p (p.id)}
-                    <option value={p.id}>
-                        {p.nuptk ? `${p.nama} (${p.nuptk})` : p.nama}
-                    </option>
-                {/each}
-            </select>
+                opsi={opsiPtk}
+                kosong="Pilih PTK"
+                value={form.ptk_id}
+                onchange={(v) => (form.ptk_id = v as number | '')}
+            />
             <InputError message={form.errors.ptk_id} />
         </div>
     {:else if pakaiBarang}
         <div class="grid content-start gap-1.5">
             <Label for="baris-barang">Barang/jasa</Label>
-            <select
+            <PilihCari
                 id="baris-barang"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
+                opsi={opsiBarang}
+                kosong="Pilih barang/jasa"
                 value={form.ref_barang_id}
-                onchange={(e) =>
-                    pilihBarang(
-                        (e.target as HTMLSelectElement).value === ''
-                            ? ''
-                            : Number((e.target as HTMLSelectElement).value),
-                    )}
-            >
-                <option value="">Pilih barang/jasa</option>
-                {#each barangOpsi as b (b.id)}
-                    <option value={b.id}>{b.nama} ({b.satuan})</option>
-                {/each}
-            </select>
+                onchange={(v) => pilihBarang(v as number | '')}
+            />
             {#if barang}
                 <p class="text-xs text-muted-foreground">
                     Satuan {barang.satuan} · batas harga {rupiah(barang.batas_bawah)}
@@ -367,16 +370,13 @@
             </div>
             <div class="grid content-start gap-1.5">
                 <Label for="baris-satuan">Satuan</Label>
-                <select
+                <PilihCari
                     id="baris-satuan"
-                    class="h-9 rounded-md border bg-background px-2 text-sm"
-                    bind:value={form.satuan}
-                >
-                    <option value="">Pilih satuan</option>
-                    {#each pilihan.satuan as s (s.id)}
-                        <option value={s.nama}>{s.nama}</option>
-                    {/each}
-                </select>
+                    opsi={opsiSatuan}
+                    kosong="Pilih satuan"
+                    value={form.satuan}
+                    onchange={(v) => (form.satuan = String(v))}
+                />
                 <InputError message={form.errors.satuan} />
             </div>
         </div>
@@ -385,16 +385,13 @@
     {#if honor}
         <div class="grid content-start gap-1.5 md:max-w-48">
             <Label for="baris-satuan-honor">Satuan</Label>
-            <select
+            <PilihCari
                 id="baris-satuan-honor"
-                class="h-9 rounded-md border bg-background px-2 text-sm"
-                bind:value={form.satuan}
-            >
-                <option value="">Pilih satuan</option>
-                {#each pilihan.satuan as s (s.id)}
-                    <option value={s.nama}>{s.nama}</option>
-                {/each}
-            </select>
+                opsi={opsiSatuan}
+                kosong="Pilih satuan"
+                value={form.satuan}
+                onchange={(v) => (form.satuan = String(v))}
+            />
             <InputError message={form.errors.satuan} />
         </div>
     {/if}

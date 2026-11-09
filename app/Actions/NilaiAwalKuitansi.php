@@ -166,13 +166,16 @@ class NilaiAwalKuitansi
     }
 
     /**
-     * Berikutnya = maks(nomor urut setahun, nomor awal - 1) + 1, naik terus sampai nomornya belum dipakai.
+     * Berikutnya = maks(nomor urut setahap, nomor awal - 1) + 1, naik terus sampai nomornya belum dipakai.
+     * Setelah disimpan, nomor diurutkan ulang menurut tanggal lunas.
      */
     private static function nomorBerikut(Kegiatan $kegiatan, int $bulan): string
     {
         $sekolah = $kegiatan->sekolah;
+        $tahap = $kegiatan->tahap === null ? null : (int) $kegiatan->tahap;
+        $awal = UrutkanNomorKuitansi::nomorAwal($sekolah, $kegiatan->tahun, $tahap);
+        $urut = max((int) UrutkanNomorKuitansi::query($sekolah->id, $kegiatan->tahun, $tahap)->max('nomor_urut'), $awal - 1) + 1;
         $dasar = Kuitansi::query()->where('sekolah_id', $sekolah->id)->where('tahun', $kegiatan->tahun);
-        $urut = max((int) (clone $dasar)->max('nomor_urut'), ((int) ($sekolah->nomor_awal[$kegiatan->tahun] ?? 1)) - 1) + 1;
 
         while ((clone $dasar)->where('nomor', $nomor = self::formatNomor($kegiatan, $urut, $bulan))->exists()) {
             $urut++;

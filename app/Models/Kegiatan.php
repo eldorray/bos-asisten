@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\StatusManual;
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\KegiatanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $sekolah_id
  * @property int $tahun
  * @property int|null $bulan
@@ -46,7 +48,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Kegiatan extends Model
 {
     /** @use HasFactory<KegiatanFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

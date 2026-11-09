@@ -27,6 +27,7 @@ class PerbandinganController extends Controller
         return Inertia::render('rkas/Perbandingan', [
             'kertasKerja' => [
                 'id' => $kertasKerja->id,
+                'uuid' => $kertasKerja->uuid,
                 'tahun' => $kertasKerja->tahun,
                 'versi' => $kertasKerja->labelVersi(),
                 'sekolah' => $sekolah->nama,

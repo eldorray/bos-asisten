@@ -17,6 +17,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import PilihCari from '@/components/PilihCari.svelte';
     import FormReferensi from '@/components/rkas/FormReferensi.svelte';
     import type { JenisReferensi } from '@/components/rkas/FormReferensi.svelte';
     import { Button } from '@/components/ui/button';
@@ -33,7 +34,7 @@
         prev_page_url: string | null;
         next_page_url: string | null;
     };
-    type Sekolah = { id: number; nama: string };
+    type Sekolah = { id: number; uuid: string; nama: string };
 
     let {
         jenis,
@@ -109,26 +110,26 @@
     }
 
     function bukaHalaman(
-        ubah: Partial<{ jenis: string; tahun: number; sekolah_id: number }>,
+        ubah: Partial<{ jenis: string; tahun: number; sekolah: string }>,
     ): void {
         router.get(
             ReferensiRkasController.index({
                 query: {
                     jenis,
                     tahun,
-                    sekolah_id: sekolah.id,
+                    sekolah: sekolah.uuid,
                     ...ubah,
                 },
             }).url,
         );
     }
 
-    function hapus(id: number): void {
+    function hapus(uuid: string): void {
         if (!confirm('Hapus referensi ini?')) {
             return;
         }
         router.delete(
-            ReferensiRkasController.destroy({ jenis, id }).url,
+            ReferensiRkasController.destroy({ jenis, uuid }).url,
             { preserveScroll: true },
         );
     }
@@ -137,6 +138,14 @@
         router.post(
             ReferensiRkasController.salin().url,
             { dari: tahun - 1, ke: tahun },
+            { preserveScroll: true },
+        );
+    }
+
+    function muatKegiatan(): void {
+        router.post(
+            ReferensiRkasController.muatKegiatan().url,
+            { tahun },
             { preserveScroll: true },
         );
     }
@@ -157,21 +166,13 @@
         <div class="flex flex-wrap items-center gap-2.5">
             {#if jenis === 'ptk' && pilihanSekolah.length > 1}
                 <Label for="sekolah" class="shrink-0">Sekolah</Label>
-                <select
+                <PilihCari
                     id="sekolah"
-                    class="h-9 rounded-md border bg-background px-2 text-sm"
-                    value={sekolah.id}
-                    onchange={(e) =>
-                        bukaHalaman({
-                            sekolah_id: Number(
-                                (e.target as HTMLSelectElement).value,
-                            ),
-                        })}
-                >
-                    {#each pilihanSekolah as pilihan (pilihan.id)}
-                        <option value={pilihan.id}>{pilihan.nama}</option>
-                    {/each}
-                </select>
+                    class="w-56"
+                    opsi={pilihanSekolah.map((p) => ({ value: p.uuid, label: p.nama }))}
+                    value={sekolah.uuid}
+                    onchange={(v) => bukaHalaman({ sekolah: String(v) })}
+                />
             {/if}
             {#if perluTahun}
                 <Label for="tahun" class="shrink-0">Tahun anggaran</Label>
@@ -195,7 +196,7 @@
         {#each tab as t (t.jenis)}
             <Link
                 href={ReferensiRkasController.index({
-                    query: { jenis: t.jenis, tahun, sekolah_id: sekolah.id },
+                    query: { jenis: t.jenis, tahun, sekolah: sekolah.uuid },
                 })}
                 class={[
                     'rounded-md border px-3 py-1.5 text-sm font-medium',
@@ -217,6 +218,20 @@
             <span>Belum ada data untuk {tahun}.</span>
             <Button variant="outline" onclick={salin}>
                 Salin dari {tahun - 1}
+            </Button>
+        </div>
+    {/if}
+
+    {#if jenis === 'kegiatan' && daftar.total === 0}
+        <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/50 p-3 text-sm"
+        >
+            <span>
+                Kode kegiatan BOS {tahun} belum ada. Muat dari tabel resmi ARKAS 4
+                (151 kegiatan).
+            </span>
+            <Button variant="outline" onclick={muatKegiatan}>
+                Muat kode resmi ARKAS
             </Button>
         </div>
     {/if}
@@ -264,7 +279,7 @@
                                         variant="ghost"
                                         size="icon"
                                         aria-label="Hapus"
-                                        onclick={() => hapus(Number(baris.id))}
+                                        onclick={() => hapus(String(baris.uuid))}
                                     >
                                         <Trash2 class="size-4" />
                                     </Button>

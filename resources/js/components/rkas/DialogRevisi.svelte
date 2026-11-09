@@ -16,12 +16,12 @@
     import { Label } from '@/components/ui/label';
 
     let {
-        kertasKerjaId,
+        kertasKerjaUuid,
         jenis,
         paguAwal,
         tampilkanPagu,
     }: {
-        kertasKerjaId: number;
+        kertasKerjaUuid: string;
         jenis: 'pergeseran' | 'perubahan';
         paguAwal: number;
         tampilkanPagu: boolean;
@@ -52,7 +52,7 @@
     const judul = $derived(jenis === 'perubahan' ? 'Buat Perubahan' : 'Buat Pergeseran');
 
     function kirim(): void {
-        form.post(RevisiController.store.url(kertasKerjaId), {
+        form.post(RevisiController.store.url(kertasKerjaUuid), {
             onSuccess: () => (terbuka = false),
         });
     }

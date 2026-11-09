@@ -15,7 +15,7 @@
         sekolahId,
         tahun,
         pilihanSumberDana,
-        kertasKerjaId = null,
+        kertasKerjaUuid = null,
         sumberDana = 'bosp_reguler',
         pagu = '',
         pemberiDana = [],
@@ -24,7 +24,7 @@
         sekolahId: number;
         tahun: number;
         pilihanSumberDana: { nilai: string; nama: string }[];
-        kertasKerjaId?: number | null;
+        kertasKerjaUuid?: string | null;
         sumberDana?: SumberDana;
         pagu?: number | string;
         pemberiDana?: PemberiDana[];
@@ -47,7 +47,7 @@
         pemberi_dana: pemberiDana.length > 0 ? pemberiDana.map((p) => ({ ...p })) : [{ nama: '', jumlah: '' }],
     });
 
-    const ubah = $derived(kertasKerjaId !== null);
+    const ubah = $derived(kertasKerjaUuid !== null);
     const lainnya = $derived(form.sumber_dana === 'lainnya');
     const total = $derived(
         form.pemberi_dana.reduce((jumlah, p) => jumlah + (Number(p.jumlah) || 0), 0),
@@ -78,9 +78,9 @@
                     : { ...dasar, pagu: Number(nilaiPagu) };
             })
             .submit(
-                kertasKerjaId === null
+                kertasKerjaUuid === null
                     ? KertasKerjaController.store()
-                    : KertasKerjaController.update(kertasKerjaId),
+                    : KertasKerjaController.update(kertasKerjaUuid),
                 { preserveScroll: true, onSuccess: () => onSelesai?.() },
             );
     }

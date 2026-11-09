@@ -89,7 +89,7 @@ test('nomor awal sekolah dihormati dan nomor urut naik terus', function () {
     expect(NilaiAwalKuitansi::untuk($januari)['nomor'])->toBe('046/01/SMPG/2026');
 });
 
-test('nomor diubah manual tidak membuat nomor berikutnya bentrok', function () {
+test('angka urut yang diubah manual dikembalikan ke urutan tanggal', function () {
     $sekolah = sekolahSmp();
     $januari = kegiatanGaji($sekolah, 1);
     $februari = kegiatanGaji($sekolah, 2, ['uraian' => 'Listrik', 'nama' => 'Listrik', 'kode' => '5.1.02.01.01.0099']);
@@ -98,8 +98,8 @@ test('nomor diubah manual tidak membuat nomor berikutnya bentrok', function () {
     $kuitansi = Kuitansi::firstOrFail();
     $this->patch(route('kuitansi.update', $kuitansi), isianKuitansi(['nomor' => '002/01/SMPG/2026']))->assertSessionHasNoErrors();
 
-    expect($kuitansi->fresh()->nomor_urut)->toBe(2)
-        ->and(NilaiAwalKuitansi::untuk($februari)['nomor'])->toBe('003/02/SMPG/2026');
+    expect($kuitansi->fresh()->nomor)->toBe('001/01/SMPG/2026')
+        ->and(NilaiAwalKuitansi::untuk($februari)['nomor'])->toBe('002/02/SMPG/2026');
 });
 
 test('hapus kuitansi terakhir lalu buat lagi berhasil', function () {
@@ -350,7 +350,7 @@ test('ubah hanya mengubah isian dan cakupan tetap', function () {
     ]))->assertSessionHasNoErrors();
 
     $kuitansi->refresh();
-    expect($kuitansi->nomor)->toBe('007/02/SMPG/2026')->and($kuitansi->nomor_urut)->toBe(7)
+    expect($kuitansi->nomor)->toBe('001/02/SMPG/2026')->and($kuitansi->nomor_urut)->toBe(1)
         ->and($kuitansi->penerima)->toBe('Siti')->and($kuitansi->jumlah)->toBe(31_000_000)
         ->and($kuitansi->untuk_pembayaran)->toBe('Honor baru')
         ->and($kuitansi->tanggal_lunas->toDateString())->toBe('2026-02-25')
@@ -552,6 +552,42 @@ test('membatasi nomor dan penerima agar muat di kuitansi', function (string $kol
 
     expect(Kuitansi::firstOrFail()->{$kolom})->toBe($sah);
 })->with([
-    'nomor' => ['nomor', '1/'.str_repeat('W', 38), '1/'.str_repeat('W', 39), 'Nomor bukti maksimal 40 karakter agar muat di kuitansi.'],
+    'nomor' => ['nomor', '001/'.str_repeat('W', 36), '001/'.str_repeat('W', 37), 'Nomor bukti maksimal 40 karakter agar muat di kuitansi.'],
     'penerima' => ['penerima', str_repeat('W', 90), str_repeat('W', 91), 'Nama penerima maksimal 90 karakter agar muat di kuitansi.'],
 ]);
+
+test('nomor kuitansi e-RKAM urut tanggal lunas dan mulai lagi tiap tahap', function () {
+    $sekolah = sekolahMi();
+    $simpan = app(SimpanKuitansi::class);
+    $buat = function (int $bulan, int $tahap, string $lunas) use ($sekolah, $simpan): Kuitansi {
+        $kegiatan = kegiatanGaji($sekolah, $bulan, ['tahap' => $tahap]);
+
+        return $simpan->buat([$kegiatan->id], isianKuitansi([
+            'nomor' => NilaiAwalKuitansi::untuk($kegiatan)['nomor'],
+            'tanggal_lunas' => $lunas,
+        ]));
+    };
+
+    $juni = $buat(6, 1, '2026-06-15');
+    $juli9 = $buat(7, 2, '2026-07-09');
+    $agustus = $buat(8, 2, '2026-08-03');
+    $juli4 = $buat(7, 2, '2026-07-04');
+
+    expect($juni->fresh()->nomor)->toBe('001/T1/MIDH/2026')
+        ->and($juli4->fresh()->nomor)->toBe('001/T2/MIDH/2026')
+        ->and($juli9->fresh()->nomor)->toBe('002/T2/MIDH/2026')
+        ->and($agustus->fresh()->nomor)->toBe('003/T2/MIDH/2026')
+        ->and($agustus->fresh()->nomor_urut)->toBe(3);
+
+    // Tanggal lunas diubah: urutan ikut berubah. Hapus: celah nomor tertutup.
+    $simpan->ubah($juli4->fresh(), isianKuitansi(['nomor' => $juli4->fresh()->nomor, 'tanggal_lunas' => '2026-07-20']));
+
+    expect($juli9->fresh()->nomor)->toBe('001/T2/MIDH/2026')
+        ->and($juli4->fresh()->nomor)->toBe('002/T2/MIDH/2026');
+
+    $simpan->hapus($juli9->fresh());
+
+    expect($juli4->fresh()->nomor)->toBe('001/T2/MIDH/2026')
+        ->and($agustus->fresh()->nomor)->toBe('002/T2/MIDH/2026')
+        ->and($juni->fresh()->nomor)->toBe('001/T1/MIDH/2026');
+});

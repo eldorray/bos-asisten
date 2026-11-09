@@ -29,8 +29,8 @@ class KertasKerjaController extends Controller
         abort_unless($tahun >= 2000 && $tahun <= 2100, 404);
 
         $sekolahs = Sekolah::query()->where('sistem', SistemAnggaran::Arkas)->orderBy('nama')->get();
-        $sekolah = $request->filled('sekolah_id')
-            ? $sekolahs->firstWhere('id', $request->integer('sekolah_id'))
+        $sekolah = $request->filled('sekolah')
+            ? $sekolahs->firstWhere('uuid', $request->string('sekolah')->toString())
             : $sekolahs->first();
         abort_if($sekolah === null, 404);
 
@@ -48,6 +48,7 @@ class KertasKerjaController extends Controller
 
                 return [
                     'id' => $k->id,
+                    'uuid' => $k->uuid,
                     'label' => $k->label(),
                     'sumber_dana' => $k->sumber_dana->value,
                     'versi' => $k->labelVersi(),
@@ -63,8 +64,8 @@ class KertasKerjaController extends Controller
 
         return Inertia::render('rkas/Index', [
             'tahun' => $tahun,
-            'sekolah' => ['id' => $sekolah->id, 'nama' => $sekolah->nama],
-            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'nama' => $s->nama])->values(),
+            'sekolah' => ['id' => $sekolah->id, 'uuid' => $sekolah->uuid, 'nama' => $sekolah->nama],
+            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'uuid' => $s->uuid, 'nama' => $s->nama])->values(),
             'pilihanSumberDana' => array_map(
                 fn (SumberDanaRkas $s): array => ['nilai' => $s->value, 'nama' => $s === SumberDanaRkas::BospReguler ? 'BOSP Reguler' : 'Lainnya'],
                 SumberDanaRkas::cases(),
@@ -94,6 +95,7 @@ class KertasKerjaController extends Controller
         return Inertia::render('rkas/Show', [
             'kertasKerja' => [
                 'id' => $kertasKerja->id,
+                'uuid' => $kertasKerja->uuid,
                 'label' => $kertasKerja->label(),
                 'tahun' => $kertasKerja->tahun,
                 'sumber_dana' => $kertasKerja->sumber_dana->value,
@@ -107,10 +109,11 @@ class KertasKerjaController extends Controller
                 'tanggal_revisi' => $kertasKerja->tanggal_revisi?->toDateString(),
                 'bisa_diubah' => $kertasKerja->bisaDiubah(),
                 'bisa_direvisi' => $kertasKerja->status === StatusKertasKerja::Disahkan && ! $rantai->contains('induk_id', $kertasKerja->id),
-                'sekolah' => ['id' => $sekolah->id, 'nama' => $sekolah->nama, 'identitas' => $sekolah->identitas],
+                'sekolah' => ['id' => $sekolah->id, 'uuid' => $sekolah->uuid, 'nama' => $sekolah->nama, 'identitas' => $sekolah->identitas],
             ],
             'rantai' => $rantai->map(fn (RkasKertasKerja $k): array => [
                 'id' => $k->id,
+                'uuid' => $k->uuid,
                 'versi' => $k->labelVersi(),
                 'status_label' => $k->status->label(),
                 'tanggal_revisi' => $k->tanggal_revisi?->toDateString(),
@@ -143,7 +146,7 @@ class KertasKerjaController extends Controller
         $alasan = $simpan->hapus($kertasKerja);
 
         return $alasan === null
-            ? to_route('rkas.index', ['tahun' => $kertasKerja->tahun, 'sekolah_id' => $kertasKerja->sekolah_id])
+            ? to_route('rkas.index', ['tahun' => $kertasKerja->tahun, 'sekolah' => $kertasKerja->sekolah->uuid])
             : back()->withErrors(['hapus' => $alasan]);
     }
 }

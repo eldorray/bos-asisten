@@ -110,7 +110,7 @@
         if (!confirm(`Hapus baris "${b.uraian}"?`)) {
             return;
         }
-        router.delete(BarisRkasController.destroy(b.id), {
+        router.delete(BarisRkasController.destroy(b.uuid), {
             preserveScroll: true,
         });
     }

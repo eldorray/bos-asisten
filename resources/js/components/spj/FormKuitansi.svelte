@@ -21,6 +21,7 @@
 
     export type KuitansiData = {
         id: number;
+        uuid: string;
         nomor: string;
         untuk_pembayaran: string;
         penerima: string;
@@ -34,7 +35,7 @@
     export type KandidatRapel = { id: number; bulan: number; jumlah: number };
 
     let {
-        kegiatanId,
+        kegiatanUuid,
         tahun,
         kuitansi,
         nilaiAwal,
@@ -43,7 +44,7 @@
         bulan,
         onsimpan,
     }: {
-        kegiatanId: number;
+        kegiatanUuid: string;
         tahun: number;
         kuitansi: KuitansiData | null;
         nilaiAwal: NilaiAwal | null;
@@ -116,7 +117,7 @@
         memuat = true;
 
         router.get(
-            KegiatanController.show.url(kegiatanId),
+            KegiatanController.show.url(kegiatanUuid),
             { rapel: rapelDipilih },
             {
                 only: ['nilaiAwal', 'rapelDipilih'],
@@ -145,7 +146,7 @@
         event.preventDefault();
 
         if (kuitansi !== null) {
-            form.submit(KuitansiController.update(kuitansi.id), {
+            form.submit(KuitansiController.update(kuitansi.uuid), {
                 preserveScroll: true,
                 onSuccess: () => onsimpan?.(),
             });
@@ -156,7 +157,7 @@
         form.transform((data) => ({
             ...data,
             kegiatan_rapel_ids: rapelDipilih,
-        })).submit(KuitansiController.store(kegiatanId), {
+        })).submit(KuitansiController.store(kegiatanUuid), {
             preserveScroll: true,
             onSuccess: () => onsimpan?.(),
         });
@@ -172,7 +173,7 @@
             return;
         }
 
-        hapus.submit(KuitansiController.destroy(kuitansi.id), {
+        hapus.submit(KuitansiController.destroy(kuitansi.uuid), {
             preserveScroll: true,
             onSuccess: () => onsimpan?.(),
         });
@@ -256,6 +257,9 @@
     >
         <Label for="kuitansi-nomor">Nomor bukti</Label>
         <Input id="kuitansi-nomor" bind:value={form.nomor} />
+        <p class="-mt-2 text-xs text-muted-foreground">
+            Angka urut diatur otomatis menurut tanggal lunas, mulai 1 tiap tahap.
+        </p>
         <InputError message={form.errors.nomor} />
 
         <Label for="kuitansi-untuk">Untuk pembayaran</Label>

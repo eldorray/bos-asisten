@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Rkas;
 
 use App\Actions\Rkas\HapusReferensi;
+use App\Actions\Rkas\MuatKegiatanResmi;
 use App\Actions\Rkas\SalinReferensi;
 use App\Enums\JenisPtk;
 use App\Enums\SistemAnggaran;
@@ -46,8 +47,8 @@ class ReferensiRkasController extends Controller
         abort_unless($tahun >= 2000 && $tahun <= 2100, 404);
 
         $sekolahs = Sekolah::query()->where('sistem', SistemAnggaran::Arkas)->orderBy('nama')->get();
-        $sekolah = $request->filled('sekolah_id')
-            ? $sekolahs->firstWhere('id', $request->integer('sekolah_id'))
+        $sekolah = $request->filled('sekolah')
+            ? $sekolahs->firstWhere('uuid', $request->string('sekolah')->toString())
             : $sekolahs->first();
         abort_if($sekolah === null, 404);
 
@@ -58,8 +59,8 @@ class ReferensiRkasController extends Controller
         return Inertia::render('pengaturan/ReferensiRkas', [
             'jenis' => $jenis,
             'tahun' => $tahun,
-            'sekolah' => ['id' => $sekolah->id, 'nama' => $sekolah->nama],
-            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'nama' => $s->nama])->values(),
+            'sekolah' => ['id' => $sekolah->id, 'uuid' => $sekolah->uuid, 'nama' => $sekolah->nama],
+            'pilihanSekolah' => $sekolahs->map(fn (Sekolah $s): array => ['id' => $s->id, 'uuid' => $s->uuid, 'nama' => $s->nama])->values(),
             'daftar' => $this->daftar($jenis, $tahun, $sekolah),
             'dapatDisalin' => $dapatDisalin,
             'pilihanJenisPtk' => array_map(
@@ -77,11 +78,11 @@ class ReferensiRkasController extends Controller
         return back();
     }
 
-    public function destroy(string $jenis, int $id, HapusReferensi $hapus): RedirectResponse
+    public function destroy(string $jenis, string $uuid, HapusReferensi $hapus): RedirectResponse
     {
         abort_unless(isset(self::MODEL[$jenis]), 404);
 
-        $ref = self::MODEL[$jenis]::query()->findOrFail($id);
+        $ref = self::MODEL[$jenis]::query()->where('uuid', $uuid)->firstOrFail();
 
         if ($ref instanceof RkasPtk) {
             abort_unless($ref->sekolah->sistem === SistemAnggaran::Arkas, 404);
@@ -95,6 +96,19 @@ class ReferensiRkasController extends Controller
     public function salin(SalinReferensiRkasRequest $request, SalinReferensi $salin): RedirectResponse
     {
         $salin->jalankan($request->integer('dari'), $request->integer('ke'));
+
+        return back();
+    }
+
+    public function muatKegiatan(Request $request, MuatKegiatanResmi $muat): RedirectResponse
+    {
+        $tahun = (int) $request->validate(['tahun' => ['required', 'integer', 'between:2000,2100']])['tahun'];
+        $baru = $muat->jalankan($tahun);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $baru === 0 ? "Kode kegiatan {$tahun} sudah lengkap" : "{$baru} kode kegiatan {$tahun} dimuat",
+        ]);
 
         return back();
     }
@@ -126,21 +140,21 @@ class ReferensiRkasController extends Controller
     {
         return match (true) {
             $m instanceof RkasRefKegiatan => [
-                'id' => $m->id, 'kode' => $m->kode, 'uraian' => $m->uraian, 'level' => $m->level,
+                'id' => $m->id, 'uuid' => $m->uuid, 'kode' => $m->kode, 'uraian' => $m->uraian, 'level' => $m->level,
                 'sumber_dana' => $m->sumber_dana, 'kedaluwarsa' => $m->kedaluwarsa?->toDateString(),
             ],
             $m instanceof RkasRefRekening => [
-                'id' => $m->id, 'kode' => $m->kode, 'nama' => $m->nama, 'kedaluwarsa' => $m->kedaluwarsa?->toDateString(),
+                'id' => $m->id, 'uuid' => $m->uuid, 'kode' => $m->kode, 'nama' => $m->nama, 'kedaluwarsa' => $m->kedaluwarsa?->toDateString(),
             ],
             $m instanceof RkasRefBarang => [
-                'id' => $m->id, 'kode_rekening' => $m->kode_rekening, 'nama' => $m->nama, 'satuan' => $m->satuan,
+                'id' => $m->id, 'uuid' => $m->uuid, 'kode_rekening' => $m->kode_rekening, 'nama' => $m->nama, 'satuan' => $m->satuan,
                 'harga' => $m->harga, 'batas_bawah' => $m->batas_bawah, 'batas_atas' => $m->batas_atas,
                 'kedaluwarsa' => $m->kedaluwarsa?->toDateString(),
             ],
             $m instanceof RkasPtk => [
-                'id' => $m->id, 'nama' => $m->nama, 'nuptk' => $m->nuptk, 'jenis' => $m->jenis->value,
+                'id' => $m->id, 'uuid' => $m->uuid, 'nama' => $m->nama, 'nuptk' => $m->nuptk, 'jenis' => $m->jenis->value,
             ],
-            default => ['id' => $m->getKey(), 'nama' => $m->getAttribute('nama')],
+            default => ['id' => $m->getKey(), 'uuid' => $m->getAttribute('uuid'), 'nama' => $m->getAttribute('nama')],
         };
     }
 }

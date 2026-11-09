@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\AcaraFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $sekolah_id
  * @property int $tahun
  * @property int $bulan
@@ -24,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Acara extends Model
 {
     /** @use HasFactory<AcaraFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return BelongsTo<Sekolah, $this>

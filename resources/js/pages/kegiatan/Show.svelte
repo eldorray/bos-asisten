@@ -22,6 +22,7 @@
     import AppHead from '@/components/AppHead.svelte';
     import Heading from '@/components/Heading.svelte';
     import InputError from '@/components/InputError.svelte';
+    import PilihCari from '@/components/PilihCari.svelte';
     import FormKuitansi from '@/components/spj/FormKuitansi.svelte';
     import LembarBawah from '@/components/spj/LembarBawah.svelte';
     import type {
@@ -43,6 +44,7 @@
 
     type Rincian = {
         id: number;
+        uuid: string;
         nama: string;
         uraian: string;
         sekolah: string;
@@ -81,8 +83,8 @@
         selisihAnggaran,
     }: {
         kegiatan: Rincian;
-        acara: { id: number; nama: string; anggota: { id: number; nama: string }[] } | null;
-        berkasFoto: { id: number; nama: string; fotos: { id: number }[] }[];
+        acara: { id: number; uuid: string; nama: string; anggota: { id: number; nama: string }[] } | null;
+        berkasFoto: { id: number; nama: string; fotos: { id: number; uuid: string }[] }[];
         jenisKegiatans: { id: number; nama: string }[];
         kuitansi: KuitansiData | null;
         nilaiAwal: NilaiAwal | null;
@@ -100,7 +102,7 @@
 
     const jumlahFoto = (berkas: { id: number; fotos: unknown[] }): number =>
         berkas.fotos.length +
-        antreanFoto.untuk(kegiatan.id, berkas.id).length;
+        antreanFoto.untuk(kegiatan.uuid, berkas.id).length;
 
     const adaKuitansi = $derived(kuitansi !== null || kegiatan.rapel !== null);
     const bisaBuatKuitansi = $derived(kuitansi !== null || nilaiAwal !== null);
@@ -139,7 +141,7 @@
                 bulan_pelaksanaan:
                     data.bulan_pelaksanaan === '' ? null : data.bulan_pelaksanaan,
             }))
-            .submit(KegiatanController.update(kegiatan.id), {
+            .submit(KegiatanController.update(kegiatan.uuid), {
                 preserveScroll: true,
             });
     }
@@ -164,7 +166,7 @@
 
     function simpanBulan(event: SubmitEvent): void {
         event.preventDefault();
-        pindah.submit(KegiatanController.update(kegiatan.id), {
+        pindah.submit(KegiatanController.update(kegiatan.uuid), {
             preserveScroll: true,
         });
     }
@@ -181,7 +183,7 @@
 
     function simpanJenis(event: SubmitEvent): void {
         event.preventDefault();
-        jenis.submit(KegiatanController.update(kegiatan.id), {
+        jenis.submit(KegiatanController.update(kegiatan.uuid), {
             preserveScroll: true,
         });
     }
@@ -195,17 +197,17 @@
             return;
         }
 
-        router.delete(AcaraController.destroy(acara!.id).url, {
+        router.delete(AcaraController.destroy(acara!.uuid).url, {
             preserveScroll: true,
         });
     }
 
-    function hapusFoto(id: number): void {
+    function hapusFoto(uuid: string): void {
         if (!confirm('Hapus foto ini?')) {
             return;
         }
 
-        router.delete(FotoController.destroy(id), { preserveScroll: true });
+        router.delete(FotoController.destroy(uuid), { preserveScroll: true });
     }
 
     function simpanStatus(event: SubmitEvent): void {
@@ -218,7 +220,7 @@
                         ? data.catatan_status
                         : null,
             }))
-            .submit(KegiatanController.update(kegiatan.id), {
+            .submit(KegiatanController.update(kegiatan.uuid), {
                 preserveScroll: true,
             });
     }
@@ -237,7 +239,7 @@
         <div class="flex items-center gap-2">
             {#if kegiatan.bisaUnduhPdf}
                 <UnduhPdfKegiatan
-                    kegiatanId={kegiatan.id}
+                    kegiatanUuid={kegiatan.uuid}
                     draf={kegiatan.status === 'kurang'}
                 />
             {/if}
@@ -431,7 +433,7 @@
                 </div>
 
                 {#each berkasFoto as berkas (berkas.id)}
-                    {@const menunggu = antreanFoto.untuk(kegiatan.id, berkas.id)}
+                    {@const menunggu = antreanFoto.untuk(kegiatan.uuid, berkas.id)}
                     <div
                         class="grid grid-cols-1 gap-3 rounded-[14px] border bg-card py-2.5 pr-2.5 pl-3.5 md:p-3.5"
                     >
@@ -510,7 +512,7 @@
                                 {#each berkas.fotos as foto (foto.id)}
                                     <div class="grid w-28 gap-1.5">
                                         <a
-                                            href={FotoController.show.url(foto.id)}
+                                            href={FotoController.show.url(foto.uuid)}
                                             target="_blank"
                                             rel="noopener"
                                         >
@@ -527,7 +529,7 @@
                                             type="button"
                                             size="sm"
                                             variant="outline"
-                                            onclick={() => hapusFoto(foto.id)}
+                                            onclick={() => hapusFoto(foto.uuid)}
                                         >
                                             Hapus
                                         </Button>
@@ -536,7 +538,7 @@
                             </div>
                         {/if}
                         <UnggahBerkas
-                            kegiatanId={kegiatan.id}
+                            kegiatanUuid={kegiatan.uuid}
                             jenisBerkasId={berkas.id}
                             onpilih={() => (berkasTerbuka = null)}
                         />
@@ -605,7 +607,7 @@
                 {#if kuitansi !== null || nilaiAwal !== null}
                     {#key `${kuitansi?.id ?? 'baru'}-${kegiatan.bulan}`}
                         <FormKuitansi
-                            kegiatanId={kegiatan.id}
+                            kegiatanUuid={kegiatan.uuid}
                             tahun={kegiatan.tahun}
                             bulan={kegiatan.bulan}
                             {kuitansi}
@@ -719,15 +721,13 @@
 
                 <form class="grid gap-3" onsubmit={simpanJenis}>
                     <Label for="jenis">Jenis kegiatan</Label>
-                    <select
+                    <PilihCari
                         id="jenis"
-                        class="h-11 rounded-[10px] border border-input bg-card px-2.5 text-sm"
-                        bind:value={jenis.jenis_kegiatan_id}
-                    >
-                        {#each jenisKegiatans as j (j.id)}
-                            <option value={j.id}>{j.nama}</option>
-                        {/each}
-                    </select>
+                        class="h-11 rounded-[10px] bg-card px-2.5"
+                        opsi={jenisKegiatans.map((j) => ({ value: j.id, label: j.nama }))}
+                        value={jenis.jenis_kegiatan_id}
+                        onchange={(v) => (jenis.jenis_kegiatan_id = Number(v))}
+                    />
                     <InputError message={jenis.errors.jenis_kegiatan_id} />
                     <div>
                         <Button

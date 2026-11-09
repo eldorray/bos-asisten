@@ -46,6 +46,7 @@
     }: {
         kertasKerja: {
             id: number;
+            uuid: string;
             tahun: number;
             versi: string;
             sekolah: string;
@@ -61,7 +62,7 @@
 
     function pilihBulan(nilai: number): void {
         router.get(
-            PerbandinganController.url(kertasKerja.id, {
+            PerbandinganController.url(kertasKerja.uuid, {
                 query: { bulan: nilai },
             }),
         );
@@ -96,7 +97,7 @@
                 {/each}
             </select>
             <Link
-                href={KertasKerjaController.show(kertasKerja.id)}
+                href={KertasKerjaController.show(kertasKerja.uuid)}
                 class="text-sm underline-offset-4 hover:underline"
             >
                 Kembali ke kertas kerja

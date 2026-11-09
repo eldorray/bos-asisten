@@ -14,7 +14,11 @@
 
     let galat = $state<Record<number, string>>({});
 
-    function pilihBulan(id: number, pilihan: HTMLSelectElement): void {
+    function pilihBulan(
+        id: number,
+        uuid: string,
+        pilihan: HTMLSelectElement,
+    ): void {
         if (pilihan.value === '') {
             return;
         }
@@ -22,7 +26,7 @@
         delete galat[id];
 
         router.patch(
-            KegiatanController.update(id).url,
+            KegiatanController.update(uuid).url,
             { bulan: Number(pilihan.value) },
             {
                 preserveScroll: true,
@@ -54,7 +58,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <span class="min-w-0">
                     <Link
-                        href={KegiatanController.show(k.id)}
+                        href={KegiatanController.show(k.uuid)}
                         class="underline underline-offset-2"
                     >
                         {k.nama}
@@ -73,7 +77,7 @@
                     class="h-11 rounded-lg border border-input bg-card px-3 text-sm"
                     aria-label={`Bulan untuk ${k.nama}`}
                     aria-invalid={galat[k.id] ? true : undefined}
-                    onchange={(e) => pilihBulan(k.id, e.currentTarget)}
+                    onchange={(e) => pilihBulan(k.id, k.uuid, e.currentTarget)}
                 >
                     <option value="">Pilih bulan</option>
                     {#each namaBulan.slice(awal, awal + 6) as nama, i (nama)}

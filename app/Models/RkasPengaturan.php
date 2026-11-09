@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\RkasPengaturanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $sekolah_id
  * @property int $tahun
  * @property bool $swasta
@@ -37,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RkasPengaturan extends Model
 {
     /** @use HasFactory<RkasPengaturanFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

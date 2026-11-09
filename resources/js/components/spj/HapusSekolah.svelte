@@ -14,14 +14,14 @@
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
 
-    let { sekolah }: { sekolah: { id: number; nama: string } } = $props();
+    let { sekolah }: { sekolah: { uuid: string; nama: string } } = $props();
 
     let terbuka = $state(false);
     const form = useForm({ konfirmasi: '' });
 
     function hapus(event: SubmitEvent): void {
         event.preventDefault();
-        form.submit(SekolahController.destroy(sekolah.id), {
+        form.submit(SekolahController.destroy(sekolah.uuid), {
             preserveScroll: true,
             onSuccess: () => (terbuka = false),
         });
@@ -49,11 +49,11 @@
                 kuitansi, foto, dan draf RKAS. Tidak bisa dikembalikan.
             </DialogDescription>
             <div class="grid gap-1.5">
-                <Label for={`hapus-${sekolah.id}`}>
+                <Label for={`hapus-${sekolah.uuid}`}>
                     Ketik <strong>{sekolah.nama}</strong> untuk melanjutkan
                 </Label>
                 <Input
-                    id={`hapus-${sekolah.id}`}
+                    id={`hapus-${sekolah.uuid}`}
                     autocomplete="off"
                     bind:value={form.konfirmasi}
                 />

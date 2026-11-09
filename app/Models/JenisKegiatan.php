@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\JenisKegiatanFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property string $nama
  * @property array<int, string> $kata_kunci
  * @property int $urutan
@@ -21,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JenisKegiatan extends Model
 {
     /** @use HasFactory<JenisKegiatanFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

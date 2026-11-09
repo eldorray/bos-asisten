@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\JenisVersiRkas;
 use App\Enums\StatusKertasKerja;
 use App\Enums\SumberDanaRkas;
+use App\Models\Concerns\PakaiUuid;
 use Database\Factories\RkasKertasKerjaFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property string $uuid
  * @property int $sekolah_id
  * @property int $tahun
  * @property SumberDanaRkas $sumber_dana
@@ -36,7 +38,7 @@ use Illuminate\Support\Carbon;
 class RkasKertasKerja extends Model
 {
     /** @use HasFactory<RkasKertasKerjaFactory> */
-    use HasFactory;
+    use HasFactory, PakaiUuid;
 
     /**
      * @return array<string, string>

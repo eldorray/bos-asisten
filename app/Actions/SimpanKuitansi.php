@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class SimpanKuitansi
 {
+    public function __construct(private UrutkanNomorKuitansi $urutkan) {}
+
     /**
      * @param  list<int>  $kegiatanIds  Baris pertama adalah kegiatan yang sedang dibuka, sisanya rapel.
      * @param  array{nomor: string, untuk_pembayaran: string, penerima: string, tanggal_lunas: string, jumlah: int}  $data
@@ -44,8 +46,9 @@ class SimpanKuitansi
                     'jumlah' => $data['jumlah'],
                 ]);
                 $kuitansi->kegiatans()->attach($kegiatans->modelKeys());
+                $this->urutkanUlang($kuitansi);
 
-                return $kuitansi;
+                return $kuitansi->refresh();
             });
         } catch (UniqueConstraintViolationException) {
             throw $this->nomorSudahDipakai($kolom, $ids, $data['nomor']);
@@ -60,19 +63,22 @@ class SimpanKuitansi
     public function ubah(Kuitansi $kuitansi, array $data): Kuitansi
     {
         try {
-            $kuitansi->update([
-                'nomor' => $data['nomor'],
-                'nomor_urut' => $this->nomorUrut($data['nomor']),
-                'untuk_pembayaran' => $data['untuk_pembayaran'],
-                'penerima' => $data['penerima'],
-                'tanggal_lunas' => $data['tanggal_lunas'],
-                'jumlah' => $data['jumlah'],
-            ]);
+            DB::transaction(function () use ($kuitansi, $data): void {
+                $kuitansi->update([
+                    'nomor' => $data['nomor'],
+                    'nomor_urut' => $this->nomorUrut($data['nomor']),
+                    'untuk_pembayaran' => $data['untuk_pembayaran'],
+                    'penerima' => $data['penerima'],
+                    'tanggal_lunas' => $data['tanggal_lunas'],
+                    'jumlah' => $data['jumlah'],
+                ]);
+                $this->urutkanUlang($kuitansi);
+            });
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages(['nomor' => 'Nomor ini sudah dipakai kuitansi lain.']);
         }
 
-        return $kuitansi;
+        return $kuitansi->refresh();
     }
 
     public function hapus(Kuitansi $kuitansi): void
@@ -80,7 +86,17 @@ class SimpanKuitansi
         DB::transaction(function () use ($kuitansi): void {
             $kuitansi->kegiatans()->detach();
             $kuitansi->delete();
+            $this->urutkanUlang($kuitansi);
         });
+    }
+
+    /**
+     * Nomor urut selalu mengikuti tanggal lunas dalam satu tahap, walau kuitansinya dibuat tidak berurutan.
+     */
+    private function urutkanUlang(Kuitansi $kuitansi): void
+    {
+        $kuitansi->loadMissing('sekolah');
+        $this->urutkan->kelompok($kuitansi->sekolah, $kuitansi->tahun, $kuitansi->tahap);
     }
 
     /**

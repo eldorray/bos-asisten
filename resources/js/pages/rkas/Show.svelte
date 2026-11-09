@@ -33,6 +33,7 @@
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import type { SumberDana } from '@/components/rkas/FormKertasKerja.svelte';
     import { Badge } from '@/components/ui/badge';
+    import Plus from '@lucide/svelte/icons/plus';
     import { Button } from '@/components/ui/button';
     import { Card, CardContent } from '@/components/ui/card';
     import {
@@ -89,6 +90,18 @@
     } = $props();
 
     let sedangDiubah = $state<BarisRkas | null>(null);
+    let dialogBaris = $state(false);
+
+    function bukaFormBaris(b: BarisRkas | null): void {
+        sedangDiubah = b;
+        dialogBaris = true;
+    }
+
+    function tutupFormBaris(buka: boolean): void {
+        if (!buka) {
+            sedangDiubah = null;
+        }
+    }
 
     const namaSumber = $derived(
         kertasKerja.sumber_dana === 'lainnya' ? 'Lainnya' : 'BOSP Reguler',
@@ -304,7 +317,7 @@
                     Total semua baris belanja nanti harus sama dengan pagu ini.
                 </li>
                 <li>
-                    <strong>Tambah baris belanja</strong>, satu baris untuk satu
+                    Klik <strong>Tambah belanja</strong>, satu baris untuk satu
                     belanja. Pilih <em>Kegiatan</em> dan
                     <em>Rekening belanja</em>. Lalu pilih
                     <em>Barang/jasa</em> (harga terisi sendiri, boleh diubah),
@@ -372,28 +385,39 @@
     </Card>
 
     {#if kertasKerja.bisa_diubah}
-        <Card>
-            <CardContent class="grid gap-3">
-                <h2 class="text-base font-semibold">
-                    {sedangDiubah
-                        ? 'Ubah baris belanja'
-                        : 'Langkah 2 · Tambah baris belanja'}
-                </h2>
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-base font-semibold">Langkah 2 · Baris belanja</h2>
+            <Button type="button" onclick={() => bukaFormBaris(null)}>
+                <Plus class="size-4" />
+                Tambah belanja
+            </Button>
+        </div>
+
+        <Dialog bind:open={dialogBaris} onOpenChange={tutupFormBaris}>
+            <DialogContent
+                class="mx-3 max-h-[90dvh] max-w-5xl overflow-y-auto"
+            >
+                <DialogTitle class="mb-4">
+                    {sedangDiubah ? 'Ubah baris belanja' : 'Tambah baris belanja'}
+                </DialogTitle>
                 {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
                     <FormBarisRkas
                         kertasKerjaUuid={kertasKerja.uuid}
                         {pilihan}
                         baris={sedangDiubah}
-                        onSelesai={() => (sedangDiubah = null)}
+                        onSelesai={() => {
+                            dialogBaris = false;
+                            sedangDiubah = null;
+                        }}
                     />
                 {/key}
-            </CardContent>
-        </Card>
+            </DialogContent>
+        </Dialog>
     {/if}
 
     <TabelBarisRkas
         {baris}
         bisaDiubah={kertasKerja.bisa_diubah}
-        onUbah={(b) => (sedangDiubah = b)}
+        onUbah={bukaFormBaris}
     />
 </div>

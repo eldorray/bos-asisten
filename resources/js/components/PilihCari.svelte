@@ -137,13 +137,13 @@
         {id}
         role="combobox"
         class={cn(
-            'flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-background px-2 text-left text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-md border bg-background px-2 text-left text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
             value === '' && 'text-muted-foreground',
             className,
         )}
         {...restProps}
     >
-        <span class="truncate">{label}</span>
+        <span class="min-w-0 truncate">{label}</span>
         <ChevronsUpDown class="size-4 shrink-0 opacity-50" />
     </Popover.Trigger>
     <Popover.Portal>

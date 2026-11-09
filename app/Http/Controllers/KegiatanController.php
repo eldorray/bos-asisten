@@ -93,7 +93,35 @@ class KegiatanController extends Controller
                 ->all(),
             'selisihAnggaran' => $kuitansi === null ? null : $this->selisihAnggaran($kuitansi),
             'jenisKegiatans' => JenisKegiatan::query()->orderBy('urutan')->get(['id', 'nama']),
+            'tetangga' => $this->tetangga($kegiatan),
         ]);
+    }
+
+    /**
+     * Kegiatan sebelum dan sesudahnya di daftar bulan yang sama, urut seperti di layar Bulanan.
+     *
+     * @return array{sebelumnya: array{uuid: string, nama: string}|null, berikutnya: array{uuid: string, nama: string}|null, posisi: int, total: int}|null
+     */
+    private function tetangga(Kegiatan $kegiatan): ?array
+    {
+        $bulan = $kegiatan->bulanKerja();
+
+        if ($bulan === null) {
+            return null;
+        }
+
+        $sebulan = fn () => Kegiatan::query()
+            ->where('sekolah_id', $kegiatan->sekolah_id)
+            ->where('tahun', $kegiatan->tahun)
+            ->padaBulan($bulan);
+        $ringkas = fn (?Kegiatan $k): ?array => $k === null ? null : ['uuid' => $k->uuid, 'nama' => $k->nama];
+
+        return [
+            'sebelumnya' => $ringkas($sebulan()->where('id', '<', $kegiatan->id)->orderByDesc('id')->first(['uuid', 'nama'])),
+            'berikutnya' => $ringkas($sebulan()->where('id', '>', $kegiatan->id)->orderBy('id')->first(['uuid', 'nama'])),
+            'posisi' => $sebulan()->where('id', '<=', $kegiatan->id)->count(),
+            'total' => $sebulan()->count(),
+        ];
     }
 
     public function update(UpdateKegiatanRequest $request, Kegiatan $kegiatan): RedirectResponse

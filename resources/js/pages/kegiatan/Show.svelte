@@ -14,6 +14,8 @@
     import Camera from '@lucide/svelte/icons/camera';
     import Check from '@lucide/svelte/icons/check';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+    import ChevronRight from '@lucide/svelte/icons/chevron-right';
     import FileText from '@lucide/svelte/icons/file-text';
     import X from '@lucide/svelte/icons/x';
     import FotoController from '@/actions/App/Http/Controllers/FotoController';
@@ -81,6 +83,7 @@
         tunda,
         kandidatAcara,
         selisihAnggaran,
+        tetangga,
     }: {
         kegiatan: Rincian;
         acara: { id: number; uuid: string; nama: string; anggota: { id: number; nama: string }[] } | null;
@@ -94,6 +97,12 @@
         tunda: { pilihan: number[]; alasan: string | null } | null;
         kandidatAcara: { id: number; nama: string; jumlah: number }[];
         selisihAnggaran: { kuitansi: number; anggaran: number } | null;
+        tetangga: {
+            sebelumnya: { uuid: string; nama: string } | null;
+            berikutnya: { uuid: string; nama: string } | null;
+            posisi: number;
+            total: number;
+        } | null;
     } = $props();
 
     let kuitansiTerbuka = $state(false);
@@ -249,6 +258,55 @@
             />
         </div>
     </div>
+
+    {#if tetangga && tetangga.total > 1}
+        <nav
+            aria-label="Kegiatan lain bulan ini"
+            class="flex items-center justify-between gap-2 text-sm"
+        >
+            {#if tetangga.sebelumnya}
+                <Link
+                    href={KegiatanController.show(tetangga.sebelumnya.uuid)}
+                    title={tetangga.sebelumnya.nama}
+                    class="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-xl border bg-card px-3 py-2"
+                >
+                    <ChevronLeft class="size-4 shrink-0" />
+                    <span class="min-w-0">
+                        <span class="block text-xs text-muted-foreground">
+                            Sebelumnya
+                        </span>
+                        <span class="block truncate font-medium">
+                            {tetangga.sebelumnya.nama}
+                        </span>
+                    </span>
+                </Link>
+            {:else}
+                <span class="flex-1"></span>
+            {/if}
+            <span class="shrink-0 px-1 text-muted-foreground tabular-nums">
+                {tetangga.posisi} dari {tetangga.total}
+            </span>
+            {#if tetangga.berikutnya}
+                <Link
+                    href={KegiatanController.show(tetangga.berikutnya.uuid)}
+                    title={tetangga.berikutnya.nama}
+                    class="flex min-h-11 min-w-0 flex-1 items-center justify-end gap-1 rounded-xl border bg-card px-3 py-2 text-right"
+                >
+                    <span class="min-w-0">
+                        <span class="block text-xs text-muted-foreground">
+                            Berikutnya
+                        </span>
+                        <span class="block truncate font-medium">
+                            {tetangga.berikutnya.nama}
+                        </span>
+                    </span>
+                    <ChevronRight class="size-4 shrink-0" />
+                </Link>
+            {:else}
+                <span class="flex-1"></span>
+            {/if}
+        </nav>
+    {/if}
 
     {#if kegiatan.perluDiperiksa || kegiatan.hilangDariAnggaran}
         <p

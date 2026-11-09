@@ -76,3 +76,24 @@ test('filter sekolah di daftar RKAS memakai uuid', function () {
             ->where('kertasKerja.uuid', $kk->uuid)
             ->where('kertasKerja.sekolah.uuid', $smp->uuid));
 });
+
+test('halaman kegiatan membawa kegiatan sebelum dan sesudahnya di bulan dan sekolah yang sama', function () {
+    $this->actingAs(User::factory()->create());
+    $sekolah = Sekolah::factory()->create();
+    $buat = fn (array $ubah = []) => Kegiatan::factory()->create($ubah + ['sekolah_id' => $sekolah->id, 'tahun' => 2026, 'bulan' => 8]);
+    $a = $buat();
+    $buat(['bulan' => 9]);
+    $buat(['sekolah_id' => Sekolah::factory()->create()->id]);
+    $b = $buat();
+    $c = $buat(['bulan' => 7, 'bulan_pelaksanaan' => 8]);
+
+    $this->get(route('kegiatan.show', $b))->assertInertia(fn ($page) => $page
+        ->where('tetangga.sebelumnya.uuid', $a->uuid)
+        ->where('tetangga.berikutnya.uuid', $c->uuid)
+        ->where('tetangga.posisi', 2)
+        ->where('tetangga.total', 3));
+
+    $this->get(route('kegiatan.show', $a))->assertInertia(fn ($page) => $page
+        ->where('tetangga.sebelumnya', null)
+        ->where('tetangga.berikutnya.uuid', $b->uuid));
+});

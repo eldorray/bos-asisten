@@ -25,7 +25,9 @@ class MuatRekeningResmi
 
         return DB::transaction(function () use ($tahun, $data): array {
             $kodeAda = RkasRefRekening::query()->where('tahun', $tahun)->pluck('kode')->flip();
-            $satuanAda = RkasRefSatuan::query()->pluck('nama')->flip();
+            // Satuan dibandingkan tanpa membedakan huruf, sama seperti form tambah satuan (dan indeks unik MySQL).
+            $satuanAda = RkasRefSatuan::query()->pluck('nama')
+                ->map(fn (string $nama): string => mb_strtolower(trim($nama)))->flip();
             $baru = ['rekening' => 0, 'satuan' => 0];
 
             foreach ($data['rekening'] as [$kode, $nama]) {
@@ -36,7 +38,7 @@ class MuatRekeningResmi
             }
 
             foreach ($data['satuan'] as $nama) {
-                if (! isset($satuanAda[$nama])) {
+                if (! isset($satuanAda[mb_strtolower($nama)])) {
                     RkasRefSatuan::create(['nama' => $nama]);
                     $baru['satuan']++;
                 }

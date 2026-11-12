@@ -275,3 +275,15 @@ it('menolak memuat rekening tanpa tahun yang sah dan tanpa login', function () {
     $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 2027])->assertRedirect(route('login'));
     expect(RkasRefRekening::count())->toBe(0);
 });
+
+it('tidak menggandakan satuan yang sudah ada dengan huruf besar-kecil berbeda', function () {
+    // Di MySQL kolom nama unik tanpa membedakan huruf, jadi "Buah" di samping "buah" menggagalkan seluruh pemuatan.
+    RkasRefSatuan::factory()->create(['nama' => 'buah']);
+    RkasRefSatuan::factory()->create(['nama' => ' Orang/bulan ']);
+
+    $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 2027])->assertSessionHasNoErrors();
+
+    $nama = RkasRefSatuan::pluck('nama')->map(fn (string $n): string => mb_strtolower(trim($n)));
+    expect($nama->duplicates()->all())->toBe([])
+        ->and(RkasRefRekening::where('tahun', 2027)->count())->toBeGreaterThan(70);
+});

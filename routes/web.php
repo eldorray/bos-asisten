@@ -59,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [ReferensiRkasController::class, 'index'])->name('index');
         Route::post('salin', [ReferensiRkasController::class, 'salin'])->name('salin');
         Route::post('muat-kegiatan', [ReferensiRkasController::class, 'muatKegiatan'])->name('muat-kegiatan');
+        Route::post('muat-rekening', [ReferensiRkasController::class, 'muatRekening'])->name('muat-rekening');
         Route::post('{jenis}', [ReferensiRkasController::class, 'store'])
             ->where('jenis', 'kegiatan|rekening|barang|satuan|ptk')->name('store');
         Route::delete('{jenis}/{uuid}', [ReferensiRkasController::class, 'destroy'])

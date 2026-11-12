@@ -150,6 +150,14 @@
         );
     }
 
+    function muatRekening(): void {
+        router.post(
+            ReferensiRkasController.muatRekening().url,
+            { tahun },
+            { preserveScroll: true },
+        );
+    }
+
     const errors = $derived(page.props.errors as Record<string, string>);
     const perluTahun = $derived(jenis !== 'satuan' && jenis !== 'ptk');
 </script>
@@ -232,6 +240,23 @@
             </span>
             <Button variant="outline" onclick={muatKegiatan}>
                 Muat kode resmi ARKAS
+            </Button>
+        </div>
+    {/if}
+
+    {#if (jenis === 'rekening' || jenis === 'satuan') && daftar.total === 0}
+        <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/50 p-3 text-sm"
+        >
+            <span>
+                {jenis === 'rekening'
+                    ? `Rekening belanja ${tahun} belum ada.`
+                    : 'Satuan belum ada.'}
+                Muat 80 rekening BOSP yang lazim di ARKAS dan 36 satuan umum, lalu
+                tambah atau hapus sesuai ARKAS sekolah.
+            </span>
+            <Button variant="outline" onclick={muatRekening}>
+                Muat rekening dan satuan
             </Button>
         </div>
     {/if}

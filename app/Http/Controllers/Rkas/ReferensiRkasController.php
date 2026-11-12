@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Rkas;
 
 use App\Actions\Rkas\HapusReferensi;
 use App\Actions\Rkas\MuatKegiatanResmi;
+use App\Actions\Rkas\MuatRekeningResmi;
 use App\Actions\Rkas\SalinReferensi;
 use App\Enums\JenisPtk;
 use App\Enums\SistemAnggaran;
@@ -108,6 +109,21 @@ class ReferensiRkasController extends Controller
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => $baru === 0 ? "Kode kegiatan {$tahun} sudah lengkap" : "{$baru} kode kegiatan {$tahun} dimuat",
+        ]);
+
+        return back();
+    }
+
+    public function muatRekening(Request $request, MuatRekeningResmi $muat): RedirectResponse
+    {
+        $tahun = (int) $request->validate(['tahun' => ['required', 'integer', 'between:2000,2100']])['tahun'];
+        $baru = $muat->jalankan($tahun);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $baru['rekening'] + $baru['satuan'] === 0
+                ? "Rekening {$tahun} dan satuan sudah lengkap"
+                : "{$baru['rekening']} rekening {$tahun} dan {$baru['satuan']} satuan dimuat",
         ]);
 
         return back();

@@ -239,3 +239,39 @@ it('memuat kode kegiatan resmi ARKAS lengkap dengan induknya dan aman diulang', 
 it('menolak memuat kode kegiatan tanpa tahun yang sah', function () {
     $this->post(route('rkas.referensi.muat-kegiatan'), ['tahun' => 1999])->assertSessionHasErrors('tahun');
 });
+
+it('memuat rekening belanja BOSP dan satuan umum, aman diulang', function () {
+    RkasRefSatuan::factory()->create(['nama' => 'Rim']);
+
+    $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 2027])->assertSessionHasNoErrors();
+
+    $jumlah = RkasRefRekening::where('tahun', 2027)->count();
+    expect($jumlah)->toBeGreaterThan(70)
+        ->and(RkasRefRekening::where('tahun', 2027)->where('kode', '5.1.02.02.01.0013')->value('nama'))->toBe('Belanja Jasa Tenaga Pendidikan')
+        ->and(RkasRefRekening::where('tahun', 2027)->where('kode', '5.2.02.10.01.0002')->value('nama'))->toBe('Belanja Modal Personal Computer')
+        ->and(RkasRefSatuan::where('nama', 'Rim')->count())->toBe(1)
+        ->and(RkasRefSatuan::where('nama', 'Bulan')->exists())->toBeTrue();
+
+    // Semua kode lolos aturan yang sama dengan form tambah rekening.
+    RkasRefRekening::where('tahun', 2027)->pluck('kode')
+        ->each(fn (string $kode) => expect($kode)->toMatch('/^5\.[12](\.\d+){4}$/'));
+
+    // Hasil edit manual tidak tertimpa dan pemuatan kedua tidak menggandakan.
+    $listrik = RkasRefRekening::where('tahun', 2027)->where('kode', '5.1.02.02.01.0061')->firstOrFail();
+    $listrik->update(['nama' => 'Listrik sekolah']);
+    $satuan = RkasRefSatuan::count();
+    $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 2027]);
+
+    expect(RkasRefRekening::where('tahun', 2027)->count())->toBe($jumlah)
+        ->and($listrik->fresh()->nama)->toBe('Listrik sekolah')
+        ->and(RkasRefSatuan::count())->toBe($satuan)
+        ->and(RkasRefRekening::where('tahun', 2026)->count())->toBe(0);
+});
+
+it('menolak memuat rekening tanpa tahun yang sah dan tanpa login', function () {
+    $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 1999])->assertSessionHasErrors('tahun');
+
+    auth()->logout();
+    $this->post(route('rkas.referensi.muat-rekening'), ['tahun' => 2027])->assertRedirect(route('login'));
+    expect(RkasRefRekening::count())->toBe(0);
+});

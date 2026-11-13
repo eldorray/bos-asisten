@@ -12,6 +12,8 @@
     const close = () => setOpen(false);
 </script>
 
+<svelte:window onkeydown={(e) => e.key === 'Escape' && open() && close()} />
+
 {#if open()}
     <!-- Di body, supaya tidak tertutup sidebar atau terpotong wadah induknya. -->
     <Portal>

@@ -18,7 +18,6 @@
     import PdfKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/PdfKertasKerjaController';
     import StatusKertasKerjaController from '@/actions/App/Http/Controllers/Rkas/StatusKertasKerjaController';
     import AppHead from '@/components/AppHead.svelte';
-    import Heading from '@/components/Heading.svelte';
     import DialogRevisi from '@/components/rkas/DialogRevisi.svelte';
     import FormBarisRkas from '@/components/rkas/FormBarisRkas.svelte';
     import type {
@@ -33,9 +32,16 @@
     import FormKertasKerja from '@/components/rkas/FormKertasKerja.svelte';
     import type { SumberDana } from '@/components/rkas/FormKertasKerja.svelte';
     import { Badge } from '@/components/ui/badge';
-    import Plus from '@lucide/svelte/icons/plus';
+    import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import X from '@lucide/svelte/icons/x';
     import { Button } from '@/components/ui/button';
     import { Card, CardContent } from '@/components/ui/card';
+    import {
+        DropdownMenu,
+        DropdownMenuContent,
+        DropdownMenuItem,
+        DropdownMenuTrigger,
+    } from '@/components/ui/dropdown-menu';
     import {
         Dialog,
         DialogClose,
@@ -90,12 +96,37 @@
     } = $props();
 
     let sedangDiubah = $state<BarisRkas | null>(null);
+    let kegiatanAwal = $state<number | ''>('');
     let dialogBaris = $state(false);
+    let dialogPagu = $state(false);
+    let dialogCara = $state(false);
+    let ringkasanBuka = $state(false);
 
-    function bukaFormBaris(b: BarisRkas | null): void {
+    function bukaFormBaris(
+        b: BarisRkas | null,
+        refKegiatanId: number | null = null,
+    ): void {
         sedangDiubah = b;
+        kegiatanAwal = refKegiatanId ?? '';
         dialogBaris = true;
     }
+
+    const paguBisaDiubah = $derived(
+        kertasKerja.bisa_diubah && kertasKerja.jenis_versi !== 'pergeseran',
+    );
+    const persenDianggarkan = $derived(
+        kertasKerja.pagu > 0
+            ? Math.min(
+                  100,
+                  Math.round((ringkasan.dianggarkan / kertasKerja.pagu) * 100),
+              )
+            : 0,
+    );
+    const jumlahPerhatian = $derived(
+        ringkasan.peringatan.length +
+            (ringkasan.jumlah_baris_bermasalah > 0 ? 1 : 0),
+    );
+    const KELAS_MENU = 'min-h-11 px-2.5';
 
     function tutupFormBaris(buka: boolean): void {
         if (!buka) {
@@ -142,13 +173,128 @@
 
 <AppHead title={`${kertasKerja.label} ${kertasKerja.tahun}`} />
 
-<div class="flex flex-col gap-5 p-5 md:p-7">
-    <div class="flex flex-wrap items-end justify-between gap-4">
-        <Heading
-            title={`${kertasKerja.label} ${kertasKerja.tahun}`}
-            description={`${kertasKerja.sekolah.nama} (${kertasKerja.sekolah.identitas}) · ${namaSumber} · ${kertasKerja.versi}`}
-        />
-        <div class="flex flex-wrap items-center gap-2.5">
+<div class="flex flex-col gap-4 p-4 md:gap-5 md:p-7">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2.5">
+                <h1
+                    class="text-[26px] leading-tight font-semibold tracking-tight"
+                >
+                    {kertasKerja.label}
+                    {kertasKerja.tahun}
+                </h1>
+                <Badge
+                    variant={kertasKerja.status === 'disahkan'
+                        ? 'default'
+                        : 'secondary'}
+                >
+                    {kertasKerja.status_label}
+                </Badge>
+            </div>
+            <p class="mt-1 text-[15px] text-muted-foreground">
+                {kertasKerja.sekolah.nama} ({kertasKerja.sekolah.identitas}) · {namaSumber}
+                · {kertasKerja.versi}
+            </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    {#snippet children(props)}
+                        <Button
+                            variant="outline"
+                            onclick={props.onclick}
+                            aria-expanded={props['aria-expanded']}
+                        >
+                            Lainnya
+                            <ChevronDown class="size-4" />
+                        </Button>
+                    {/snippet}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    sideOffset={6}
+                    class="w-64 max-md:right-auto max-md:left-0"
+                >
+                    <DropdownMenuItem asChild class={KELAS_MENU}>
+                        {#snippet children(props)}
+                            <a
+                                href={PdfKertasKerjaController.url(
+                                    kertasKerja.uuid,
+                                )}
+                                class={props.class}
+                                onclick={props.onClick}
+                            >
+                                Cetak rincian (PDF)
+                            </a>
+                        {/snippet}
+                    </DropdownMenuItem>
+                    {#if kertasKerja.sumber_dana === 'bosp_reguler'}
+                        <DropdownMenuItem asChild class={KELAS_MENU}>
+                            {#snippet children(props)}
+                                <Link
+                                    href={PerbandinganController.url(
+                                        kertasKerja.uuid,
+                                    )}
+                                    class={props.class}
+                                    onclick={props.onClick}
+                                >
+                                    Bandingkan dengan impor ARKAS
+                                </Link>
+                            {/snippet}
+                        </DropdownMenuItem>
+                    {/if}
+                    {#if paguBisaDiubah}
+                        <DropdownMenuItem asChild class={KELAS_MENU}>
+                            {#snippet children(props)}
+                                <button
+                                    type="button"
+                                    class={props.class}
+                                    onclick={() => {
+                                        props.onClick?.();
+                                        dialogPagu = true;
+                                    }}
+                                >
+                                    Ubah pagu
+                                </button>
+                            {/snippet}
+                        </DropdownMenuItem>
+                    {/if}
+                    {#if kertasKerja.bisa_diubah}
+                        <DropdownMenuItem asChild class={KELAS_MENU}>
+                            {#snippet children(props)}
+                                <button
+                                    type="button"
+                                    class={props.class}
+                                    onclick={() => {
+                                        props.onClick?.();
+                                        dialogCara = true;
+                                    }}
+                                >
+                                    Cara mengisi
+                                </button>
+                            {/snippet}
+                        </DropdownMenuItem>
+                    {/if}
+                    <DropdownMenuItem asChild class={KELAS_MENU}>
+                        {#snippet children(props)}
+                            <Link
+                                href={KertasKerjaController.index({
+                                    query: {
+                                        tahun: kertasKerja.tahun,
+                                        sekolah: kertasKerja.sekolah.uuid,
+                                    },
+                                })}
+                                class={props.class}
+                                onclick={props.onClick}
+                            >
+                                Kembali ke daftar
+                            </Link>
+                        {/snippet}
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
             {#if kertasKerja.status === 'draf'}
                 <Button
                     disabled={sedangMengubahStatus}
@@ -233,40 +379,117 @@
                     />
                 {/key}
             {/if}
-            <Badge
-                variant={kertasKerja.status === 'disahkan'
-                    ? 'default'
-                    : 'secondary'}
-            >
-                {kertasKerja.status_label}
-            </Badge>
-            <a
-                href={PdfKertasKerjaController.url(kertasKerja.uuid)}
-                class="text-sm underline-offset-4 hover:underline"
-            >
-                Cetak rincian (PDF)
-            </a>
-            {#if kertasKerja.sumber_dana === 'bosp_reguler'}
-                <Link
-                    href={PerbandinganController.url(kertasKerja.uuid)}
-                    class="text-sm underline-offset-4 hover:underline"
-                >
-                    Bandingkan dengan impor ARKAS
-                </Link>
-            {/if}
-            <Link
-                href={KertasKerjaController.index({
-                    query: {
-                        tahun: kertasKerja.tahun,
-                        sekolah: kertasKerja.sekolah.uuid,
-                    },
-                })}
-                class="text-sm underline-offset-4 hover:underline"
-            >
-                Kembali ke daftar
-            </Link>
         </div>
     </div>
+
+    <!-- Selalu terlihat saat menggulir: angka inilah yang dikejar sampai sisa Rp 0. -->
+    <section
+        aria-label="Ringkasan pagu"
+        class="sticky top-[57px] z-10 -mx-2 bg-background p-2 md:top-0"
+    >
+        <div class="grid gap-3 rounded-[14px] border bg-card px-4 py-3.5">
+            <div class="flex flex-wrap items-center gap-x-8 gap-y-2">
+                <div class="max-md:hidden">
+                    <div class="text-meta text-muted-foreground">Pagu</div>
+                    <div class="text-lg font-semibold tabular-nums">
+                        {rupiah(kertasKerja.pagu)}
+                    </div>
+                </div>
+                <div class="max-md:hidden">
+                    <div class="text-meta text-muted-foreground">
+                        Dianggarkan
+                    </div>
+                    <div class="text-lg font-semibold tabular-nums">
+                        {rupiah(ringkasan.dianggarkan)}
+                    </div>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-meta text-muted-foreground">
+                        {ringkasan.sisa < 0
+                            ? 'Melebihi pagu'
+                            : ringkasan.sisa === 0
+                              ? 'Sisa (pas)'
+                              : 'Sisa'}
+                    </div>
+                    <div
+                        class={[
+                            'text-lg font-semibold tabular-nums',
+                            ringkasan.sisa < 0 && 'text-belum-foreground',
+                            ringkasan.sisa === 0 && 'text-selesai-foreground',
+                        ]}
+                    >
+                        {rupiah(Math.abs(ringkasan.sisa))}
+                    </div>
+                    <div
+                        class="text-meta text-muted-foreground tabular-nums md:hidden"
+                    >
+                        dari {rupiah(kertasKerja.pagu)}
+                    </div>
+                </div>
+                <Button
+                    variant="outline"
+                    aria-expanded={ringkasanBuka}
+                    onclick={() => (ringkasanBuka = !ringkasanBuka)}
+                >
+                    {ringkasanBuka ? 'Tutup ringkasan' : 'Ringkasan'}
+                    {#if jumlahPerhatian > 0}
+                        <span
+                            aria-label={`${jumlahPerhatian} hal perlu diperhatikan`}
+                            class="min-w-5 rounded-full bg-kurang px-1.5 text-center text-xs font-semibold text-kurang-foreground tabular-nums"
+                        >
+                            {jumlahPerhatian}
+                        </span>
+                    {/if}
+                </Button>
+            </div>
+            <div
+                role="progressbar"
+                aria-label="Porsi pagu yang sudah dianggarkan"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={persenDianggarkan}
+                class="h-2 overflow-hidden rounded-full bg-muted"
+            >
+                <div
+                    class={[
+                        'h-full rounded-full',
+                        ringkasan.sisa < 0
+                            ? 'bg-belum-foreground'
+                            : ringkasan.sisa === 0
+                              ? 'bg-selesai-foreground'
+                              : 'bg-primary',
+                    ]}
+                    style:width={`${persenDianggarkan}%`}
+                ></div>
+            </div>
+        </div>
+    </section>
+
+    {#if ringkasanBuka}
+        <RingkasanRkas {ringkasan} tanpaTotal />
+
+        {#if kertasKerja.sumber_dana === 'lainnya' && pemberiDana.length > 0}
+            <Card>
+                <CardContent class="grid gap-2">
+                    <span class="text-sm font-medium">Pemberi dana</span>
+                    <ul class="grid gap-1 text-sm">
+                        {#each pemberiDana as pemberi (pemberi.id)}
+                            <li class="flex justify-between">
+                                <span>{pemberi.nama}</span>
+                                <span class="tabular-nums">
+                                    {rupiah(pemberi.jumlah)}
+                                </span>
+                            </li>
+                        {/each}
+                    </ul>
+                </CardContent>
+            </Card>
+        {/if}
+    {/if}
+
+    {#if pemeriksaan}
+        <HasilPemeriksaan hasil={pemeriksaan} />
+    {/if}
 
     {#if rantai.length > 1}
         <Card>
@@ -297,27 +520,64 @@
         </Card>
     {/if}
 
-    {#if pemeriksaan}
-        <HasilPemeriksaan hasil={pemeriksaan} />
+    {#if kertasKerja.bisa_diubah && baris.length === 0}
+        <div
+            class="flex flex-wrap items-center justify-between gap-3 rounded-[14px] bg-muted px-4 py-3 text-sm"
+        >
+            <span>
+                Baru pertama kali menyusun? Lihat urutan pengisiannya dulu.
+            </span>
+            <Button variant="outline" onclick={() => (dialogCara = true)}>
+                Cara mengisi
+            </Button>
+        </div>
     {/if}
 
-    <RingkasanRkas {ringkasan} />
+    <TabelBarisRkas
+        {baris}
+        bisaDiubah={kertasKerja.bisa_diubah}
+        onUbah={(b) => bukaFormBaris(b)}
+        onTambah={(refKegiatanId) => bukaFormBaris(null, refKegiatanId)}
+    />
+</div>
 
-    {#if kertasKerja.bisa_diubah}
-        <details
-            class="rounded-xl border bg-card px-5 py-4 text-sm"
-            open={baris.length === 0}
+{#if kertasKerja.bisa_diubah}
+    <Dialog bind:open={dialogBaris} onOpenChange={tutupFormBaris}>
+        <DialogContent
+            class="max-h-[90dvh] max-w-3xl overflow-y-auto max-md:h-dvh max-md:max-h-dvh max-md:max-w-none max-md:rounded-none max-md:border-0"
         >
-            <summary class="cursor-pointer text-base font-semibold">
-                Cara mengisi
-            </summary>
-            <ol class="mt-3 grid list-decimal gap-2 pl-5">
+            <DialogTitle class="mb-4">
+                {sedangDiubah ? 'Ubah belanja' : 'Tambah belanja'}
+            </DialogTitle>
+            {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
+                <FormBarisRkas
+                    kertasKerjaUuid={kertasKerja.uuid}
+                    {pilihan}
+                    baris={sedangDiubah}
+                    {kegiatanAwal}
+                    sisaPagu={ringkasan.sisa}
+                    onSelesai={() => {
+                        dialogBaris = false;
+                        sedangDiubah = null;
+                    }}
+                />
+            {/key}
+        </DialogContent>
+    </Dialog>
+
+    <Dialog bind:open={dialogCara}>
+        <DialogContent
+            class="max-h-[90dvh] overflow-y-auto max-md:max-w-[calc(100%-2rem)]"
+        >
+            <DialogTitle class="mb-3">Cara mengisi</DialogTitle>
+            <ol class="grid list-decimal gap-2 pl-5 text-sm">
                 <li>
-                    <strong>Atur pagu</strong> di kartu Pagu di bawah, lalu simpan.
-                    Total semua baris belanja nanti harus sama dengan pagu ini.
+                    Pastikan <strong>pagu</strong> sudah benar. Pagu diubah lewat
+                    menu <em>Lainnya</em>, lalu <em>Ubah pagu</em>. Total semua
+                    belanja nanti harus sama dengan pagu ini.
                 </li>
                 <li>
-                    Klik <strong>Tambah belanja</strong>, satu baris untuk satu
+                    Klik <strong>Tambah belanja</strong>, satu untuk tiap
                     belanja. Pilih <em>Kegiatan</em> dan
                     <em>Rekening belanja</em>. Lalu pilih
                     <em>Barang/jasa</em> (harga terisi sendiri, boleh diubah),
@@ -325,14 +585,17 @@
                     pilihan barang. Untuk kegiatan honor, pilih <em>PTK</em>.
                 </li>
                 <li>
-                    <strong>Isi volume per bulan</strong> pada bulan belanja itu
-                    dilakukan. Jumlah uang dihitung otomatis: total volume × harga
-                    satuan.
+                    <strong>Isi volume</strong> pada bulan belanja itu dilakukan.
+                    Untuk belanja rutin, ketik angkanya di <em>Isi cepat</em>
+                    lalu pilih <em>Tiap bulan</em> atau per tahap. Jumlah uang
+                    dihitung otomatis.
                 </li>
                 <li>
-                    Ulangi sampai <strong>Sisa</strong> di ringkasan atas
-                    menjadi Rp 0. Baris yang sudah tersimpan muncul di tabel dan
-                    bisa diubah atau dihapus.
+                    Pakai <strong>Simpan dan tambah lagi</strong> untuk belanja
+                    berikutnya di kegiatan yang sama, atau
+                    <strong>Tambah di sini</strong> pada kegiatan yang sudah
+                    ada. Ulangi sampai <strong>Sisa</strong> di atas menjadi Rp
+                    0.
                 </li>
                 <li>
                     Klik <strong>Nyatakan Siap</strong>. Bila ada yang kurang,
@@ -340,84 +603,45 @@
                     <strong>Tandai Disahkan</strong>.
                 </li>
             </ol>
-        </details>
-    {/if}
-
-    <Card>
-        <CardContent class="grid gap-4">
-            <div class="flex items-baseline justify-between">
-                <span class="text-sm text-muted-foreground">
-                    {kertasKerja.bisa_diubah ? 'Langkah 1 · Pagu' : 'Pagu'}
-                </span>
-                <span class="text-xl font-semibold tabular-nums">
-                    {rupiah(kertasKerja.pagu)}
-                </span>
+            <div class="mt-4 flex justify-end">
+                <Button onclick={() => (dialogCara = false)}>Mengerti</Button>
             </div>
+        </DialogContent>
+    </Dialog>
+{/if}
 
-            {#if kertasKerja.sumber_dana === 'lainnya' && (!kertasKerja.bisa_diubah || kertasKerja.jenis_versi === 'pergeseran')}
-                <ul class="grid gap-1 text-sm">
-                    {#each pemberiDana as pemberi (pemberi.id)}
-                        <li class="flex justify-between">
-                            <span>{pemberi.nama}</span>
-                            <span class="tabular-nums">{rupiah(pemberi.jumlah)}</span>
-                        </li>
-                    {/each}
-                </ul>
-            {/if}
-
-            {#if kertasKerja.bisa_diubah && kertasKerja.jenis_versi !== 'pergeseran'}
-                {#key kertasKerja.id}
-                    <FormKertasKerja
-                        sekolahId={kertasKerja.sekolah.id}
-                        tahun={kertasKerja.tahun}
-                        pilihanSumberDana={[]}
-                        kertasKerjaUuid={kertasKerja.uuid}
-                        sumberDana={kertasKerja.sumber_dana}
-                        pagu={kertasKerja.pagu}
-                        pemberiDana={pemberiDana.map((p) => ({
-                            nama: p.nama,
-                            jumlah: p.jumlah,
-                        }))}
-                    />
-                {/key}
-            {/if}
-        </CardContent>
-    </Card>
-
-    {#if kertasKerja.bisa_diubah}
-        <div class="flex items-center justify-between gap-3">
-            <h2 class="text-base font-semibold">Langkah 2 · Baris belanja</h2>
-            <Button type="button" onclick={() => bukaFormBaris(null)}>
-                <Plus class="size-4" />
-                Tambah belanja
-            </Button>
-        </div>
-
-        <Dialog bind:open={dialogBaris} onOpenChange={tutupFormBaris}>
-            <DialogContent
-                class="mx-3 max-h-[90dvh] max-w-5xl overflow-y-auto"
-            >
-                <DialogTitle class="mb-4">
-                    {sedangDiubah ? 'Ubah baris belanja' : 'Tambah baris belanja'}
-                </DialogTitle>
-                {#key `${kertasKerja.id}-${sedangDiubah?.id ?? 'baru'}`}
-                    <FormBarisRkas
-                        kertasKerjaUuid={kertasKerja.uuid}
-                        {pilihan}
-                        baris={sedangDiubah}
-                        onSelesai={() => {
-                            dialogBaris = false;
-                            sedangDiubah = null;
-                        }}
-                    />
-                {/key}
-            </DialogContent>
-        </Dialog>
-    {/if}
-
-    <TabelBarisRkas
-        {baris}
-        bisaDiubah={kertasKerja.bisa_diubah}
-        onUbah={bukaFormBaris}
-    />
-</div>
+{#if paguBisaDiubah}
+    <Dialog bind:open={dialogPagu}>
+        <DialogContent
+            class="max-h-[90dvh] overflow-y-auto max-md:max-w-[calc(100%-2rem)]"
+        >
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <DialogTitle>Ubah pagu</DialogTitle>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Tutup"
+                    onclick={() => (dialogPagu = false)}
+                >
+                    <X class="size-5" />
+                </Button>
+            </div>
+            {#key `${kertasKerja.id}-${dialogPagu}`}
+                <FormKertasKerja
+                    sekolahId={kertasKerja.sekolah.id}
+                    tahun={kertasKerja.tahun}
+                    pilihanSumberDana={[]}
+                    kertasKerjaUuid={kertasKerja.uuid}
+                    sumberDana={kertasKerja.sumber_dana}
+                    pagu={kertasKerja.pagu}
+                    pemberiDana={pemberiDana.map((p) => ({
+                        nama: p.nama,
+                        jumlah: p.jumlah,
+                    }))}
+                    onSelesai={() => (dialogPagu = false)}
+                />
+            {/key}
+        </DialogContent>
+    </Dialog>
+{/if}

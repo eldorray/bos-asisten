@@ -1,0 +1,1 @@
+import{Bt as e,Ct as t,G as n,N as r,Pt as i,Q as a,Yt as o,Z as s,bt as c,i as l,lt as u,pt as d,zt as f}from"./wayfinder-DtR1Hv6i.js";function p(p,m){e(m,!0);let h=l(m,`title`,3,``),g=`SPJ BOS`,_=i(()=>h()?`${h()} - ${g}`:g);r(`6lre40`,e=>{var r=a(),i=t(r);n(i,()=>m.children??o),d(()=>{c.title=u(_)??``}),s(e,r)}),f()}export{p as t};

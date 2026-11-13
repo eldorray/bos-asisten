@@ -64,21 +64,6 @@
         masalah: string[];
         peringatan: string[];
     };
-
-    export const BULAN = [
-        'Jan',
-        'Feb',
-        'Mar',
-        'Apr',
-        'Mei',
-        'Jun',
-        'Jul',
-        'Agu',
-        'Sep',
-        'Okt',
-        'Nov',
-        'Des',
-    ];
 </script>
 
 <script lang="ts">
@@ -89,18 +74,27 @@
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
+    import { BULAN } from '@/lib/rkas';
 
     let {
         kertasKerjaUuid,
         pilihan,
         baris = null,
+        kegiatanAwal = '',
+        sisaPagu,
         onSelesai,
     }: {
         kertasKerjaUuid: string;
         pilihan: Pilihan;
         baris?: BarisRkas | null;
+        /** Kegiatan yang sudah terpilih saat form dibuka dari kelompoknya. */
+        kegiatanAwal?: number | '';
+        sisaPagu: number;
         onSelesai?: () => void;
     } = $props();
+
+    let isiCepat = $state('1');
+    let pesanTersimpan = $state('');
 
     function volumeAwal(): Record<string, string> {
         const isi: Record<string, string> = {};
@@ -115,7 +109,7 @@
     // Komponen ini dibuat ulang lewat {#key} oleh pemakainya, jadi nilai awal memang diambil sekali.
     /* svelte-ignore state_referenced_locally */
     const form = useForm({
-        ref_kegiatan_id: baris?.ref_kegiatan_id ?? ('' as number | ''),
+        ref_kegiatan_id: baris?.ref_kegiatan_id ?? kegiatanAwal,
         ref_rekening_id: baris?.ref_rekening_id ?? ('' as number | ''),
         ref_barang_id: baris?.ref_barang_id ?? ('' as number | ''),
         ptk_id: baris?.ptk_id ?? ('' as number | ''),
@@ -193,6 +187,14 @@
         ),
     );
     const jumlah = $derived(totalVolume * (Number(form.harga) || 0));
+    // Saat mengubah, jumlah lama baris ini dikembalikan dulu ke sisa.
+    const sisaSetelah = $derived(sisaPagu + (baris?.jumlah ?? 0) - jumlah);
+
+    function isiBulan(dari: number, sampai: number, nilai: string): void {
+        for (let bulan = dari; bulan <= sampai; bulan++) {
+            form.volume_bulan[String(bulan)] = nilai;
+        }
+    }
 
     const opsiKegiatan = $derived(
         kegiatanOpsi.map((k) => ({ value: k.id, label: `${k.kode} ${k.uraian}` })),
@@ -256,8 +258,13 @@
             .map(([, pesan]) => pesan),
     );
 
-    function simpan(event: SubmitEvent): void {
+    function kirim(event: SubmitEvent): void {
         event.preventDefault();
+        simpan(false);
+    }
+
+    function simpan(lagi: boolean): void {
+        pesanTersimpan = '';
         form
             .transform((data) => ({
                 ref_kegiatan_id: data.ref_kegiatan_id || null,
@@ -282,15 +289,34 @@
                 {
                     preserveScroll: true,
                     onSuccess: () => {
+                        const kegiatanTerakhir = form.ref_kegiatan_id;
                         form.reset();
-                        onSelesai?.();
+
+                        if (!lagi) {
+                            onSelesai?.();
+
+                            return;
+                        }
+
+                        // Belanja berikutnya biasanya masih di kegiatan yang sama.
+                        form.ref_kegiatan_id = kegiatanTerakhir;
+                        pesanTersimpan =
+                            'Tersimpan. Kegiatan tetap, tinggal isi belanja berikutnya.';
                     },
                 },
             );
     }
 </script>
 
-<form class="grid gap-4" onsubmit={simpan}>
+<form class="grid grid-cols-1 gap-4" onsubmit={kirim}>
+    {#if pesanTersimpan}
+        <p
+            role="status"
+            class="rounded-[10px] bg-selesai px-3 py-2.5 text-sm text-selesai-foreground"
+        >
+            {pesanTersimpan}
+        </p>
+    {/if}
     <InputError message={galat.kertas_kerja} />
     {#each galatLain as { kunci, pesan } (kunci)}
         <InputError message={pesan} />
@@ -408,9 +434,51 @@
         <InputError message={form.errors.harga} />
     </div>
 
-    <div class="grid gap-1.5">
-        <Label>Volume per bulan</Label>
-        <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 lg:grid-cols-12">
+    <fieldset class="grid gap-2.5 rounded-xl border p-3">
+        <legend class="px-1 text-sm font-medium">Volume per bulan</legend>
+        <div class="flex flex-wrap items-center gap-2">
+            <Label for="baris-isi-cepat" class="text-muted-foreground">
+                Isi cepat
+            </Label>
+            <Input
+                id="baris-isi-cepat"
+                class="w-18 text-center"
+                inputmode="numeric"
+                maxlength={6}
+                value={isiCepat}
+                oninput={(e) =>
+                    (isiCepat = angka((e.target as HTMLInputElement).value))}
+            />
+            <Button
+                type="button"
+                variant="secondary"
+                onclick={() => isiBulan(1, 12, isiCepat)}
+            >
+                Tiap bulan
+            </Button>
+            <Button
+                type="button"
+                variant="secondary"
+                onclick={() => isiBulan(1, 6, isiCepat)}
+            >
+                Tahap 1
+            </Button>
+            <Button
+                type="button"
+                variant="secondary"
+                onclick={() => isiBulan(7, 12, isiCepat)}
+            >
+                Tahap 2
+            </Button>
+            <Button
+                type="button"
+                variant="ghost"
+                onclick={() => isiBulan(1, 12, '')}
+            >
+                Kosongkan
+            </Button>
+        </div>
+        <div class="grid grid-cols-4 gap-2 md:grid-cols-6">
             {#each BULAN as nama, i (nama)}
                 <div class="grid gap-0.5">
                     <span class="text-xs text-muted-foreground">{nama}</span>
@@ -430,17 +498,7 @@
         {#each galatVolume as pesan (pesan)}
             <InputError message={pesan} />
         {/each}
-        <p class="text-sm text-muted-foreground">
-            Total volume
-            <span class="font-medium text-foreground tabular-nums">
-                {totalVolume.toLocaleString('id-ID')}
-            </span>
-            · Jumlah
-            <span class="font-medium text-foreground tabular-nums">
-                {rupiah(jumlah)}
-            </span>
-        </p>
-    </div>
+    </fieldset>
 
     <div class="grid content-start gap-1.5">
         <Label for="baris-keterangan">Keterangan (opsional)</Label>
@@ -452,14 +510,57 @@
         <InputError message={form.errors.keterangan} />
     </div>
 
-    <div class="flex gap-2">
-        <Button type="submit" disabled={form.processing}>
-            {baris === null ? 'Tambah baris' : 'Simpan perubahan'}
-        </Button>
-        {#if baris !== null}
-            <Button type="button" variant="ghost" onclick={() => onSelesai?.()}>
-                Batal
+    <!-- Menempel di bawah dialog, supaya jumlah dan tombol simpan selalu terlihat. -->
+    <div
+        class="sticky -bottom-6 -mx-6 -mb-6 grid gap-2.5 border-t bg-background px-6 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+    >
+        <div class="flex flex-wrap justify-between gap-x-6 gap-y-1 text-sm">
+            <span>
+                Volume
+                <strong class="font-semibold tabular-nums">
+                    {totalVolume.toLocaleString('id-ID')}
+                </strong>
+                × harga =
+                <strong class="font-semibold tabular-nums">
+                    {rupiah(jumlah)}
+                </strong>
+            </span>
+            <span
+                class={sisaSetelah < 0
+                    ? 'text-belum-foreground'
+                    : 'text-muted-foreground'}
+            >
+                Sisa pagu setelah ini
+                <strong class="font-semibold tabular-nums">
+                    {sisaSetelah < 0 ? '-' : ''}{rupiah(Math.abs(sisaSetelah))}
+                </strong>
+            </span>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2">
+            <Button
+                type="button"
+                variant="ghost"
+                onclick={() => onSelesai?.()}
+            >
+                Tutup
             </Button>
-        {/if}
+            <Button
+                type="submit"
+                variant={baris === null ? 'outline' : 'default'}
+                disabled={form.processing}
+            >
+                Simpan
+            </Button>
+            {#if baris === null}
+                <Button
+                    type="button"
+                    class="max-md:flex-1"
+                    disabled={form.processing}
+                    onclick={() => simpan(true)}
+                >
+                    Simpan dan tambah lagi
+                </Button>
+            {/if}
+        </div>
     </div>
 </form>

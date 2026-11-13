@@ -25,7 +25,10 @@
     import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
     import { Card, CardContent } from '@/components/ui/card';
 
-    let { ringkasan }: { ringkasan: Ringkasan } = $props();
+    let {
+        ringkasan,
+        tanpaTotal = false,
+    }: { ringkasan: Ringkasan; tanpaTotal?: boolean } = $props();
 
     function rupiah(n: number): string {
         return `Rp ${n.toLocaleString('id-ID')}`;
@@ -61,6 +64,7 @@
 </script>
 
 <div class="grid gap-3">
+    {#if !tanpaTotal}
     <div class="grid gap-3 md:grid-cols-2">
         <Card>
             <CardContent class="grid gap-1">
@@ -83,6 +87,7 @@
             </CardContent>
         </Card>
     </div>
+    {/if}
 
     {#if ringkasan.tahap.length > 0}
         <div class="grid gap-3 md:grid-cols-2">

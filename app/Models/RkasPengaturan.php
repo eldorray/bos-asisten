@@ -56,14 +56,14 @@ class RkasPengaturan extends Model
     }
 
     /**
-     * Nilai awal sesuai juknis (SMP, 2026 ke atas).
+     * Nilai awal sesuai juknis (SMP, 2026 ke atas). Bawaan swasta: sekolah pemakai aplikasi ini di bawah yayasan.
      *
      * @return array<string, mixed>
      */
     public static function nilaiAwal(): array
     {
         return [
-            'swasta' => false,
+            'swasta' => true,
             'persen_tahap_1' => 50,
             'ambang_tahap_1' => 25,
             'honor_maks_negeri' => 20,

@@ -28,7 +28,8 @@ it('membuat pengaturan tahun dengan nilai awal juknis', function () {
 
     $pengaturan = RkasPengaturan::untuk($smp, 2027);
 
-    expect($pengaturan->persen_tahap_1)->toBe(50)
+    expect($pengaturan->swasta)->toBeTrue()
+        ->and($pengaturan->persen_tahap_1)->toBe(50)
         ->and($pengaturan->ambang_tahap_1)->toBe(25)
         ->and($pengaturan->kode_honor)->toBe(['07.12.01.', '07.12.02.', '07.12.03.', '07.12.04.'])
         ->and($pengaturan->kuota_pergeseran)->toBeNull()

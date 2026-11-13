@@ -87,6 +87,7 @@ it('tidak membuat tahap dan juknis untuk sumber dana Lainnya', function () {
 
 it('memperingatkan honor di atas 20 persen untuk negeri dan tidak untuk 40 persen swasta', function () {
     $kk = ($this->kk)(100_000_000);
+    RkasPengaturan::untuk($this->smp, 2027)->update(['swasta' => false]);
     ($this->baris)($kk, [1 => 1], 25_000_000, '07.12.01.', '5.1.02.02.01.0013');
 
     $r = ($this->hitung)($kk);
@@ -149,7 +150,7 @@ it('menghasilkan nol tanpa error untuk pagu nol dan tanpa baris', function () {
         ->and($r->jumlahBarisBermasalah)->toBe(0);
 
     $this->get(route('rkas.show', $kk))->assertOk()
-        ->assertInertia(fn (Assert $page) => $page->where('ringkasan.dianggarkan', 0)->where('ringkasan.juknis.0.batas', 20)->missing('ringkasan.per_bulan')->where('ringkasan.jumlah_baris_bermasalah', 0));
+        ->assertInertia(fn (Assert $page) => $page->where('ringkasan.dianggarkan', 0)->where('ringkasan.juknis.0.batas', 40)->missing('ringkasan.per_bulan')->where('ringkasan.jumlah_baris_bermasalah', 0));
 });
 
 it('menandai baris yang rekeningnya kedaluwarsa tanpa menghapusnya', function () {

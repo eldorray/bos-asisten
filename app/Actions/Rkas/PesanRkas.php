@@ -72,6 +72,8 @@ final class PesanRkas
 
     public const PTK_TIDAK_SESUAI = 'Jenis PTK tidak sesuai dengan kegiatan honor ini.';
 
+    public const PTK_JENIS = 'Kegiatan honor ini hanya untuk PTK berjenis %s, sedangkan PTK ini berjenis %s. Ubah jenisnya di Pengaturan › Referensi RKAS atau pilih kegiatan honor lain.';
+
     public static function rupiah(int $n): string
     {
         return 'Rp '.number_format($n, 0, ',', '.');

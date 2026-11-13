@@ -1,6 +1,6 @@
 import { expect, test } from 'vite-plus/test';
 import type { BarisRkas } from '@/components/rkas/FormBarisRkas.svelte';
-import { kelompokkanPerKegiatan, ringkasBulan } from './rkas';
+import { jenisPtkKegiatan, kelompokkanPerKegiatan, ringkasBulan } from './rkas';
 
 const vol = (isi: Record<number, number>): Record<string, number> =>
     Object.fromEntries(
@@ -59,4 +59,10 @@ test('baris dikelompokkan per kegiatan dengan subtotal', () => {
     expect(hasil[1].subtotal).toBe(125);
     expect(hasil[1].baris.map((b) => b.id)).toEqual([3, 1]);
     expect(hasil[1].jalur).toBe('03 Program');
+});
+
+test('jenis PTK diambil dari digit terakhir kode kegiatan honor', () => {
+    expect(jenisPtkKegiatan('07.12.03.')).toBe(3);
+    expect(jenisPtkKegiatan('07.12.09.')).toBeNull();
+    expect(jenisPtkKegiatan('07.')).toBeNull();
 });

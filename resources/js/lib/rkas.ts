@@ -1,5 +1,20 @@
 import type { BarisRkas } from '@/components/rkas/FormBarisRkas.svelte';
 
+// ponytail: salinan nama App\Enums\JenisPtk; kirim dari server bila jenisnya bertambah.
+export const JENIS_PTK: Record<number, string> = {
+    1: 'Guru',
+    2: 'Administrasi',
+    3: 'Perpustakaan',
+    4: 'Lainnya',
+};
+
+/** Jenis PTK untuk kegiatan honor: digit terakhir segmen ketiga kodenya (07.12.0X.). Aturan yang sama dipakai server. */
+export function jenisPtkKegiatan(kode: string): number | null {
+    const jenis = Number(kode.split('.')[2]?.slice(-1));
+
+    return jenis in JENIS_PTK ? jenis : null;
+}
+
 export const BULAN = [
     'Jan',
     'Feb',

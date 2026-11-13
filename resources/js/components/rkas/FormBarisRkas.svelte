@@ -74,7 +74,7 @@
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Label } from '@/components/ui/label';
-    import { BULAN } from '@/lib/rkas';
+    import { BULAN, JENIS_PTK, jenisPtkKegiatan } from '@/lib/rkas';
 
     let {
         kertasKerjaUuid,
@@ -205,11 +205,17 @@
     const opsiBarang = $derived(
         barangOpsi.map((b) => ({ value: b.id, label: `${b.nama} (${b.satuan})` })),
     );
+    const jenisPtk = $derived(
+        honor && kegiatan ? jenisPtkKegiatan(kegiatan.kode) : null,
+    );
+    // Hanya PTK yang jenisnya diterima kegiatan honor ini; yang lain pasti ditolak server.
     const opsiPtk = $derived(
-        pilihan.ptk.map((p) => ({
-            value: p.id,
-            label: p.nuptk ? `${p.nama} (${p.nuptk})` : p.nama,
-        })),
+        pilihan.ptk
+            .filter((p) => jenisPtk === null || p.jenis === jenisPtk)
+            .map((p) => ({
+                value: p.id,
+                label: p.nuptk ? `${p.nama} (${p.nuptk})` : p.nama,
+            })),
     );
     const opsiSatuan = $derived(
         pilihan.satuan.map((s) => ({ value: s.nama, label: s.nama })),
@@ -330,7 +336,13 @@
                 opsi={opsiKegiatan}
                 kosong="Pilih kegiatan"
                 value={form.ref_kegiatan_id}
-                onchange={(v) => (form.ref_kegiatan_id = v as number | '')}
+                onchange={(v) => {
+                    form.ref_kegiatan_id = v as number | '';
+                    // PTK terpilih bisa tidak cocok lagi dengan kegiatan honor yang baru.
+                    if (!opsiPtk.some((o) => o.value === form.ptk_id)) {
+                        form.ptk_id = '';
+                    }
+                }}
             />
             <InputError message={form.errors.ref_kegiatan_id} />
         </div>
@@ -361,6 +373,13 @@
                 value={form.ptk_id}
                 onchange={(v) => (form.ptk_id = v as number | '')}
             />
+            {#if jenisPtk !== null}
+                <p class="text-meta text-muted-foreground">
+                    {opsiPtk.length > 0
+                        ? `Hanya PTK berjenis ${JENIS_PTK[jenisPtk]}.`
+                        : `Belum ada PTK berjenis ${JENIS_PTK[jenisPtk]}. Tambahkan atau ubah jenisnya di Pengaturan › Referensi RKAS.`}
+                </p>
+            {/if}
             <InputError message={form.errors.ptk_id} />
         </div>
     {:else if pakaiBarang}

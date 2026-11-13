@@ -144,8 +144,11 @@ class SimpanBarisRkas
 
         // Digit terakhir segmen ketiga kode kegiatan (07.12.0X.) menentukan jenis PTK.
         $segmen = explode('.', rtrim($kegiatan->kode, '.'));
-        if (isset($segmen[2]) && JenisPtk::tryFrom((int) substr($segmen[2], -1)) !== $ptk->jenis) {
-            $this->tolak('ptk_id', PesanRkas::PTK_TIDAK_SESUAI);
+        $diminta = isset($segmen[2]) ? JenisPtk::tryFrom((int) substr($segmen[2], -1)) : $ptk->jenis;
+        if ($diminta !== $ptk->jenis) {
+            $this->tolak('ptk_id', $diminta === null
+                ? PesanRkas::PTK_TIDAK_SESUAI
+                : sprintf(PesanRkas::PTK_JENIS, $diminta->name, $ptk->jenis->name));
         }
 
         return $ptk;

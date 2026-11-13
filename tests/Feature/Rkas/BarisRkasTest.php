@@ -165,7 +165,8 @@ it('menolak PTK yang jenisnya tidak cocok dengan kegiatan honor', function () {
     $honor = RkasRefKegiatan::factory()->create(['tahun' => 2027, 'kode' => '07.12.02.']);
     $guru = RkasPtk::factory()->create(['sekolah_id' => $this->smp->id, 'jenis' => JenisPtk::Guru]);
 
-    ($this->kirim)(['ref_kegiatan_id' => $honor->id, 'ptk_id' => $guru->id])->assertSessionHasErrors('ptk_id');
+    ($this->kirim)(['ref_kegiatan_id' => $honor->id, 'ptk_id' => $guru->id])
+        ->assertSessionHasErrors(['ptk_id' => sprintf(PesanRkas::PTK_JENIS, 'Administrasi', 'Guru')]);
     expect(RkasBaris::count())->toBe(0);
 });
 

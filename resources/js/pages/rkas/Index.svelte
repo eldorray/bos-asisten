@@ -13,6 +13,7 @@
 
 <script lang="ts">
     import { Link, page, router } from '@inertiajs/svelte';
+    import Pencil from '@lucide/svelte/icons/pencil';
     import Plus from '@lucide/svelte/icons/plus';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import AppHead from '@/components/AppHead.svelte';
@@ -27,6 +28,7 @@
         Dialog,
         DialogContent,
         DialogDescription,
+        DialogFooter,
         DialogTitle,
     } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
@@ -62,6 +64,8 @@
     } = $props();
 
     let dialogBuka = $state(false);
+    let akanDihapus = $state<Baris | null>(null);
+    let menghapus = $state(false);
 
     const namaSumber = $derived(
         Object.fromEntries(pilihanSumberDana.map((s) => [s.nilai, s.nama])),
@@ -82,12 +86,18 @@
         );
     }
 
-    function hapus(uuid: string): void {
-        if (!confirm('Hapus kertas kerja ini beserta seluruh barisnya?')) {
+    function hapus(): void {
+        if (!akanDihapus) {
             return;
         }
-        router.delete(KertasKerjaController.destroy(uuid).url, {
+        router.delete(KertasKerjaController.destroy(akanDihapus.uuid).url, {
             preserveScroll: true,
+            onStart: () => (menghapus = true),
+            // Ditolak server pun dialog ditutup; alasannya tampil di atas tabel.
+            onFinish: () => {
+                menghapus = false;
+                akanDihapus = null;
+            },
         });
     }
 </script>
@@ -147,7 +157,7 @@
                                 Dianggarkan
                             </th>
                             <th class="px-2 py-2 text-right font-medium">Sisa</th>
-                            <th class="w-10 px-2 py-2"></th>
+                            <th class="px-2 py-2"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -184,17 +194,44 @@
                                 <td class="px-2 py-2 text-right tabular-nums">
                                     {rupiah(baris.sisa)}
                                 </td>
-                                <td class="px-2 py-2 text-right">
-                                    {#if baris.bisa_diubah}
+                                <td class="px-2 py-2">
+                                    <div class="flex justify-end">
                                         <Button
+                                            asChild
                                             variant="ghost"
                                             size="icon"
-                                            aria-label="Hapus"
-                                            onclick={() => hapus(baris.uuid)}
                                         >
-                                            <Trash2 class="size-4" />
+                                            {#snippet children(props)}
+                                                <Link
+                                                    {...props}
+                                                    href={KertasKerjaController.show(
+                                                        baris.uuid,
+                                                    )}
+                                                    aria-label={baris.bisa_diubah
+                                                        ? 'Buka dan ubah'
+                                                        : 'Buka'}
+                                                    title={baris.bisa_diubah
+                                                        ? 'Buka dan ubah'
+                                                        : 'Buka'}
+                                                >
+                                                    <Pencil class="size-4" />
+                                                </Link>
+                                            {/snippet}
                                         </Button>
-                                    {/if}
+                                        {#if baris.bisa_diubah}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                class="text-belum-foreground"
+                                                aria-label="Hapus"
+                                                title="Hapus"
+                                                onclick={() =>
+                                                    (akanDihapus = baris)}
+                                            >
+                                                <Trash2 class="size-4" />
+                                            </Button>
+                                        {/if}
+                                    </div>
                                 </td>
                             </tr>
                         {:else}
@@ -229,5 +266,44 @@
                 onSelesai={() => (dialogBuka = false)}
             />
         {/key}
+    </DialogContent>
+</Dialog>
+
+<Dialog
+    open={akanDihapus !== null}
+    onOpenChange={(buka) => {
+        if (!buka) {
+            akanDihapus = null;
+        }
+    }}
+>
+    <DialogContent class="max-md:max-w-[calc(100%-2rem)]">
+        {#if akanDihapus}
+            <div class="grid gap-4">
+                <DialogTitle>Hapus kertas kerja ini?</DialogTitle>
+                <DialogDescription>
+                    {namaSumber[akanDihapus.sumber_dana] ??
+                        akanDihapus.sumber_dana}
+                    {tahun}, versi {akanDihapus.versi}. Seluruh belanja di dalamnya
+                    ({rupiah(akanDihapus.dianggarkan)}) ikut terhapus dan tidak bisa
+                    dikembalikan.
+                </DialogDescription>
+                <DialogFooter>
+                    <Button
+                        variant="secondary"
+                        onclick={() => (akanDihapus = null)}
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        disabled={menghapus}
+                        onclick={hapus}
+                    >
+                        Hapus
+                    </Button>
+                </DialogFooter>
+            </div>
+        {/if}
     </DialogContent>
 </Dialog>

@@ -392,6 +392,30 @@
     </div>
 
     <!-- Selalu terlihat saat menggulir: angka inilah yang dikejar sampai sisa Rp 0. -->
+    <!-- Di HP tombol turun ke baris total supaya sisa per tahap mendapat satu baris penuh. -->
+    {#snippet tombolRingkasan(kelas: string)}
+        <Button
+            variant="outline"
+            class={kelas}
+            aria-expanded={ringkasanBuka}
+            onclick={() => (ringkasanBuka = !ringkasanBuka)}
+        >
+            {ringkasanBuka ? 'Tutup' : 'Ringkasan'}<span
+                class={ringkasanBuka ? '-ml-1 max-md:hidden' : 'hidden'}
+            >
+                ringkasan
+            </span>
+            {#if jumlahPerhatian > 0}
+                <span
+                    aria-label={`${jumlahPerhatian} hal perlu diperhatikan`}
+                    class="min-w-5 rounded-full bg-kurang px-1.5 text-center text-xs font-semibold text-kurang-foreground tabular-nums"
+                >
+                    {jumlahPerhatian}
+                </span>
+            {/if}
+        </Button>
+    {/snippet}
+
     <section
         aria-label="Ringkasan pagu"
         class="sticky top-[57px] z-10 -mx-2 bg-background p-2 md:top-0"
@@ -417,78 +441,94 @@
                         </span>
                     </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                    <div class="text-meta text-muted-foreground">
-                        {ringkasan.sisa < 0
-                            ? 'Melebihi pagu'
-                            : ringkasan.sisa === 0
-                              ? 'Sisa (pas)'
-                              : 'Sisa'}
+                {#each ringkasan.tahap as t (t.tahap)}
+                    <div class="min-w-0 max-md:basis-[calc(50%-0.375rem)]">
+                        <div class="text-meta text-muted-foreground">
+                            {t.selisih < 0 ? 'Lebih' : 'Sisa'} tahap {t.tahap}
+                        </div>
+                        <div
+                            class={[
+                                'font-semibold whitespace-nowrap tabular-nums md:text-lg',
+                                t.selisih < 0 && 'text-belum-foreground',
+                                t.selisih === 0 && 'text-selesai-foreground',
+                            ]}
+                        >
+                            {rupiah(Math.abs(t.selisih))}
+                        </div>
                     </div>
+                {:else}
+                    <div class="min-w-0 flex-1">
+                        <div class="text-meta text-muted-foreground">
+                            {ringkasan.sisa < 0
+                                ? 'Melebihi pagu'
+                                : ringkasan.sisa === 0
+                                  ? 'Sisa (pas)'
+                                  : 'Sisa'}
+                        </div>
+                        <div
+                            class={[
+                                'text-lg font-semibold tabular-nums',
+                                ringkasan.sisa < 0 && 'text-belum-foreground',
+                                ringkasan.sisa === 0 && 'text-selesai-foreground',
+                            ]}
+                        >
+                            <span class="whitespace-nowrap">
+                                {rupiah(Math.abs(ringkasan.sisa))}
+                            </span>
+                            <span
+                                class="text-sm font-normal text-muted-foreground max-md:hidden"
+                            >
+                                {persen(Math.abs(ringkasan.sisa))}
+                            </span>
+                        </div>
+                        <div
+                            class="flex flex-wrap gap-x-1 text-meta text-muted-foreground tabular-nums md:hidden"
+                        >
+                            <span>{persen(Math.abs(ringkasan.sisa))}</span>
+                            <span class="whitespace-nowrap">
+                                dari {rupiah(kertasKerja.pagu)}
+                            </span>
+                        </div>
+                    </div>
+                {/each}
+                {@render tombolRingkasan('ml-auto max-md:hidden')}
+            </div>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <div
+                    role="progressbar"
+                    aria-label="Porsi pagu yang sudah dianggarkan"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={persenDianggarkan}
+                    class="h-2 min-w-32 flex-1 overflow-hidden rounded-full bg-muted max-md:basis-full"
+                >
                     <div
                         class={[
-                            'text-lg font-semibold tabular-nums',
-                            ringkasan.sisa < 0 && 'text-belum-foreground',
-                            ringkasan.sisa === 0 && 'text-selesai-foreground',
+                            'h-full rounded-full',
+                            ringkasan.sisa < 0
+                                ? 'bg-belum-foreground'
+                                : ringkasan.sisa === 0
+                                  ? 'bg-selesai-foreground'
+                                  : 'bg-primary',
+                        ]}
+                        style:width={`${persenDianggarkan}%`}
+                    ></div>
+                </div>
+                {#if ringkasan.tahap.length > 0}
+                    <span
+                        class={[
+                            'text-meta whitespace-nowrap tabular-nums',
+                            ringkasan.sisa < 0
+                                ? 'font-medium text-belum-foreground'
+                                : 'text-muted-foreground',
                         ]}
                     >
-                        <span class="whitespace-nowrap">
-                            {rupiah(Math.abs(ringkasan.sisa))}
-                        </span>
-                        <span
-                            class="text-sm font-normal text-muted-foreground max-md:hidden"
-                        >
-                            {persen(Math.abs(ringkasan.sisa))}
-                        </span>
-                    </div>
-                    <div
-                        class="flex flex-wrap gap-x-1 text-meta text-muted-foreground tabular-nums md:hidden"
-                    >
-                        <span>{persen(Math.abs(ringkasan.sisa))}</span>
-                        <span class="whitespace-nowrap">
-                            dari {rupiah(kertasKerja.pagu)}
-                        </span>
-                    </div>
-                </div>
-                <Button
-                    variant="outline"
-                    aria-expanded={ringkasanBuka}
-                    onclick={() => (ringkasanBuka = !ringkasanBuka)}
-                >
-                    {ringkasanBuka ? 'Tutup' : 'Ringkasan'}<span
-                        class={ringkasanBuka ? '-ml-1 max-md:hidden' : 'hidden'}
-                    >
-                        ringkasan
+                        {ringkasan.sisa < 0 ? 'Melebihi pagu' : 'Sisa'}
+                        {rupiah(Math.abs(ringkasan.sisa))}
+                        · {persen(Math.abs(ringkasan.sisa))}
                     </span>
-                    {#if jumlahPerhatian > 0}
-                        <span
-                            aria-label={`${jumlahPerhatian} hal perlu diperhatikan`}
-                            class="min-w-5 rounded-full bg-kurang px-1.5 text-center text-xs font-semibold text-kurang-foreground tabular-nums"
-                        >
-                            {jumlahPerhatian}
-                        </span>
-                    {/if}
-                </Button>
-            </div>
-            <div
-                role="progressbar"
-                aria-label="Porsi pagu yang sudah dianggarkan"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={persenDianggarkan}
-                class="h-2 overflow-hidden rounded-full bg-muted"
-            >
-                <div
-                    class={[
-                        'h-full rounded-full',
-                        ringkasan.sisa < 0
-                            ? 'bg-belum-foreground'
-                            : ringkasan.sisa === 0
-                              ? 'bg-selesai-foreground'
-                              : 'bg-primary',
-                    ]}
-                    style:width={`${persenDianggarkan}%`}
-                ></div>
+                {/if}
+                {@render tombolRingkasan('ml-auto md:hidden')}
             </div>
         </div>
     </section>

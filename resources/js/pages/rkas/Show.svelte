@@ -169,6 +169,15 @@
     function rupiah(n: number): string {
         return `Rp ${n.toLocaleString('id-ID')}`;
     }
+
+    /** Porsi terhadap pagu, dua desimal seperti persentase juknis. */
+    function persen(n: number): string {
+        if (kertasKerja.pagu <= 0) {
+            return '';
+        }
+
+        return `${((n / kertasKerja.pagu) * 100).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`;
+    }
 </script>
 
 <AppHead title={`${kertasKerja.label} ${kertasKerja.tahun}`} />
@@ -388,7 +397,7 @@
         class="sticky top-[57px] z-10 -mx-2 bg-background p-2 md:top-0"
     >
         <div class="grid gap-3 rounded-[14px] border bg-card px-4 py-3.5">
-            <div class="flex flex-wrap items-center gap-x-8 gap-y-2">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 md:gap-x-8">
                 <div class="max-md:hidden">
                     <div class="text-meta text-muted-foreground">Pagu</div>
                     <div class="text-lg font-semibold tabular-nums">
@@ -401,6 +410,11 @@
                     </div>
                     <div class="text-lg font-semibold tabular-nums">
                         {rupiah(ringkasan.dianggarkan)}
+                        <span
+                            class="text-sm font-normal text-muted-foreground"
+                        >
+                            {persen(ringkasan.dianggarkan)}
+                        </span>
                     </div>
                 </div>
                 <div class="min-w-0 flex-1">
@@ -418,12 +432,22 @@
                             ringkasan.sisa === 0 && 'text-selesai-foreground',
                         ]}
                     >
-                        {rupiah(Math.abs(ringkasan.sisa))}
+                        <span class="whitespace-nowrap">
+                            {rupiah(Math.abs(ringkasan.sisa))}
+                        </span>
+                        <span
+                            class="text-sm font-normal text-muted-foreground max-md:hidden"
+                        >
+                            {persen(Math.abs(ringkasan.sisa))}
+                        </span>
                     </div>
                     <div
-                        class="text-meta text-muted-foreground tabular-nums md:hidden"
+                        class="flex flex-wrap gap-x-1 text-meta text-muted-foreground tabular-nums md:hidden"
                     >
-                        dari {rupiah(kertasKerja.pagu)}
+                        <span>{persen(Math.abs(ringkasan.sisa))}</span>
+                        <span class="whitespace-nowrap">
+                            dari {rupiah(kertasKerja.pagu)}
+                        </span>
                     </div>
                 </div>
                 <Button
@@ -431,7 +455,11 @@
                     aria-expanded={ringkasanBuka}
                     onclick={() => (ringkasanBuka = !ringkasanBuka)}
                 >
-                    {ringkasanBuka ? 'Tutup ringkasan' : 'Ringkasan'}
+                    {ringkasanBuka ? 'Tutup' : 'Ringkasan'}<span
+                        class={ringkasanBuka ? '-ml-1 max-md:hidden' : 'hidden'}
+                    >
+                        ringkasan
+                    </span>
                     {#if jumlahPerhatian > 0}
                         <span
                             aria-label={`${jumlahPerhatian} hal perlu diperhatikan`}

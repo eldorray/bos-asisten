@@ -92,7 +92,8 @@ class HitungRingkasan
 
             $batasHonor = $pengaturan->swasta ? $pengaturan->honor_maks_swasta : $pengaturan->honor_maks_negeri;
             $juknis = [
-                $this->juknis('Honor', $nilaiHonor, $batasHonor, $pagu, true, PesanRkas::HONOR),
+                // Status ikut ditampilkan: batas honor negeri dan swasta berbeda, dan salah status mudah terlewat.
+                $this->juknis($pengaturan->swasta ? 'Honor (sekolah swasta)' : 'Honor (sekolah negeri)', $nilaiHonor, $batasHonor, $pagu, true, PesanRkas::HONOR),
                 $this->juknis('Buku', $nilaiBuku, $pengaturan->buku_min, $pagu, false, PesanRkas::BUKU),
                 $this->juknis('Sarpras', $nilaiSarpras, $pengaturan->sarpras_maks, $pagu, true, PesanRkas::SARPRAS),
             ];

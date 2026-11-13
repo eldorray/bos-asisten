@@ -194,6 +194,10 @@
                         </li>
                     {/each}
                 </ul>
+                <p class="text-xs text-muted-foreground">
+                    Batas honor mengikuti status negeri atau swasta di Pengaturan
+                    RKAS.
+                </p>
             </CardContent>
         </Card>
     {/if}

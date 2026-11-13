@@ -91,11 +91,12 @@ it('memperingatkan honor di atas 20 persen untuk negeri dan tidak untuk 40 perse
 
     $r = ($this->hitung)($kk);
     expect($r->peringatan)->toContain(sprintf(PesanRkas::HONOR, 20))
+        ->and($r->juknis[0]['nama'])->toBe('Honor (sekolah negeri)')
         ->and($r->juknis[0]['persen'])->toBe(25.0)
         ->and(collect($r->juknis)->pluck('batas')->all())->toBe([20, 10, 20]);
 
     RkasPengaturan::untuk($this->smp, 2027)->update(['swasta' => true]);
-    expect(($this->hitung)($kk)->juknis[0]['batas'])->toBe(40);
+    expect(($this->hitung)($kk)->juknis[0])->toMatchArray(['nama' => 'Honor (sekolah swasta)', 'batas' => 40]);
     expect(($this->hitung)($kk)->peringatan)->not->toContain(sprintf(PesanRkas::HONOR, 40))
         ->and(($this->hitung)($kk)->peringatan)->not->toContain(sprintf(PesanRkas::HONOR, 20));
 });

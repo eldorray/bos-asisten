@@ -25,11 +25,36 @@
     let dialog: HTMLDialogElement;
 
     $effect(() => {
-        if (terbuka && !dialog.open) {
-            dialog.showModal();
-        } else if (!terbuka && dialog.open) {
-            dialog.close();
+        if (terbuka) {
+            dialog.classList.remove('menutup');
+
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+
+            return;
         }
+
+        if (!dialog.open) {
+            return;
+        }
+
+        // close() langsung menghilangkan dialog, jadi gerak turunnya dimainkan dulu.
+        // Tanpa animasi (desktop, gerak dikurangi) janji ini langsung selesai.
+        let batal = false;
+        dialog.classList.add('menutup');
+        void Promise.allSettled(
+            dialog.getAnimations().map((a) => a.finished),
+        ).then(() => {
+            if (!batal) {
+                dialog.classList.remove('menutup');
+                dialog.close();
+            }
+        });
+
+        return () => {
+            batal = true;
+        };
     });
 </script>
 
@@ -39,7 +64,7 @@
     onclose={ontutup}
     onclick={(e) => e.target === dialog && ontutup()}
     class={cn(
-        'max-md:animate-in max-md:fade-in max-md:slide-in-from-bottom-4 max-md:duration-300 max-md:ease-tenang fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-card p-0 text-foreground backdrop:bg-black/45',
+        'lembar-bawah fixed inset-x-0 top-auto bottom-0 m-0 max-h-[90dvh] w-full max-w-none overflow-y-auto rounded-t-3xl bg-card p-0 text-foreground backdrop:bg-black/45',
         penuh && 'top-0 h-dvh max-h-dvh rounded-none',
         sebarisDiDesktop
             ? 'md:static md:block md:h-auto md:max-h-none md:overflow-visible md:rounded-none md:bg-transparent'

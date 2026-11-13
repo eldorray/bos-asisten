@@ -1,4 +1,5 @@
 import { flushSync } from 'svelte';
+import { setArah } from '@/lib/arahTransisi';
 
 /**
  * Perubahan tampilan di halaman yang sama, seperti ganti tab, memakai gerak yang
@@ -11,6 +12,7 @@ export function transisi(ubah: () => void): void {
         return;
     }
 
+    setArah('setara');
     document.startViewTransition(() => {
         ubah();
         flushSync();

@@ -13,6 +13,7 @@
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
     --ease-tenang: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 
     --text-meta: 0.8125rem;
     --text-meta--line-height: 1.25rem;
@@ -254,6 +255,146 @@ main {
     from {
         opacity: 0;
         transform: translateY(8px);
+    }
+}
+
+@keyframes pudar-masuk {
+    from {
+        opacity: 0;
+    }
+}
+
+/*
+ * Gerak ala iOS, hanya di HP. Masuk lebih dalam: halaman baru bergeser dari kanan
+ * menutupi halaman lama yang mundur sedikit. Kembali: kebalikannya. Arah diisi
+ * arahTransisi.ts pada <html data-arah>.
+ */
+@media (max-width: 767px) {
+    .tab-bawah {
+        view-transition-name: tab-bawah;
+    }
+
+    ::view-transition-group(tab-bawah) {
+        animation: none;
+    }
+
+    /* Potret lama dan baru bertumpuk; campuran bawaan membuat tumpukannya terlalu terang. */
+    ::view-transition-old(konten),
+    ::view-transition-new(konten) {
+        mix-blend-mode: normal;
+    }
+
+    ::view-transition-old(root),
+    ::view-transition-old(tab-bawah):not(:only-child) {
+        display: none;
+    }
+
+    ::view-transition-new(tab-bawah):not(:only-child) {
+        animation: none;
+    }
+
+    ::view-transition-old(konten) {
+        translate: 0 calc(var(--gulir-lama, 0px) * -1);
+    }
+
+    ::view-transition-new(konten) {
+        animation: 200ms ease-out both pudar-masuk;
+    }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+    :root[data-arah='maju']::view-transition-old(konten) {
+        animation: 400ms var(--ease-ios) both mundur-ke-kiri;
+    }
+
+    :root[data-arah='maju']::view-transition-new(konten) {
+        animation: 400ms var(--ease-ios) both masuk-dari-kanan;
+        box-shadow: -8px 0 24px rgb(0 0 0 / 0.08);
+    }
+
+    :root[data-arah='mundur']::view-transition-old(konten) {
+        z-index: 1;
+        animation: 400ms var(--ease-ios) both keluar-ke-kanan;
+        box-shadow: -8px 0 24px rgb(0 0 0 / 0.08);
+    }
+
+    :root[data-arah='mundur']::view-transition-new(konten) {
+        animation: 400ms var(--ease-ios) both maju-dari-kiri;
+    }
+
+    /* Tab bawah bergerak seirama tepi halaman: terdorong keluar saat masuk rincian, tersingkap saat kembali. */
+    ::view-transition-old(tab-bawah):only-child {
+        animation: 400ms var(--ease-ios) both keluar-ke-kiri;
+    }
+
+    ::view-transition-new(tab-bawah):only-child {
+        animation: 400ms var(--ease-ios) both masuk-dari-kiri;
+    }
+
+    .lembar-bawah[open] {
+        animation: 500ms var(--ease-ios) both lembar-naik;
+    }
+
+    .lembar-bawah[open]::backdrop {
+        animation: 300ms ease-out both pudar-masuk;
+    }
+
+    .lembar-bawah.menutup {
+        animation: 300ms var(--ease-ios) both lembar-turun;
+    }
+
+    .lembar-bawah.menutup::backdrop {
+        animation: 300ms ease-in both pudar-keluar;
+    }
+}
+
+@keyframes masuk-dari-kanan {
+    from {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes mundur-ke-kiri {
+    to {
+        transform: translateX(-30%);
+        filter: brightness(0.94);
+    }
+}
+
+@keyframes keluar-ke-kanan {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes maju-dari-kiri {
+    from {
+        transform: translateX(-30%);
+        filter: brightness(0.94);
+    }
+}
+
+@keyframes keluar-ke-kiri {
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes masuk-dari-kiri {
+    from {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes lembar-naik {
+    from {
+        transform: translateY(100%);
+    }
+}
+
+@keyframes lembar-turun {
+    to {
+        transform: translateY(100%);
     }
 }
 

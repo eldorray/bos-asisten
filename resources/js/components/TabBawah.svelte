@@ -34,7 +34,7 @@
 
 <nav
     aria-label="Menu utama"
-    class="fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 gap-1 border-t bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden"
+    class="tab-bawah fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 gap-1 border-t bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden"
 >
     {#each tab as t (t.judul)}
         <Link

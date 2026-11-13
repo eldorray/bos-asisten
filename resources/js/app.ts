@@ -4,6 +4,7 @@ import AppLayout from '@/layouts/AppLayout.svelte';
 import AuthLayout from '@/layouts/AuthLayout.svelte';
 import SettingsLayout from '@/layouts/settings/Layout.svelte';
 import { antreanFoto } from '@/lib/antreanFoto.svelte';
+import { mulaiArahTransisi } from '@/lib/arahTransisi';
 import { initializeFlashToast } from '@/lib/flash-toast';
 import { pasangAplikasi } from '@/lib/pasangAplikasi.svelte';
 import { initializeTheme } from '@/lib/theme.svelte';
@@ -43,6 +44,7 @@ initializeFlashToast();
 if (typeof window !== 'undefined') {
     void antreanFoto.mulai();
     pasangAplikasi.mulai();
+    mulaiArahTransisi();
 
     router.on('networkError', () => {
         toast.error('Tidak ada sinyal. Coba lagi saat online.');

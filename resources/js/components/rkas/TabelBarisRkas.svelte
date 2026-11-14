@@ -2,6 +2,7 @@
     import { router } from '@inertiajs/svelte';
     import CalendarDays from '@lucide/svelte/icons/calendar-days';
     import ChevronDown from '@lucide/svelte/icons/chevron-down';
+    import ListChecks from '@lucide/svelte/icons/list-checks';
     import Pencil from '@lucide/svelte/icons/pencil';
     import Plus from '@lucide/svelte/icons/plus';
     import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -35,8 +36,8 @@
     // Kode kegiatan yang dilipat. Bawaan terbuka; saat mencari semua hasil tampil.
     const dilipat = new SvelteSet<string>();
 
-    // Mode pilih untuk mengubah volume beberapa belanja sekaligus.
-    let memilih = $state(false);
+    // Ubah volume sekaligus berlaku per kegiatan: kode kegiatan yang sedang dipilih barisnya.
+    let memilih = $state<string | null>(null);
     let dialogVolume = $state(false);
     const terpilih = new SvelteSet<number>();
     // Belanja yang sudah dihapus tidak ikut terhitung.
@@ -48,18 +49,17 @@
         }
     }
 
-    function pilihKelompok(daftar: BarisRkas[], semua: boolean): void {
+    // Semua belanja kegiatan itu langsung tercentang; yang dikecualikan tinggal dilepas.
+    function mulaiMemilih(kodeKegiatan: string, daftar: BarisRkas[]): void {
+        terpilih.clear();
         for (const b of daftar) {
-            if (semua) {
-                terpilih.delete(b.id);
-            } else {
-                terpilih.add(b.id);
-            }
+            terpilih.add(b.id);
         }
+        memilih = kodeKegiatan;
     }
 
     function selesaiMemilih(): void {
-        memilih = false;
+        memilih = null;
         terpilih.clear();
     }
 
@@ -159,16 +159,7 @@
                     {semuaDilipat ? 'Buka semua' : 'Tutup semua'}
                 </Button>
             {/if}
-            {#if bisaDiubah && !memilih}
-                {#if baris.length > 1}
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onclick={() => (memilih = true)}
-                    >
-                        Ubah sekaligus
-                    </Button>
-                {/if}
+            {#if bisaDiubah}
                 <Button type="button" onclick={() => onTambah(null)}>
                     <Plus class="size-4" />
                     Tambah belanja
@@ -195,7 +186,9 @@
     {/if}
 
     {#each kelompok as k (k.kode)}
-        {@const buka = kata !== '' || !dilipat.has(k.kode)}
+        {@const dipilihDiSini = memilih === k.kode}
+        {@const buka =
+            kata !== '' || dipilihDiSini || !dilipat.has(k.kode)}
         <section aria-label={k.nama} class="rounded-[14px] border bg-card">
             <div
                 class={[
@@ -208,7 +201,7 @@
                     class="flex min-w-0 flex-[1_1_18rem] items-start gap-1.5 rounded-lg p-2 text-left hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     aria-expanded={buka}
                     aria-controls={`belanja-${k.kode}`}
-                    disabled={kata !== ''}
+                    disabled={kata !== '' || dipilihDiSini}
                     onclick={() => lipat(k.kode)}
                 >
                     <ChevronDown
@@ -232,17 +225,30 @@
                 <span class="font-semibold tabular-nums">
                     Rp {rupiah(k.subtotal)}
                 </span>
-                {#if memilih}
-                    {@const semua = k.baris.every((b) => terpilih.has(b.id))}
+                {#if dipilihDiSini}
+                    <Button type="button" variant="ghost" onclick={selesaiMemilih}>
+                        Batal
+                    </Button>
                     <Button
                         type="button"
-                        variant="secondary"
-                        aria-label={`${semua ? 'Lepas' : 'Pilih'} semua belanja di ${k.nama}`}
-                        onclick={() => pilihKelompok(k.baris, semua)}
+                        disabled={barisTerpilih.length === 0}
+                        onclick={() => (dialogVolume = true)}
                     >
-                        {semua ? 'Lepas semua' : 'Pilih semua'}
+                        Atur volume ({barisTerpilih.length})
                     </Button>
                 {:else if bisaDiubah}
+                    {#if k.baris.length > 1 && kata === ''}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            aria-label={`Ubah volume sekaligus di ${k.nama}`}
+                            title="Ubah volume dan bulan sekaligus"
+                            onclick={() => mulaiMemilih(k.kode, k.baris)}
+                        >
+                            <ListChecks class="size-4" />
+                            <span class="max-md:hidden">Ubah sekaligus</span>
+                        </Button>
+                    {/if}
                     <Button
                         type="button"
                         variant="secondary"
@@ -272,7 +278,7 @@
                             class={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2.5 pr-2 pl-4 ${KOLOM}`}
                         >
                             <div class="flex min-w-0 items-start gap-3">
-                                {#if memilih}
+                                {#if dipilihDiSini}
                                     <input
                                         type="checkbox"
                                         class="mt-0.5 size-5 shrink-0 accent-primary"
@@ -333,7 +339,7 @@
                                 >
                                     <CalendarDays class="size-[18px]" />
                                 </Button>
-                                {#if bisaDiubah && !memilih}
+                                {#if bisaDiubah && !dipilihDiSini}
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -389,27 +395,6 @@
             </div>
         </section>
     {/each}
-
-    {#if memilih}
-        <!-- Menempel di bawah supaya tetap terjangkau saat daftar panjang; di HP di atas tab bawah. -->
-        <div
-            class="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center gap-2 rounded-[14px] border bg-card p-3 shadow-lg md:bottom-4"
-        >
-            <span class="mr-auto text-sm font-medium tabular-nums">
-                {barisTerpilih.length} belanja dipilih
-            </span>
-            <Button type="button" variant="ghost" onclick={selesaiMemilih}>
-                Batal
-            </Button>
-            <Button
-                type="button"
-                disabled={barisTerpilih.length === 0}
-                onclick={() => (dialogVolume = true)}
-            >
-                Atur volume<span class="-ml-1 max-sm:hidden">dan bulan</span>
-            </Button>
-        </div>
-    {/if}
 
     {#if baris.length > 0}
         <div

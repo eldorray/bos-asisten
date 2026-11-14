@@ -8,6 +8,7 @@
     import { SvelteSet } from 'svelte/reactivity';
     import BarisRkasController from '@/actions/App/Http/Controllers/Rkas/BarisRkasController';
     import type { BarisRkas } from '@/components/rkas/FormBarisRkas.svelte';
+    import UbahVolumeSekaligus from '@/components/rkas/UbahVolumeSekaligus.svelte';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { BULAN, kelompokkanPerKegiatan, ringkasBulan } from '@/lib/rkas';
@@ -15,11 +16,15 @@
     let {
         baris,
         bisaDiubah,
+        kertasKerjaUuid,
+        sisaPagu,
         onUbah,
         onTambah,
     }: {
         baris: BarisRkas[];
         bisaDiubah: boolean;
+        kertasKerjaUuid: string;
+        sisaPagu: number;
         onUbah: (baris: BarisRkas) => void;
         /** Kegiatan yang sudah terpilih di form, atau null untuk memilih sendiri. */
         onTambah: (refKegiatanId: number | null) => void;
@@ -29,6 +34,34 @@
     let terbuka = $state<number | null>(null);
     // Kode kegiatan yang dilipat. Bawaan terbuka; saat mencari semua hasil tampil.
     const dilipat = new SvelteSet<string>();
+
+    // Mode pilih untuk mengubah volume beberapa belanja sekaligus.
+    let memilih = $state(false);
+    let dialogVolume = $state(false);
+    const terpilih = new SvelteSet<number>();
+    // Belanja yang sudah dihapus tidak ikut terhitung.
+    const barisTerpilih = $derived(baris.filter((b) => terpilih.has(b.id)));
+
+    function pilih(id: number): void {
+        if (!terpilih.delete(id)) {
+            terpilih.add(id);
+        }
+    }
+
+    function pilihKelompok(daftar: BarisRkas[], semua: boolean): void {
+        for (const b of daftar) {
+            if (semua) {
+                terpilih.delete(b.id);
+            } else {
+                terpilih.add(b.id);
+            }
+        }
+    }
+
+    function selesaiMemilih(): void {
+        memilih = false;
+        terpilih.clear();
+    }
 
     const kata = $derived(cari.trim().toLowerCase());
 
@@ -126,7 +159,16 @@
                     {semuaDilipat ? 'Buka semua' : 'Tutup semua'}
                 </Button>
             {/if}
-            {#if bisaDiubah}
+            {#if bisaDiubah && !memilih}
+                {#if baris.length > 1}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onclick={() => (memilih = true)}
+                    >
+                        Ubah sekaligus
+                    </Button>
+                {/if}
                 <Button type="button" onclick={() => onTambah(null)}>
                     <Plus class="size-4" />
                     Tambah belanja
@@ -190,7 +232,17 @@
                 <span class="font-semibold tabular-nums">
                     Rp {rupiah(k.subtotal)}
                 </span>
-                {#if bisaDiubah}
+                {#if memilih}
+                    {@const semua = k.baris.every((b) => terpilih.has(b.id))}
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        aria-label={`${semua ? 'Lepas' : 'Pilih'} semua belanja di ${k.nama}`}
+                        onclick={() => pilihKelompok(k.baris, semua)}
+                    >
+                        {semua ? 'Lepas semua' : 'Pilih semua'}
+                    </Button>
+                {:else if bisaDiubah}
                     <Button
                         type="button"
                         variant="secondary"
@@ -219,32 +271,43 @@
                         <div
                             class={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 py-2.5 pr-2 pl-4 ${KOLOM}`}
                         >
-                            <div class="min-w-0">
-                                <div class="font-medium [overflow-wrap:anywhere]">
-                                    {b.uraian}
+                            <div class="flex min-w-0 items-start gap-3">
+                                {#if memilih}
+                                    <input
+                                        type="checkbox"
+                                        class="mt-0.5 size-5 shrink-0 accent-primary"
+                                        aria-label={`Pilih ${b.uraian}`}
+                                        checked={terpilih.has(b.id)}
+                                        onchange={() => pilih(b.id)}
+                                    />
+                                {/if}
+                                <div class="min-w-0">
+                                    <div class="font-medium [overflow-wrap:anywhere]">
+                                        {b.uraian}
+                                    </div>
+                                    <div
+                                        class="text-meta text-muted-foreground tabular-nums md:hidden"
+                                    >
+                                        {rupiah(b.volume)}
+                                        {b.satuan} × Rp {rupiah(b.harga)}
+                                    </div>
+                                    <div class="text-meta text-muted-foreground">
+                                        <span title={b.rekening.nama}>
+                                            {b.rekening.kode}
+                                        </span>
+                                        · {ringkasBulan(b.volume_bulan)}
+                                    </div>
+                                    {#each b.masalah as pesan (pesan)}
+                                        <p class="text-meta font-medium text-belum-foreground">
+                                            {pesan}
+                                        </p>
+                                    {/each}
+                                    {#each b.peringatan as pesan (pesan)}
+                                        <p class="text-meta text-kurang-foreground">
+                                            {pesan}
+                                        </p>
+                                    {/each}
                                 </div>
-                                <div
-                                    class="text-meta text-muted-foreground tabular-nums md:hidden"
-                                >
-                                    {rupiah(b.volume)}
-                                    {b.satuan} × Rp {rupiah(b.harga)}
-                                </div>
-                                <div class="text-meta text-muted-foreground">
-                                    <span title={b.rekening.nama}>
-                                        {b.rekening.kode}
-                                    </span>
-                                    · {ringkasBulan(b.volume_bulan)}
-                                </div>
-                                {#each b.masalah as pesan (pesan)}
-                                    <p class="text-meta font-medium text-belum-foreground">
-                                        {pesan}
-                                    </p>
-                                {/each}
-                                {#each b.peringatan as pesan (pesan)}
-                                    <p class="text-meta text-kurang-foreground">
-                                        {pesan}
-                                    </p>
-                                {/each}
                             </div>
                             <span class="hidden text-right tabular-nums md:block">
                                 {rupiah(b.volume)}
@@ -270,7 +333,7 @@
                                 >
                                     <CalendarDays class="size-[18px]" />
                                 </Button>
-                                {#if bisaDiubah}
+                                {#if bisaDiubah && !memilih}
                                     <Button
                                         type="button"
                                         variant="ghost"
@@ -327,6 +390,27 @@
         </section>
     {/each}
 
+    {#if memilih}
+        <!-- Menempel di bawah supaya tetap terjangkau saat daftar panjang; di HP di atas tab bawah. -->
+        <div
+            class="sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap items-center gap-2 rounded-[14px] border bg-card p-3 shadow-lg md:bottom-4"
+        >
+            <span class="mr-auto text-sm font-medium tabular-nums">
+                {barisTerpilih.length} belanja dipilih
+            </span>
+            <Button type="button" variant="ghost" onclick={selesaiMemilih}>
+                Batal
+            </Button>
+            <Button
+                type="button"
+                disabled={barisTerpilih.length === 0}
+                onclick={() => (dialogVolume = true)}
+            >
+                Atur volume<span class="-ml-1 max-sm:hidden">dan bulan</span>
+            </Button>
+        </div>
+    {/if}
+
     {#if baris.length > 0}
         <div
             class="flex justify-between gap-3 rounded-[14px] bg-primary px-4 py-3.5 font-semibold text-primary-foreground"
@@ -336,3 +420,13 @@
         </div>
     {/if}
 </div>
+
+{#key dialogVolume}
+    <UbahVolumeSekaligus
+        bind:terbuka={dialogVolume}
+        {kertasKerjaUuid}
+        baris={barisTerpilih}
+        {sisaPagu}
+        onSelesai={selesaiMemilih}
+    />
+{/key}

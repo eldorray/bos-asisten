@@ -604,6 +604,8 @@
     <TabelBarisRkas
         {baris}
         bisaDiubah={kertasKerja.bisa_diubah}
+        kertasKerjaUuid={kertasKerja.uuid}
+        sisaPagu={ringkasan.sisa}
         onUbah={(b) => bukaFormBaris(b)}
         onTambah={(refKegiatanId) => bukaFormBaris(null, refKegiatanId)}
     />

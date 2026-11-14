@@ -103,6 +103,29 @@ class SimpanBarisRkas
         });
     }
 
+    /**
+     * Ganti jadwal volume beberapa baris sekaligus: bulan terpilih berisi $volume, bulan lain kosong.
+     * Isian lain tiap baris tidak disentuh, jadi aturan uraian, harga, dan PTK tidak diperiksa ulang.
+     *
+     * @param  list<string>  $uuid
+     * @param  list<int>  $bulan
+     */
+    public function ubahVolume(RkasKertasKerja $kertasKerja, array $uuid, array $bulan, int $volume): void
+    {
+        $this->pastikanBisaDiubah($kertasKerja);
+
+        $jadwal = $this->volumePerBulan(array_fill_keys($bulan, $volume));
+
+        DB::transaction(function () use ($kertasKerja, $uuid, $jadwal): void {
+            $baris = RkasBaris::query()->where('kertas_kerja_id', $kertasKerja->id)->whereIn('uuid', $uuid)->get();
+            if ($baris->count() !== count(array_unique($uuid))) {
+                $this->tolak('baris', PesanRkas::BARIS_TIDAK_ADA);
+            }
+
+            $baris->each(fn (RkasBaris $b) => $b->update(['volume_bulan' => $jadwal]));
+        });
+    }
+
     public function hapus(RkasBaris $baris): void
     {
         $this->pastikanBisaDiubah($baris->kertasKerja);

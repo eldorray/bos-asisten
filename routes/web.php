@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('rkas/{kertasKerja}/disahkan', [StatusKertasKerjaController::class, 'disahkan'])->name('rkas.status.disahkan');
     Route::post('rkas/{kertasKerja}/revisi', [RevisiController::class, 'store'])->name('rkas.revisi.store');
     Route::post('rkas/{kertasKerja}/baris', [BarisRkasController::class, 'store'])->name('rkas.baris.store');
+    Route::patch('rkas/{kertasKerja}/baris/volume', [BarisRkasController::class, 'volume'])->name('rkas.baris.volume');
     Route::patch('rkas-baris/{baris}', [BarisRkasController::class, 'update'])->name('rkas.baris.update');
     Route::delete('rkas-baris/{baris}', [BarisRkasController::class, 'destroy'])->name('rkas.baris.destroy');
     Route::get('cadangan', CadanganController::class)->name('cadangan.unduh');

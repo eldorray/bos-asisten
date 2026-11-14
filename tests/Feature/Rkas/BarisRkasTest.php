@@ -343,3 +343,39 @@ it('menyertakan referensi milik baris yang sudah kedaluwarsa agar tetap bisa diu
     $this->patch(route('rkas.baris.update', RkasBaris::firstOrFail()), ($this->data)(['ref_barang_id' => $barang->id, 'volume_bulan' => [1 => 7]]))
         ->assertSessionHasNoErrors();
 });
+
+it('mengubah volume beberapa baris sekaligus dan mengosongkan bulan lain', function () {
+    ($this->kirim)()->assertSessionHasNoErrors();
+    ($this->kirim)(['uraian' => 'Spidol warna'])->assertSessionHasNoErrors();
+    ($this->kirim)(['uraian' => 'Tidak dipilih'])->assertSessionHasNoErrors();
+    [$a, $b, $lain] = RkasBaris::orderBy('id')->get()->all();
+
+    $this->patch(route('rkas.baris.volume', $this->kk), ['baris' => [$a->uuid, $b->uuid], 'bulan' => [2, 8], 'volume' => 4])
+        ->assertSessionHasNoErrors();
+
+    expect($a->fresh()->volume_bulan)->toBe(volume([2 => 4, 8 => 4]))
+        ->and($b->fresh()->volume_bulan)->toBe(volume([2 => 4, 8 => 4]))
+        ->and($b->fresh()->uraian)->toBe('Spidol warna')
+        ->and($lain->fresh()->volume_bulan)->toBe(volume([1 => 2, 7 => 3]));
+});
+
+it('menolak ubah volume sekaligus untuk baris kertas kerja lain, isian kosong, atau kertas kerja terkunci', function () {
+    ($this->kirim)()->assertSessionHasNoErrors();
+    $milik = RkasBaris::firstOrFail();
+    $asing = RkasBaris::factory()->create();
+    $kirim = fn (array $ganti = []) => $this->patch(
+        route('rkas.baris.volume', $this->kk),
+        array_replace(['baris' => [$milik->uuid], 'bulan' => [3], 'volume' => 1], $ganti),
+    );
+
+    $kirim(['baris' => [$milik->uuid, $asing->uuid]])->assertSessionHasErrors(['baris' => PesanRkas::BARIS_TIDAK_ADA]);
+    $kirim(['bulan' => []])->assertSessionHasErrors('bulan');
+    $kirim(['bulan' => [13]])->assertSessionHasErrors('bulan.0');
+    $kirim(['volume' => 0])->assertSessionHasErrors('volume');
+
+    $this->kk->update(['status' => StatusKertasKerja::Siap]);
+    $kirim()->assertSessionHasErrors('kertas_kerja');
+
+    expect($milik->fresh()->volume_bulan)->toBe(volume([1 => 2, 7 => 3]))
+        ->and($asing->fresh()->volume_bulan)->not->toBe(volume([3 => 1]));
+});
